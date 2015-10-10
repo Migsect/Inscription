@@ -1,0 +1,6 @@
+name: Inscription
+main: net.samongi.Inscription.Inscription
+version: 0.0
+description: Adds the ability to buff your player using glyphs
+author: Migsect
+depend: [SamongiLib]
