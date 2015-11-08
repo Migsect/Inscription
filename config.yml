@@ -1,0 +1,25 @@
+debug: true
+placement-tracking:
+ - STONE
+ - ENDER_STONE
+ - NETHERRACK
+ - SAND
+ - SANDSTONE
+ - DIRT
+ - GRASS
+ - GRAVEL
+ - CLAY
+ - HARDENED_CLAY
+ - STAINED_CLAY
+ - LOG
+ - LOG_2
+ - COAL_ORE
+ - IRON_ORE
+ - GOLD_ORE
+ - REDSTONE_ORE
+ - GLOWING_REDSTONE_ORE 
+ - LAPIS_ORE
+ - QUARTZ_ORE
+ - DIAMOND_ORE
+ 
+ 

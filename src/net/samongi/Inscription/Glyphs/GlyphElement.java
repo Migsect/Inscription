@@ -6,13 +6,13 @@ public enum GlyphElement
 {
   
   FIRE ("Fire", ChatColor.RED),
-  WATER ("Fire", ChatColor.RED),
-  AIR ("Fire", ChatColor.RED),
-  EARTH ("Fire", ChatColor.RED),
-  SHADOW ("Fire", ChatColor.RED),
-  LIGHT ("Fire", ChatColor.RED),
-  TIME ("Fire", ChatColor.RED),
-  SPACE ("Fire", ChatColor.RED);
+  WATER ("Water", ChatColor.AQUA),
+  AIR ("Air", ChatColor.LIGHT_PURPLE),
+  EARTH ("Earth", ChatColor.GREEN),
+  SHADOW ("Shadow", ChatColor.DARK_GRAY),
+  LIGHT ("Light", ChatColor.YELLOW),
+  TIME ("Time", ChatColor.BLUE),
+  SPACE ("Space", ChatColor.DARK_PURPLE);
   
   private final String display;
   private final ChatColor color;

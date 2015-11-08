@@ -4,3 +4,8 @@ version: 0.0
 description: Adds the ability to buff your player using glyphs
 author: Migsect
 depend: [SamongiLib]
+commands:
+  inscription:
+    description: This is the hub command for the plugin.
+    usage: /<command>
+    aliases: [inscript]
