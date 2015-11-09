@@ -5,12 +5,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Glyphs.Generator.GlyphGenerator;
+import net.samongi.SamongiLib.Configuration.ConfigFile;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -48,6 +51,9 @@ public class LootManager
    */
   public void parseGenerators(File dir)
   {
+    if(!dir.exists()) return; // TODO error message
+    if(!dir.isDirectory()) return; // TODO error message
+    
     File[] files = dir.listFiles();
     for(File f : files)
     {
@@ -55,6 +61,58 @@ public class LootManager
       if(f.isDirectory()) continue;
       List<GlyphGenerator> generators = GlyphGenerator.parse(f);
       for(GlyphGenerator g : generators) this.registerGenerator(g);
+    }
+  }
+  
+  public void parseDrops(File file)
+  {
+    if(!file.exists()) return; // TODO error message;
+    if(file.isDirectory()) return; // TODO error message;
+    
+    ConfigFile config = new ConfigFile(file);
+    ConfigurationSection root = config.getConfig().getConfigurationSection("drops");
+    if(root == null) return; // TODO error message
+    
+    ConfigurationSection entities = root.getConfigurationSection("entities");
+    if(entities != null) // TODO error message?
+    {
+      Set<String> entity_keys = entities.getKeys(false);
+      for(String k : entity_keys)
+      {
+        EntityType type = EntityType.valueOf(k);
+        if(type == null) continue; // TODO error message
+        ConfigurationSection section = entities.getConfigurationSection(k);
+        
+        String gen_string = section.getString("generator");
+        if(gen_string == null) continue; // TODO error_message
+        GlyphGenerator generator = this.getGenerator(gen_string);
+        if(generator == null) continue; // TODO error_message;
+        
+        double rate = section.getDouble("rate");
+        
+        this.registerGeneratorToEntity(type, generator, rate);
+      }
+    }
+    
+    ConfigurationSection materials = root.getConfigurationSection("materials");
+    if(materials != null) // TODO error message?
+    {
+      Set<String> material_keys = materials.getKeys(false);
+      for(String k : material_keys)
+      {
+        Material type = Material.valueOf(k);
+        if(type == null) continue; // TODO error message
+        ConfigurationSection section = materials.getConfigurationSection(k);
+        
+        String gen_string = section.getString("generator");
+        if(gen_string == null) continue; // TODO error_message
+        GlyphGenerator generator = this.getGenerator(gen_string);
+        if(generator == null) continue; // TODO error_message;
+        
+        double rate = section.getDouble("rate");
+        
+        this.registerGeneratorToMaterial(type, generator, rate);
+      }
     }
   }
   

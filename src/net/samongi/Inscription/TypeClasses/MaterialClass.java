@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 
 /**Referred to by attributes and othe rplugin systems
  * to group together different material types.
@@ -92,4 +93,15 @@ public class MaterialClass
    * @return True if the class is a global global.
    */
   public boolean isGlobal(){return this.is_global;}
+
+  /**Will parse the configuration section for an material class
+   * returns an material class based off the section passed in
+   * 
+   * @param section
+   * @return
+   */
+  public static MaterialClass parse(ConfigurationSection section)
+  {
+    return null;
+  }
 }

@@ -14,7 +14,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 public class PlayerManager
 {
   public static void log(String message){Inscription.log("[PlayerManager] " + message);}
-  public static void logDebug(String message){if(Inscription.debug()) PlayerManager.log("[DEBUG] " + message);}
+  public static void logDebug(String message){if(Inscription.debug()) PlayerManager.log(Inscription.debug_tag + message);}
   public static boolean debug(){return Inscription.debug();}
   
   private Map<UUID, PlayerData> players = new HashMap<>();

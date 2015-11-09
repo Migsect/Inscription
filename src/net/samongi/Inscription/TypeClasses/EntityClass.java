@@ -1,8 +1,12 @@
 package net.samongi.Inscription.TypeClasses;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import net.samongi.Inscription.Inscription;
+
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
 
 /**Referred to by attributes and other plugin systems
@@ -43,6 +47,8 @@ public class EntityClass
   /** The set of entities for the class
   */
   private final Set<EntityType> entities = new HashSet<>();
+  
+  private final Set<String> inherited = new HashSet<>();
   /**Determines if the class is global.
    */
   private boolean is_global = false;
@@ -72,13 +78,27 @@ public class EntityClass
    * @param type The type of the entity to check
    * @return True if the class contains the entity type
    */
-  public boolean containsEntity(EntityType type){return this.entities.contains(type);}
+  public boolean containsEntity(EntityType type)
+  {
+    return this.entities.contains(type);
+  }
   /**Gets a set of the entity types within this class. This is a set that when
    * mutated does not mutate the EntityClass itself.
    * 
    * @return A set of entities contained within this class.
    */
-  public Set<EntityType> getEntities(){return new HashSet<EntityType>(this.entities);}
+  public Set<EntityType> getEntities()
+  {
+    TypeClassManager manager = Inscription.getInstance().getTypeClassManager();
+    HashSet<EntityType> ret_set = new HashSet<>(this.entities);
+    if(manager != null) for(String t : this.inherited)
+    {
+      EntityClass e_class = manager.getEntityClass(t);
+      if(e_class == null) continue;
+      ret_set.addAll(e_class.getEntities());
+    }
+    return ret_set;
+  }
   /**Adds the entity type to this entity class.
    * 
    * @param type
@@ -98,6 +118,11 @@ public class EntityClass
     this.addEntityType(e_type);
     return true;
   }
+  /**Adds a class to be inherited by this class.
+   * 
+   * @param class_name
+   */
+  public void addInheritied(String class_name){this.inherited.add(class_name);}
   
   /**Returns true if the class is contructed through the global methods.
    * Global signifies optimizaitons in data storage.
@@ -105,4 +130,30 @@ public class EntityClass
    * @return True if the class is a global global.
    */
   public boolean isGlobal(){return this.is_global;}
+  
+  /**Will parse the configuration section for an entity class
+   * returns an entity class based off the section passed in
+   * 
+   * @param section
+   * @return
+   */
+  public static EntityClass parse(ConfigurationSection section)
+  {
+    String name = section.getString("name");
+    if(name == null) return null; // TODO error message
+    
+    EntityClass e_class = new EntityClass(name);
+    List<String> entities = section.getStringList("entities");
+    if(entities != null) for(String t : entities)
+    {
+      EntityType type = EntityType.valueOf(t);
+      if(type == null) continue;
+      e_class.addEntityType(type);
+    }
+    
+    List<String> inherited = section.getStringList("inherited");
+    if(inherited != null) for(String i : inherited){e_class.addInheritied(i);}
+    
+    return e_class;
+  }
 }

@@ -15,7 +15,7 @@ import net.samongi.Inscription.Inscription;
 public class PlayerData implements Serializable
 {
   public static void log(String message){Inscription.log("[PlayerData] " + message);}
-  public static void logDebug(String message){if(Inscription.debug()) PlayerManager.log("[DEBUG] " + message);}
+  public static void logDebug(String message){if(Inscription.debug()) PlayerManager.log(Inscription.debug_tag + message);}
   public static boolean debug(){return Inscription.debug();}
   
   private static final long serialVersionUID = 3049177777841203611L;

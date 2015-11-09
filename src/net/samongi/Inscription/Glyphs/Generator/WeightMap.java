@@ -19,6 +19,7 @@ public class WeightMap<T>
   public T getRandom()
   {
     int weight_sum = this.getWeightSum();
+    if(weight_sum <= 0) return null;
     List<T> items = this.randomizedList();
     
     Random rand = new Random();
