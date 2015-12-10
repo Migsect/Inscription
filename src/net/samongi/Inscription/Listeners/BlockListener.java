@@ -14,5 +14,6 @@ public class BlockListener implements Listener
   {
     if(event.isCancelled()) return;
     Inscription.getInstance().getLootHandler().onBlockBreak(event);
+    Inscription.getInstance().getExperienceManager().onBlockBreak(event);
   }
 }

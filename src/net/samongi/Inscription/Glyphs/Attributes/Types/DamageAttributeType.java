@@ -1,13 +1,19 @@
 package net.samongi.Inscription.Glyphs.Attributes.Types;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.EntityType;
 
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Glyphs.Attributes.Attribute;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeTypeConstructor;
+import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClasses.EntityClass;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
@@ -115,8 +121,29 @@ public class DamageAttributeType implements AttributeType
       @Override
       public void cache(PlayerData data)
       {
-        // TODO Auto-generated method stub
         
+        DamageAttributeType.Data damage_data = new DamageAttributeType.Data();
+        double damage = getDamage(this.getGlyph());
+        if(target_entities.isGlobal() && target_materials.isGlobal())
+        {
+          //TODO
+        }
+        else if(target_entities.isGlobal())
+        {
+          //TODO
+        }
+        else if(target_materials.isGlobal())
+        {
+          //TODO
+        }
+        else
+        {
+          for(EntityType e : target_entities.getEntities()) for(Material m : target_materials.getMaterials())
+          {
+              double d = damage_data.get(e, m);
+              damage_data.set(e, m, d + damage);
+          }
+        }
       }
 
       @Override
@@ -131,6 +158,55 @@ public class DamageAttributeType implements AttributeType
         return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - " + ChatColor.RESET + info_line;
       }
     };
+  }
+  
+  public static class Data implements CacheData
+  {
+    private static final String type = "DAMAGE";
+    private double global;
+    private HashMap<Material, Double> material_damage = new HashMap<>();
+    private HashMap<EntityType, Double> entity_damage = new HashMap<>();
+    private HashMap<EntityType, HashMap<Material, Double>> material_entity_damage = new HashMap<>();
+
+    public void set(Double amount){this.global = amount;}
+    public void set(Material mat, Double amount){this.material_damage.put(mat, amount);}
+    public void set(EntityType entity, Double amount){this.entity_damage.put(entity, amount);}
+    public void set(EntityType entity, Material mat, Double amount)
+    {
+      if(!material_entity_damage.containsKey(entity)) material_entity_damage.put(entity, new HashMap<Material,Double>());
+      Map<Material,Double> e_damage = material_entity_damage.get(entity);
+      e_damage.put(mat, amount);
+    }
+    public double get(){return this.global;}
+    public double get(Material mat)
+    {
+      if(!this.material_damage.containsKey(mat)) return 0.0;
+      return this.material_damage.get(mat);
+    }
+    public double get(EntityType entity)
+    {
+      if(!this.entity_damage.containsKey(entity)) return 0.0;
+      return this.entity_damage.get(entity);
+    }
+    public double get(EntityType entity, Material mat)
+    {
+      if(!material_entity_damage.containsKey(entity)) return 0;
+      Map<Material,Double> e_damage = material_entity_damage.get(entity);
+      if(!e_damage.containsKey(mat)) return 0;
+      return e_damage.get(mat);
+    }
+    
+    @Override
+    public void clear()
+    {
+      this.global = 0;
+      this.material_damage = new HashMap<>();
+      this.entity_damage = new HashMap<>();
+      this.material_entity_damage = new HashMap<>();
+    }
+
+    @Override
+    public String getType(){return type;}
   }
   
   private double getDamage(Glyph glyph)

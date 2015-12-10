@@ -8,9 +8,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
+
 import net.samongi.Inscription.Inscription;
+import net.samongi.Inscription.Experience.ExperienceChangeEvent;
 
 public class PlayerData implements Serializable
 {
@@ -20,7 +24,7 @@ public class PlayerData implements Serializable
   
   private static final long serialVersionUID = 3049177777841203611L;
   
-  private transient DamageData damage_data = new DamageData();
+  private transient Map<String, CacheData> cached_data = new HashMap<>();
   private GlyphInventory glyphs = new GlyphInventory();
   private HashMap<String, Integer> experience = new HashMap<>();
   
@@ -62,25 +66,35 @@ public class PlayerData implements Serializable
    * @return
    */
   public GlyphInventory getGlyphInventory(){return this.glyphs;}
-  /**Returns the player data which determines their extra damage dealt to creatures.
-   * This is cached data and will be recalculated whenever needed.
-   * This is generally cleared whenever the glyph inventory is saved.
-   * 
-   * @return Player's current damage data.
-   */
-  public DamageData getDamageData()
-  {
-    if(damage_data == null) 
-    {
-      this.damage_data = new DamageData();
-      this.glyphs.cacheGlyphs(this);
-    }
-    return this.damage_data;
-  }
+
+  public void setData(CacheData data){this.cached_data.put(data.getType(), data);}
+  public CacheData getData(String type){return this.cached_data.get(type);}
+  public boolean hasData(String type){return this.cached_data.containsKey(type);}
   
-  public void setExperience(String type, Integer amount){this.experience.put(player_name, amount);}
-  public void addExperience(String type, Integer amount){this.experience.put(type, this.experience.get(type));}
+  public void setExperience(String type, int amount)
+  {
+    int old_amount = this.experience.get(type);
+    int new_amount = amount;
+    ExperienceChangeEvent event = new ExperienceChangeEvent(type, old_amount, new_amount);
+    Bukkit.getPluginManager().callEvent(event);
+    if(event.isCancelled()) return;
+    
+    this.experience.put(type, event.getNewValue());
+  }
+  public void addExperience(String type, int amount)
+  {
+    if(!this.experience.containsKey(type)) this.experience.put(type, 0);
+    
+    int old_amount = this.experience.get(type);
+    int new_amount = old_amount + amount;
+    ExperienceChangeEvent event = new ExperienceChangeEvent(type, old_amount, new_amount);
+    Bukkit.getPluginManager().callEvent(event);
+    if(event.isCancelled()) return;
+
+    this.experience.put(type, event.getNewValue());
+  }
   public int getExperience(String type){return this.experience.get(type);}
+  public Map<String, Integer> getExperience(){return this.experience;}
   
   /**Will attempt to load the specified player data file
    * If it fails to load the file for any reason it will

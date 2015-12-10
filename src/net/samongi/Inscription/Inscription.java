@@ -3,6 +3,7 @@ package net.samongi.Inscription;
 import java.io.File;
 import java.util.logging.Logger;
 
+import net.samongi.Inscription.Commands.CommandExperience;
 import net.samongi.Inscription.Commands.CommandHelp;
 import net.samongi.Inscription.Experience.ExperienceManager;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeManager;
@@ -142,6 +143,7 @@ public class Inscription extends JavaPlugin
   {
     this.command_handler = new CommandHandler(this);
     this.command_handler.registerCommand(new CommandHelp("inscription", this.command_handler));
+    this.command_handler.registerCommand(new CommandExperience("inscription experience"));
   }
   
   private void createListeners()
