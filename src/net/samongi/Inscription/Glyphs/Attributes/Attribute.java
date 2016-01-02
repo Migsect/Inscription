@@ -15,14 +15,11 @@ public abstract class Attribute implements Serializable
   private Glyph glyph_container;
   private AttributeType type;
   
-  private Map<String, Integer> base_experience = new HashMap<>();
-  private Map<String, Integer> per_level_experience = new HashMap<>();
-  
   public Attribute(AttributeType type)
   {
     this.type = type;
   }
-  
+
   /**Sets the glyph that this attribute is a part of.
    * This will determine it's hashcode.
    * 
@@ -67,19 +64,17 @@ public abstract class Attribute implements Serializable
    */
   public Map<String, Integer> getExperience()
   {
-    Map<String, Integer> experience_map = new HashMap<>(base_experience);
+    if(this.getType().getBaseExperience() == null) return new HashMap<String, Integer>();
+    Map<String, Integer> experience_map = new HashMap<>(this.getType().getBaseExperience());
     int glyph_level = this.getGlyph().getLevel();
     
-    for(String s : per_level_experience.keySet()) 
+    for(String s : this.getType().getLevelExperience().keySet()) 
     {
-      if(!experience_map.containsKey(s)) experience_map.put(s, per_level_experience.get(s) * glyph_level);
-      else experience_map.put(s, experience_map.get(s) + per_level_experience.get(s) * glyph_level);
+      if(!experience_map.containsKey(s)) experience_map.put(s, this.getType().getLevelExperience().get(s) * glyph_level);
+      else experience_map.put(s, experience_map.get(s) + this.getType().getLevelExperience().get(s) * glyph_level);
     }
     return experience_map;
   }
-  
-  public void setBaseExperience(Map<String, Integer> experience_map){this.base_experience = experience_map;}
-  public void setPerLevelExperience(Map<String, Integer> experience_map){this.per_level_experience = experience_map;}
 
 
   

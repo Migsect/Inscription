@@ -1,11 +1,35 @@
 package net.samongi.Inscription.Glyphs.Attributes;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.bukkit.configuration.ConfigurationSection;
 
 import net.samongi.Inscription.Glyphs.Glyph;
 
 public interface AttributeType extends Serializable
 {
+  /**Transforms the section into an int map of keys to integers
+   * 
+   * @param section The section to map
+   * @return
+   */
+  public static Map<String, Integer> getIntMap(ConfigurationSection section)
+  {
+    Map<String, Integer> map = new HashMap<>();
+    if(section == null) return map;
+    Set<String> base_key = section.getKeys(false);
+    for(String k : base_key)
+    {
+      int amount = section.getInt(k);
+      if(amount == 0) continue;
+      map.put(k, amount);
+    }
+    return map;
+  }
+  
   /**Generates an attribute for a glyph.
    * This attribute will have no current glyph set to it and will need to have a glyph set to it
    * 
@@ -48,4 +72,16 @@ public interface AttributeType extends Serializable
    * @return A name descriptor, this should be returned all lowercase by contract/
    */
   public String getNameDescriptor();
+  
+  /**Gets the base experience required for this attribute type
+   * 
+   * @return The mapping of experience
+   */
+  public Map<String, Integer> getBaseExperience();
+  /**Gets the per level experience required for this attribute type
+   * 
+   * @return The mapping of experience
+   */
+  public Map<String, Integer> getLevelExperience();
+  
 }

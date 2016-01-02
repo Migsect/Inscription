@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import net.samongi.Inscription.Commands.CommandExperience;
 import net.samongi.Inscription.Commands.CommandHelp;
+import net.samongi.Inscription.Commands.CommandInventory;
 import net.samongi.Inscription.Experience.ExperienceManager;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeManager;
 import net.samongi.Inscription.Glyphs.Attributes.Types.DamageAttributeType;
@@ -42,7 +43,7 @@ public class Inscription extends JavaPlugin
   
   public static final String debug_tag = "###";
   public static void log(String message){Inscription.logger.info(message);}
-  public static void logDebug(String message){if(Inscription.debug) Inscription.logger.info("[DEBUG] " + message);}
+  public static void logDebug(String message){if(Inscription.debug) Inscription.logger.info(Inscription.debug_tag + message);}
   public static boolean debug(){return Inscription.debug;}
   
   private CommandHandler command_handler;
@@ -77,13 +78,13 @@ public class Inscription extends JavaPlugin
     // Creating the type class manager
     this.type_class_manager = new TypeClassManager();
     this.type_class_manager.registerEntityClass(EntityClass.getGlobal("GLOBAL"));
-    this.type_class_manager.registerEntityClass(EntityClass.getGlobalLiving("GLOVAL_LIVING"));
+    this.type_class_manager.registerEntityClass(EntityClass.getGlobalLiving("GLOBAL_LIVING"));
     this.type_class_manager.registerMaterialClass(MaterialClass.getGlobal("GLOBAL"));
     this.type_class_manager.parse(new File(this.getDataFolder(), type_class_directory));
 
     // Creating the Attribute manager
     this.attribute_manager = new AttributeManager();
-    this.attribute_manager.registerConstructor(new DamageAttributeType.Constructor());
+    this.createAttributeConstructor();
     
     this.attribute_manager.parse(new File(this.getDataFolder(), attribute_directory));
 
@@ -101,6 +102,7 @@ public class Inscription extends JavaPlugin
     // Creating the player manager
     File player_data_location = new File(this.getDataFolder(), player_data_directory);
     this.player_manager = new PlayerManager(player_data_location);
+    
     for(Player p : Bukkit.getOnlinePlayers()) this.getPlayerManager().loadPlayer(p);
     
     
@@ -144,6 +146,7 @@ public class Inscription extends JavaPlugin
     this.command_handler = new CommandHandler(this);
     this.command_handler.registerCommand(new CommandHelp("inscription", this.command_handler));
     this.command_handler.registerCommand(new CommandExperience("inscription experience"));
+    this.command_handler.registerCommand(new CommandInventory("inscription inventory"));
   }
   
   private void createListeners()
@@ -152,6 +155,11 @@ public class Inscription extends JavaPlugin
     pm.registerEvents(new BlockListener(), this);
     pm.registerEvents(new EntityListener(), this);
     pm.registerEvents(new PlayerListener(), this);
+  }
+  
+  public void createAttributeConstructor()
+  {
+    this.attribute_manager.registerConstructor(new DamageAttributeType.Constructor());
   }
   
   public LootManager getLootHandler(){return this.loot_manager;}

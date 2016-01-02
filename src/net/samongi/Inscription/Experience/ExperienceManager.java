@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Set;
 
 import net.samongi.Inscription.Inscription;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeManager;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 import net.samongi.SamongiLib.Items.ItemUtil;
@@ -25,9 +24,10 @@ import org.bukkit.material.MaterialData;
 
 public class ExperienceManager
 {
-  public static void log(String message){Inscription.log("[ExperienceManager] " + message);}
-  public static void logDebug(String message){if(Inscription.debug()) AttributeManager.log(Inscription.debug_tag + message);}
-  public static boolean debug(){return Inscription.debug();}
+  private static void log(String message){Inscription.log("[ExperienceManager] " + message);}
+  private static void logDebug(String message){if(Inscription.debug()) ExperienceManager.log(Inscription.debug_tag + message);}
+  @SuppressWarnings("unused")
+  private static boolean debug(){return Inscription.debug();}
   
   private Map<EntityType, Map<String, Integer>> exp_per_kill = new HashMap<>();
   private Map<EntityType, Map<String, Integer>> exp_per_damage = new HashMap<>();
@@ -85,7 +85,7 @@ public class ExperienceManager
     for(String s : exp_per.keySet())
     {
       int exp = exp_per.get(s);
-      data.addExperience(s, exp);
+      data.getGlyphInventory().distributeExperience(s, exp);
     }
   }
   public void onBlockBreak(BlockBreakEvent event)
@@ -105,7 +105,7 @@ public class ExperienceManager
     for(String s : exp_per.keySet())
     {
       int exp = exp_per.get(s);
-      data.addExperience(s, exp);
+      data.getGlyphInventory().distributeExperience(s, exp);
     }
   }
   public void onCraftItem(CraftItemEvent event)

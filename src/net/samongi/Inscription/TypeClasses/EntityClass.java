@@ -1,5 +1,6 @@
 package net.samongi.Inscription.TypeClasses;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,8 +14,15 @@ import org.bukkit.entity.EntityType;
  * to group together different creature types.
  *
  */
-public class EntityClass
+public class EntityClass implements Serializable
 {
+  private static void log(String message){Inscription.log("[EntityClass] " + message);}
+  private static void logDebug(String message){if(Inscription.debug()) EntityClass.log(Inscription.debug_tag + message);}
+  @SuppressWarnings("unused")
+  private static boolean debug(){return Inscription.debug();}
+  
+  private static final long serialVersionUID = 5229737283135685813L;
+
   /**Returns an entity class with all the entities within it.
    * 
    * @param name The name that the class will be called.
@@ -129,7 +137,14 @@ public class EntityClass
    * 
    * @return True if the class is a global global.
    */
-  public boolean isGlobal(){return this.is_global;}
+  public boolean isGlobal()
+  {
+    if(this.is_global) return true;
+    
+    TypeClassManager manager = Inscription.getInstance().getTypeClassManager();
+    for(String i : this.inherited) if(manager.getEntityClass(i) != null && manager.getEntityClass(i).isGlobal()) return true;
+    return false;
+  }
   
   /**Will parse the configuration section for an entity class
    * returns an entity class based off the section passed in
@@ -141,18 +156,27 @@ public class EntityClass
   {
     String name = section.getString("name");
     if(name == null) return null; // TODO error message
+    EntityClass.logDebug("Found name to be: '" + name + "'");
     
     EntityClass e_class = new EntityClass(name);
     List<String> entities = section.getStringList("entities");
+    if(entities != null) EntityClass.logDebug("Found EntityTypes:");;
     if(entities != null) for(String t : entities)
     {
       EntityType type = EntityType.valueOf(t);
       if(type == null) continue;
+      EntityClass.logDebug(" - '" + type + "'");;
       e_class.addEntityType(type);
     }
     
     List<String> inherited = section.getStringList("inherited");
-    if(inherited != null) for(String i : inherited){e_class.addInheritied(i);}
+    if(inherited != null) EntityClass.logDebug("Found Inherited:");
+    if(inherited != null) for(String i : inherited)
+    {
+      EntityClass.logDebug(" - '" + i + "'");;
+      e_class.addInheritied(i);
+    }
+    
     
     return e_class;
   }

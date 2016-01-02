@@ -18,7 +18,7 @@ public class GlyphTests
     if(glyph.getElement() != null) fail("Glyph had a element set.");
     if(glyph.getAttributes().size() != 0) fail("Glyph did not have an emepty attribute array.");
     if(glyph.getLevel() != 0) fail("Glyph had a non-zero levle");
-    if(glyph.getLevelExperience().size() != 0) fail("Glyph had a experience values");
+    if(glyph.getExperienceToLevel().size() != 0) fail("Glyph had a experience values");
   }
   
   @Test

@@ -24,8 +24,8 @@ public class PlayerData implements Serializable
   
   private static final long serialVersionUID = 3049177777841203611L;
   
-  private transient Map<String, CacheData> cached_data = new HashMap<>();
-  private GlyphInventory glyphs = new GlyphInventory();
+  private transient Map<String, CacheData> cached_data = null;
+  private GlyphInventory glyphs = null;
   private HashMap<String, Integer> experience = new HashMap<>();
   
   private final UUID player_UUID;
@@ -39,6 +39,8 @@ public class PlayerData implements Serializable
   public PlayerData(UUID player_UUID)
   {
     this.player_UUID = player_UUID;
+    this.player_name = Bukkit.getPlayer(player_UUID).getName();
+    this.glyphs = new GlyphInventory(player_UUID);
   }
   
   /**Returns the UUID of the player for this data
@@ -67,9 +69,32 @@ public class PlayerData implements Serializable
    */
   public GlyphInventory getGlyphInventory(){return this.glyphs;}
 
-  public void setData(CacheData data){this.cached_data.put(data.getType(), data);}
-  public CacheData getData(String type){return this.cached_data.get(type);}
-  public boolean hasData(String type){return this.cached_data.containsKey(type);}
+  private Map<String, CacheData> getCachedData()
+  {
+    if(this.cached_data == null) this.cached_data = new HashMap<>();
+    return this.cached_data;
+  }
+  /**Will call all the "clear()" methods on each entry of the cached data 
+   * This will not completely reset the data but call the implementation that the data 
+   * species and as such is different from resetting the cached data
+   */
+  public void clearCachedData()
+  {
+    for(CacheData d : this.getCachedData().values()) d.clear();
+  }
+  /**Will completely clear all the cached data that is saved and will
+   * remove any entries entirely. (Resets the hashmap of data to be empty)
+   */
+  public void resetCachedData()
+  {
+    this.cached_data = new HashMap<>();
+  }
+  public void setData(CacheData data){this.getCachedData().put(data.getType().toUpperCase(), data);}
+  public CacheData getData(String type)
+  {
+    return this.getCachedData().get(type.toUpperCase());
+  }
+  public boolean hasData(String type){return this.getCachedData().containsKey(type.toUpperCase());}
   
   public void setExperience(String type, int amount)
   {

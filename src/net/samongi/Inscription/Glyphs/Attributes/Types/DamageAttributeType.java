@@ -6,7 +6,12 @@ import java.util.Map;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Glyph;
@@ -24,16 +29,27 @@ public class DamageAttributeType implements AttributeType
   public static void logDebug(String message){if(Inscription.debug()) DamageAttributeType.log(Inscription.debug_tag + message);}
   public static boolean debug(){return Inscription.debug();}
   
-  private static final long serialVersionUID = -8367848352344774887L; 
+  private static final long serialVersionUID = -8367848352344774887L;
+  private static final String CACHE_NAME = "DAMAGE";
   
+  // The type name
   private final String type_name;
+  // The description of the attribute type
   private final String name_description;
+  
+  // The entity class that this DamageAttributeType will target
   private EntityClass target_entities;
+  // The material class that this DamageAttributeType will apply to
   private MaterialClass target_materials;
   
+  // The minimum and maximum damage multiplier
   private final double min_damage;
   private final double max_damage;
+  // The rarity multiplier
   private final double rarity_mult;
+  
+  private Map<String, Integer> base_experience;
+  private Map<String, Integer> level_experience;
   
   /**Consturctor for a DamageAttributeType
    * 
@@ -83,8 +99,8 @@ public class DamageAttributeType implements AttributeType
         return null;
       }
       
-      int min_damage = section.getInt("min-damage");
-      int max_damage = section.getInt("max-damage");
+      double min_damage = section.getDouble("min-damage");
+      double max_damage = section.getDouble("max-damage");
       if(min_damage > max_damage)
       {
         DamageAttributeType.log(section.getName() + " : min damage is bigger than max damage");
@@ -96,6 +112,9 @@ public class DamageAttributeType implements AttributeType
       String target_materials = section.getString("target-materials");
       
       DamageAttributeType attribute_type = new DamageAttributeType(name, descriptor, min_damage, max_damage, rarity_mult);
+      attribute_type.base_experience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
+      attribute_type.level_experience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
+      
       // Setting all the targeting if there is any
       if(target_entities != null) 
       {
@@ -110,6 +129,46 @@ public class DamageAttributeType implements AttributeType
       
       return attribute_type;
     }
+
+    @Override
+    public Listener getListener()
+    {
+      return new Listener()
+      {
+        @EventHandler
+        public void onEntityDamageByEntity(EntityDamageByEntityEvent event)
+        {
+          if(event.isCancelled()) return;
+          
+          Entity damager = event.getDamager();
+          if(damager instanceof Player)
+          {
+            // getting the data and basic objects
+            Player player_damager = (Player) damager;
+            PlayerData player_data = Inscription.getInstance().getPlayerManager().getData(player_damager);
+            CacheData data = player_data.getData(DamageAttributeType.CACHE_NAME);
+            if(!(data instanceof DamageAttributeType.Data)) return;
+            DamageAttributeType.Data damage_data = (DamageAttributeType.Data) data;
+            
+            // getting damage bonus relavant information
+            Material in_hand = player_damager.getItemInHand().getType();
+            EntityType entity = event.getEntity().getType();
+            
+            // adding up the damage bonus
+            double damage_bonus = 0;
+            damage_bonus += damage_data.get();
+            damage_bonus += damage_data.get(in_hand);
+            damage_bonus += damage_data.get(entity);
+            damage_bonus += damage_data.get(entity, in_hand);
+            
+            DamageAttributeType.logDebug("[Damage Event] Damage Bonus: " + damage_bonus);
+            
+            event.setDamage(event.getDamage() * (1 + damage_bonus));
+          }
+          else return;
+        }
+      }; // End Attribute Listener definition
+    }
   }
 
   @Override
@@ -118,32 +177,55 @@ public class DamageAttributeType implements AttributeType
     return new Attribute(this){
       private static final long serialVersionUID = 7422514378631333199L;
 
+      // Caching the data
       @Override
       public void cache(PlayerData data)
       {
+        CacheData cached_data = data.getData(DamageAttributeType.CACHE_NAME);
+        if(cached_data == null) cached_data = new DamageAttributeType.Data();
+        if(!(cached_data instanceof DamageAttributeType.Data)) return; // Checking to make sure it is the right data type
         
-        DamageAttributeType.Data damage_data = new DamageAttributeType.Data();
-        double damage = getDamage(this.getGlyph());
-        if(target_entities.isGlobal() && target_materials.isGlobal())
+        DamageAttributeType.logDebug("  Caching attribute for " + name_description);
+        DamageAttributeType.logDebug("    'target_entities' is global?: " + target_entities.isGlobal());
+        DamageAttributeType.logDebug("    'target_materials' is global?: " + target_materials.isGlobal());
+        
+        DamageAttributeType.Data damage_data = (DamageAttributeType.Data) cached_data;
+        double damage = getDamage(this.getGlyph()); // getting the damage for the attribute
+        if(target_entities.isGlobal() && target_materials.isGlobal()) // If this attribute is a global attribute for both (omnidamage)
         {
-          //TODO
+          double d = damage_data.get();
+          DamageAttributeType.logDebug("C- Added '" + damage + "' damage");
+          damage_data.set(d + damage);
         }
-        else if(target_entities.isGlobal())
+        else if(target_entities.isGlobal()) // If this attribute is global attribute for entities and varies on materials
         {
-          //TODO
+          for(Material m : target_materials.getMaterials())
+          {
+            double d = damage_data.get(m);
+            DamageAttributeType.logDebug("C- Added '" + damage + "' damage to '" + m.toString() + "'");
+            damage_data.set(m, d + damage);
+          }
         }
-        else if(target_materials.isGlobal())
+        else if(target_materials.isGlobal()) // If this attribute is a global attribute for materials and varies on entities
         {
-          //TODO
+          for(EntityType e : target_entities.getEntities())
+          {
+            double d = damage_data.get(e);
+            DamageAttributeType.logDebug("C- Added '" + damage + "' damage to '" + e.toString() + "'");
+            damage_data.set(e, d + damage);
+          }
         }
-        else
+        else // This attribute varies on both entities and materials
         {
           for(EntityType e : target_entities.getEntities()) for(Material m : target_materials.getMaterials())
           {
               double d = damage_data.get(e, m);
+              DamageAttributeType.logDebug("C- Added '" + damage + "' damage to '" + e.toString() + "|" + m.toString() + "'");
               damage_data.set(e, m, d + damage);
           }
         }
+        DamageAttributeType.logDebug("  Finished caching for " + name_description);
+        data.setData(damage_data); // setting the data again.
       }
 
       @Override
@@ -159,15 +241,18 @@ public class DamageAttributeType implements AttributeType
       }
     };
   }
-  
+
   public static class Data implements CacheData
   {
+    // Global constants of this class type
     private static final String type = "DAMAGE";
-    private double global;
-    private HashMap<Material, Double> material_damage = new HashMap<>();
-    private HashMap<EntityType, Double> entity_damage = new HashMap<>();
-    private HashMap<EntityType, HashMap<Material, Double>> material_entity_damage = new HashMap<>();
-
+    
+    private double global; // Global damage modifier
+    private HashMap<Material, Double> material_damage = new HashMap<>(); // damage modifier when using a material
+    private HashMap<EntityType, Double> entity_damage = new HashMap<>(); // damage modifier when used against an entity type
+    private HashMap<EntityType, HashMap<Material, Double>> material_entity_damage = new HashMap<>(); // damage modifer whe used against an entity type using a material
+    
+    // Setters
     public void set(Double amount){this.global = amount;}
     public void set(Material mat, Double amount){this.material_damage.put(mat, amount);}
     public void set(EntityType entity, Double amount){this.entity_damage.put(entity, amount);}
@@ -177,6 +262,8 @@ public class DamageAttributeType implements AttributeType
       Map<Material,Double> e_damage = material_entity_damage.get(entity);
       e_damage.put(mat, amount);
     }
+    
+    // Getters
     public double get(){return this.global;}
     public double get(Material mat)
     {
@@ -196,6 +283,7 @@ public class DamageAttributeType implements AttributeType
       return e_damage.get(mat);
     }
     
+    // Clears the saved data
     @Override
     public void clear()
     {
@@ -207,8 +295,21 @@ public class DamageAttributeType implements AttributeType
 
     @Override
     public String getType(){return type;}
-  }
+    
+    @Override
+    public String getData()
+    {
+      // TODO
+      return "";
+    }
+    
+  } // End data definition
   
+  /**Get the damage this attribute will provide given the glyph it is applied to
+   * 
+   * @param glyph The glyph that will be used to calculate the damage
+   * @return A ratio of damage multiplication
+   */
   private double getDamage(Glyph glyph)
   {
     int glyph_level = glyph.getLevel();
@@ -218,7 +319,12 @@ public class DamageAttributeType implements AttributeType
     double base_damage = min_damage + (max_damage - min_damage) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
     return rarity_multiplier * base_damage;
   }
-  private String getDamageString(Glyph glyph){return String.format("%.1f", this.getDamage(glyph));}
+  /**Returns the damage as a string
+   * 
+   * @param glyph The glyph that will be used to calculate the damage
+   * @return A string that will show the percentage increase
+   */
+  private String getDamageString(Glyph glyph){return String.format("%.1f", this.getDamage(glyph) * 100);}
   
   @Override
   public Attribute parse(String line)
@@ -237,5 +343,10 @@ public class DamageAttributeType implements AttributeType
   
   public void setTargetEntities(EntityClass e_class){this.target_entities = e_class;}
   public void setTargetMaterials(MaterialClass m_class){this.target_materials = m_class;}
+  @Override
+  public Map<String, Integer> getBaseExperience(){return this.base_experience;}
+  @Override
+  public Map<String, Integer> getLevelExperience(){return this.level_experience;}
+  
   
 }

@@ -11,21 +11,35 @@ import net.samongi.Inscription.Inscription;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.plugin.PluginManager;
 
 public class AttributeManager
 {
-  public static void log(String message){Inscription.log("[AttributeManager] " + message);}
-  public static void logDebug(String message){if(Inscription.debug()) AttributeManager.log(Inscription.debug_tag + message);}
-  public static boolean debug(){return Inscription.debug();}
+  private static void log(String message){Inscription.log("[AttributeManager] " + message);}
+  private static void logDebug(String message){if(Inscription.debug()) AttributeManager.log(Inscription.debug_tag + message);}
+  @SuppressWarnings("unused")
+  private static boolean debug(){return Inscription.debug();}
   
   private Map<String, AttributeType> attributes = new HashMap<>();
   private List<AttributeTypeConstructor> attribute_constructors = new ArrayList<>();
   
+  /**Registers the AttributeType with the attribute manager
+   * 
+   * @param attribute The attribute type to register
+   */
   public void register(AttributeType attribute)
   {
+    // Adding the attribute to the mapping
     this.attributes.put(attribute.getName().toUpperCase().replace(" ", "_"), attribute);
+    
+    // Displaying that registration was a success
     AttributeManager.logDebug("Registered '" + attribute.getName().toUpperCase().replace(" ", "_") + "'");
   }
+  /**Returns the attribute type based on the string identifier
+   * 
+   * @param s A string used to identify the attribute type
+   * @return The attribute type if found, otherwise null
+   */
   public AttributeType getAttributeType(String s){return this.attributes.get(s.toUpperCase().replace(" ", "_"));}
   
   /**Registers a constructor with the attribute manager
@@ -34,7 +48,13 @@ public class AttributeManager
    * 
    * @param constructor
    */
-  public void registerConstructor(AttributeTypeConstructor constructor){this.attribute_constructors.add(constructor);}
+  public void registerConstructor(AttributeTypeConstructor constructor)
+  {
+    this.attribute_constructors.add(constructor);
+    // Also registering the listener that handles the attribute
+    PluginManager manager = Inscription.getInstance().getServer().getPluginManager();
+    manager.registerEvents(constructor.getListener(), Inscription.getInstance());
+  }
   
   public Attribute parseLoreLine(String line)
   {
