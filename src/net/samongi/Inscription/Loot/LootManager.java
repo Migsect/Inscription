@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Glyphs.Generator.GlyphGenerator;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
@@ -135,7 +136,11 @@ public class LootManager
   
   public void onBlockBreak(BlockBreakEvent event)
   {
+    if(event.isCancelled()) return;
+    Location location = event.getBlock().getLocation();
     Material type = event.getBlock().getType();
+    if(Inscription.getInstance().getExperienceManager().getTracker().isTracked(type) && Inscription.getInstance().getExperienceManager().getTracker().isPlaced(location)) return;
+    
     if(!block_drop_chances.containsKey(type)) return;
     if(!block_generators.containsKey(type)) return;
     double type_chance = block_drop_chances.get(type);

@@ -92,6 +92,9 @@ public class Inscription extends JavaPlugin
     this.experience_manager = new ExperienceManager();
     ConfigFile experience_config = new ConfigFile(new File(this.getDataFolder(), experience_config_file));
     this.experience_manager.parse(experience_config);
+    this.experience_manager.loadTracker(new File(this.getDataFolder(), "tracker.dat"));
+    this.experience_manager.configureTracker(this.getConfig());
+    
 
     // Creating the loot manager
     //  CAN ONLY BE MADE AFTER ATTRIBUTE MANAGER AND TYPE_CLASS
@@ -139,6 +142,7 @@ public class Inscription extends JavaPlugin
   public void onDisable()
   {
     for(Player p : Bukkit.getOnlinePlayers()) this.getPlayerManager().unloadPlayer(p);
+    this.getExperienceManager().saveTracker(new File(this.getDataFolder(), "tracker.dat"));
   }
   
   private void createCommands()

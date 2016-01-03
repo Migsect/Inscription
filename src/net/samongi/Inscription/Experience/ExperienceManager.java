@@ -1,6 +1,9 @@
 package net.samongi.Inscription.Experience;
 
+import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -9,6 +12,8 @@ import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 import net.samongi.SamongiLib.Items.ItemUtil;
 
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
@@ -16,11 +21,15 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 import org.bukkit.material.MaterialData;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class ExperienceManager
 {
@@ -29,13 +38,16 @@ public class ExperienceManager
   @SuppressWarnings("unused")
   private static boolean debug(){return Inscription.debug();}
   
+  // Experience mapping for entity related events
   private Map<EntityType, Map<String, Integer>> exp_per_kill = new HashMap<>();
   private Map<EntityType, Map<String, Integer>> exp_per_damage = new HashMap<>();
   
+  // Experience mapping for material related events
   private Map<MaterialData, Map<String, Integer>> exp_per_break = new HashMap<>();
   private Map<MaterialData, Map<String, Integer>> exp_per_place = new HashMap<>();
   private Map<MaterialData, Map<String, Integer>> exp_per_craft = new HashMap<>();
   
+  private BlockTracker tracker;
 
   public void onEntityDamageEntity(EntityDamageByEntityEvent event)
   {
@@ -88,8 +100,13 @@ public class ExperienceManager
       data.getGlyphInventory().distributeExperience(s, exp);
     }
   }
+  
   public void onBlockBreak(BlockBreakEvent event)
   {
+    Location l = event.getBlock().getLocation();
+    Material m = event.getBlock().getType();
+    if(this.tracker.isTracked(m) && this.tracker.isPlaced(l)) return;
+    
     MaterialData material_data = event.getBlock().getState().getData();
     Player player = event.getPlayer();
     
@@ -108,9 +125,104 @@ public class ExperienceManager
       data.getGlyphInventory().distributeExperience(s, exp);
     }
   }
+  public void onBlockPlace(BlockPlaceEvent event)
+  {
+    MaterialData material_data = event.getBlock().getState().getData();
+    Player player = event.getPlayer();
+    
+    PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
+    if(data == null)
+    {
+      ExperienceManager.log("ERROR: Player Data return null on call for: " + player.getName() + ":" + player.getUniqueId());
+      return;
+    }
+    
+    Map<String, Integer> exp_per = this.getExpPerPlace(material_data);
+    if(exp_per == null) return;
+    for(String s : exp_per.keySet())
+    {
+      int exp = exp_per.get(s);
+      data.getGlyphInventory().distributeExperience(s, exp);
+    }
+  }
+  
+  
   public void onCraftItem(CraftItemEvent event)
   {
-    // TODO add crafting for experience
+    if(event.isCancelled()) return;
+    
+    Recipe recipe = event.getRecipe(); // getting the recipe
+    ItemStack result = recipe.getResult(); // getting the result of the craft event
+    ExperienceManager.logDebug("Heard Craft Item Event: Item Crafted Type: " + result.getType());
+    MaterialData material_data = result.getData();
+    
+    // Note that this result will not be the total number of items that were crafted.
+    Player player = (Player) event.getWhoClicked();
+    ItemStack[] current_contents = player.getInventory().getContents();
+    ItemStack[] old_contents = new ItemStack[current_contents.length];
+    // We're doing a copy since we can't be sure if the current contents are immutable
+    for(int i = 0 ; i < old_contents.length ; i++) if(current_contents[i] != null) old_contents[i] = current_contents[i].clone();
+    
+    if(event.isShiftClick())
+    {
+      BukkitRunnable task = new BukkitRunnable(){
+        @Override
+        public void run()
+        {
+          final ItemStack[] new_contents = player.getInventory().getContents();
+          int items_crafted = 0;
+          for(int i = 0 ; i < new_contents.length ; i++)
+          {
+            ItemStack new_item = new_contents[i];
+            ItemStack old_item = old_contents[i];
+            if(new_item != old_item)
+            {
+              if(!new_item.getData().equals(material_data)) continue;
+              ExperienceManager.logDebug("Found Inv Difference: " + new_item + " =/= " + old_item);
+              if(old_item == null || old_item.getType().equals(Material.AIR)) items_crafted += new_item.getAmount();
+              else items_crafted += new_item.getAmount() - old_item.getAmount();
+            }
+          }
+          // The total times the item was crafted
+          int total_crafts = items_crafted / result.getAmount();
+          ExperienceManager.logDebug("  Items Crafted: " + items_crafted);
+          ExperienceManager.logDebug("  Result Amount: " + result.getAmount());
+          ExperienceManager.logDebug("  Total Crafts: " + total_crafts);
+          
+          
+          PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
+          if(data == null)
+          {
+            ExperienceManager.log("ERROR: Player Data return null on call for: " + player.getName() + ":" + player.getUniqueId());
+            return;
+          }
+          Map<String, Integer> exp_per = Inscription.getInstance().getExperienceManager().getExpPerCraft(material_data);
+          if(exp_per == null) return;
+          for(String s : exp_per.keySet())
+          {
+            int exp = exp_per.get(s);
+            for(int i = 0 ; i < total_crafts ; i++) data.getGlyphInventory().distributeExperience(s, exp);
+          }
+        }
+      }; // endef
+      task.runTask(Inscription.getInstance()); // Running the task
+    }
+    else
+    {
+      PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
+      if(data == null)
+      {
+        ExperienceManager.log("ERROR: Player Data return null on call for: " + player.getName() + ":" + player.getUniqueId());
+        return;
+      }
+      Map<String, Integer> exp_per = Inscription.getInstance().getExperienceManager().getExpPerCraft(material_data);
+      if(exp_per == null) return;
+      for(String s : exp_per.keySet())
+      {
+        int exp = exp_per.get(s);
+        data.getGlyphInventory().distributeExperience(s, exp);
+      }
+    }
   }
   
   public void setExpPerKill(EntityType type, String exp_type, int amount)
@@ -288,5 +400,36 @@ public class ExperienceManager
         }
       }
     }
+  } // endef
+  
+  public BlockTracker getTracker(){return this.tracker;}
+  public boolean hasTracker(){return this.tracker != null;}
+  
+  /**Will configure the block tracker in the ExperienceManager using the provided fileconfiguration
+   * 
+   * @param config The file configuration to use.
+   */
+  public void configureTracker(FileConfiguration config)
+  {
+    List<String> tracked_s = config.getStringList("placement-tracking");
+    Set<Material> tracked_m = new HashSet<>();
+    for(String s : tracked_s)
+    {
+      Material m = Material.getMaterial(s);
+      if(m == null) continue;
+      tracked_m.add(m);
+    }
+    if(this.tracker == null) this.tracker = new BlockTracker();
+    this.tracker.clearTracked();
+    for(Material m : tracked_m) this.tracker.addTracked(m);
+    this.tracker.cleanPlaced();
+  }
+  public void saveTracker(File file)
+  {
+    BlockTracker.save(this.tracker, file);
+  }
+  public void loadTracker(File file)
+  {
+    this.tracker = BlockTracker.load(file);
   }
 }
