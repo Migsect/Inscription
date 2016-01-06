@@ -42,7 +42,6 @@ public abstract class Attribute implements Serializable
    */
   public abstract void cache(PlayerData data);
   
-  
   /**Gets this attribute's type.
    * 
    * @return
@@ -67,11 +66,13 @@ public abstract class Attribute implements Serializable
     if(this.getType().getBaseExperience() == null) return new HashMap<String, Integer>();
     Map<String, Integer> experience_map = new HashMap<>(this.getType().getBaseExperience());
     int glyph_level = this.getGlyph().getLevel();
+    int ratity_level = this.getGlyph().getRarity().getRank();
+    double rarity_multiplier = this.getType().getRarityMultiplier();
     
     for(String s : this.getType().getLevelExperience().keySet()) 
     {
-      if(!experience_map.containsKey(s)) experience_map.put(s, this.getType().getLevelExperience().get(s) * glyph_level);
-      else experience_map.put(s, experience_map.get(s) + this.getType().getLevelExperience().get(s) * glyph_level);
+      if(!experience_map.containsKey(s)) experience_map.put(s, (int) (this.getType().getLevelExperience().get(s) * glyph_level * (1 + rarity_multiplier * ratity_level)));
+      else experience_map.put(s, (int) (experience_map.get(s) + this.getType().getLevelExperience().get(s) * glyph_level * (1 + rarity_multiplier * ratity_level)));
     }
     return experience_map;
   }

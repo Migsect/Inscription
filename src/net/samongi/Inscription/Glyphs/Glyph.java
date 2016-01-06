@@ -144,11 +144,12 @@ public class Glyph implements Serializable
    * @return A Map of experienc types mapped to amounts needed.
    */
   public Map<String, Integer> getExperienceToLevel()
-  {
+  { 
+    // The mapping of experience to return
     Map<String, Integer> ret_exp = new HashMap<>();
     for(Attribute a : this.getAttributes())
     {
-      Map<String, Integer> a_exp = a.getExperience();
+      Map<String, Integer> a_exp = a.getExperience(); // experience for the attribute
       for(String k : a_exp.keySet())
       {
         if(ret_exp.containsKey(k)) ret_exp.put(k, ret_exp.get(k) + a_exp.get(k));

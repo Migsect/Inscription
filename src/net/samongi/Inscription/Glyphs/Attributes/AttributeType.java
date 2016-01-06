@@ -84,4 +84,9 @@ public interface AttributeType extends Serializable
    */
   public Map<String, Integer> getLevelExperience();
   
+  /**Returns the rarity multiplier ratio that the attribute type uses.
+   * 
+   * @return an amount to mutliply by for rarity
+   */
+  public double getRarityMultiplier();
 }

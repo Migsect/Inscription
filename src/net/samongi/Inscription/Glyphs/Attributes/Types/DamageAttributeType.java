@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.inventory.ItemStack;
 
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Glyph;
@@ -25,16 +26,17 @@ import net.samongi.Inscription.TypeClasses.MaterialClass;
 
 public class DamageAttributeType implements AttributeType
 {
-  public static void log(String message){Inscription.log("[DamageAttributeType] " + message);}
-  public static void logDebug(String message){if(Inscription.debug()) DamageAttributeType.log(Inscription.debug_tag + message);}
-  public static boolean debug(){return Inscription.debug();}
+  private static void log(String message){Inscription.log("[DamageAttributeType] " + message);}
+  private static void logDebug(String message){if(Inscription.debug()) DamageAttributeType.log(Inscription.debug_tag + message);}
+  @SuppressWarnings("unused")
+  private static boolean debug(){return Inscription.debug();}
   
   private static final long serialVersionUID = -8367848352344774887L;
-  private static final String CACHE_NAME = "DAMAGE";
+  private static final String TYPE_IDENTIFIER = "DAMAGE";
   
   // The type name
   private final String type_name;
-  // The description of the attribute type
+  // The description of the attribute type (used within lore)
   private final String name_description;
   
   // The entity class that this DamageAttributeType will target
@@ -43,14 +45,16 @@ public class DamageAttributeType implements AttributeType
   private MaterialClass target_materials;
   
   // The minimum and maximum damage multiplier
-  private final double min_damage;
-  private final double max_damage;
+  private double min_damage;
+  private double max_damage;
   // The rarity multiplier
-  private final double rarity_mult;
+  private double rarity_mult;
   
+  // experience values
   private Map<String, Integer> base_experience;
   private Map<String, Integer> level_experience;
   
+  // TODO this constructor should be private
   /**Consturctor for a DamageAttributeType
    * 
    * @param type_name The name of the type (display)
@@ -59,8 +63,9 @@ public class DamageAttributeType implements AttributeType
    * @param max_damage The max damage this damage attribute can have
    * @param rarity_mult The multiplier based on rarity level of the item.
    */
-  public DamageAttributeType(String type_name, String description, double min_damage, double max_damage, double rarity_mult)
+  private DamageAttributeType(String type_name, String description, double min_damage, double max_damage, double rarity_mult)
   {
+    // TODO reduce the variables and handle them through setters instead
     this.type_name = type_name;
     this.name_description = description;
     
@@ -72,32 +77,23 @@ public class DamageAttributeType implements AttributeType
     this.rarity_mult = rarity_mult;
   }
   
+  @Override
+  public double getRarityMultiplier(){return this.rarity_mult;}
+  
   public static class Constructor implements AttributeTypeConstructor
   {
     @Override
     public AttributeType construct(ConfigurationSection section)
     {
       String type = section.getString("type");
-      if(type == null)
-      {
-        DamageAttributeType.log(section.getName() + " : Could not find attribute 'type' in section.");
-        return null;
-      }
+      if(type == null) return null;
       if(!type.toUpperCase().equals("DAMAGE")) return null;
       
       String name = section.getString("name");
-      if(name == null)
-      {
-        DamageAttributeType.log(section.getName() + " : Could not find attribute 'name' in section.");
-        return null;
-      }
+      if(name == null) return null;
       
       String descriptor = section.getString("descriptor");
-      if(descriptor == null)
-      {
-        DamageAttributeType.log(section.getName() + " : Could not find attribute 'descriptor' in section.");
-        return null;
-      }
+      if(descriptor == null) return null;
       
       double min_damage = section.getDouble("min-damage");
       double max_damage = section.getDouble("max-damage");
@@ -146,20 +142,22 @@ public class DamageAttributeType implements AttributeType
             // getting the data and basic objects
             Player player_damager = (Player) damager;
             PlayerData player_data = Inscription.getInstance().getPlayerManager().getData(player_damager);
-            CacheData data = player_data.getData(DamageAttributeType.CACHE_NAME);
+            CacheData data = player_data.getData(DamageAttributeType.TYPE_IDENTIFIER);
             if(!(data instanceof DamageAttributeType.Data)) return;
             DamageAttributeType.Data damage_data = (DamageAttributeType.Data) data;
             
             // getting damage bonus relavant information
-            Material in_hand = player_damager.getItemInHand().getType();
+            ItemStack item_in_hand = player_damager.getItemInHand();
+            Material material = Material.AIR;
+            if(item_in_hand != null) material = item_in_hand.getType();
             EntityType entity = event.getEntity().getType();
             
             // adding up the damage bonus
             double damage_bonus = 0;
             damage_bonus += damage_data.get();
-            damage_bonus += damage_data.get(in_hand);
+            damage_bonus += damage_data.get(material);
             damage_bonus += damage_data.get(entity);
-            damage_bonus += damage_data.get(entity, in_hand);
+            damage_bonus += damage_data.get(entity, material);
             
             DamageAttributeType.logDebug("[Damage Event] Damage Bonus: " + damage_bonus);
             
@@ -181,7 +179,7 @@ public class DamageAttributeType implements AttributeType
       @Override
       public void cache(PlayerData data)
       {
-        CacheData cached_data = data.getData(DamageAttributeType.CACHE_NAME);
+        CacheData cached_data = data.getData(DamageAttributeType.TYPE_IDENTIFIER);
         if(cached_data == null) cached_data = new DamageAttributeType.Data();
         if(!(cached_data instanceof DamageAttributeType.Data)) return; // Checking to make sure it is the right data type
         
@@ -244,9 +242,7 @@ public class DamageAttributeType implements AttributeType
 
   public static class Data implements CacheData
   {
-    // Global constants of this class type
-    private static final String type = "DAMAGE";
-    
+    // Data members of the data
     private double global; // Global damage modifier
     private HashMap<Material, Double> material_damage = new HashMap<>(); // damage modifier when using a material
     private HashMap<EntityType, Double> entity_damage = new HashMap<>(); // damage modifier when used against an entity type
@@ -294,7 +290,7 @@ public class DamageAttributeType implements AttributeType
     }
 
     @Override
-    public String getType(){return type;}
+    public String getType(){return TYPE_IDENTIFIER;}
     
     @Override
     public String getData()
@@ -344,7 +340,8 @@ public class DamageAttributeType implements AttributeType
   public void setTargetEntities(EntityClass e_class){this.target_entities = e_class;}
   public void setTargetMaterials(MaterialClass m_class){this.target_materials = m_class;}
   @Override
-  public Map<String, Integer> getBaseExperience(){return this.base_experience;}
+  public Map<String, Integer> getBaseExperience()
+  {return this.base_experience;}
   @Override
   public Map<String, Integer> getLevelExperience(){return this.level_experience;}
   
