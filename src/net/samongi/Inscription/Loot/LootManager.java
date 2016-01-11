@@ -137,7 +137,7 @@ public class LootManager
   public void onBlockBreak(BlockBreakEvent event)
   {
     if(event.isCancelled()) return;
-    Location location = event.getBlock().getLocation();
+    Location location = event.getPlayer().getLocation();
     Material type = event.getBlock().getType();
     if(Inscription.getInstance().getExperienceManager().getTracker().isTracked(type) && Inscription.getInstance().getExperienceManager().getTracker().isPlaced(location)) return;
     
@@ -150,9 +150,9 @@ public class LootManager
     if(rand.nextDouble() > type_chance) return;
     
     GlyphGenerator generator = block_generators.get(type);
-    Location loc = event.getBlock().getLocation();
     
-    this.dropGlyph(generator, loc);
+    this.dropGlyph(generator, location);
+    Inscription.logDebug("A Glyph was dropped!");
   }
   
   private void dropGlyph(GlyphGenerator generator, Location loc)

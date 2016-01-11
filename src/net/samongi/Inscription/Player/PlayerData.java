@@ -14,7 +14,7 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 
 import net.samongi.Inscription.Inscription;
-import net.samongi.Inscription.Experience.ExperienceChangeEvent;
+import net.samongi.Inscription.Experience.ExperienceGainedEvent;
 
 public class PlayerData implements Serializable
 {
@@ -26,6 +26,9 @@ public class PlayerData implements Serializable
   
   private transient Map<String, CacheData> cached_data = null;
   private GlyphInventory glyphs = null;
+  /**This is no longer used for its original purpose
+   * It will be repurposed as data for a player.
+   */
   private HashMap<String, Integer> experience = new HashMap<>();
   
   private final UUID player_UUID;
@@ -100,7 +103,7 @@ public class PlayerData implements Serializable
   {
     int old_amount = this.experience.get(type);
     int new_amount = amount;
-    ExperienceChangeEvent event = new ExperienceChangeEvent(type, old_amount, new_amount);
+    ExperienceGainedEvent event = new ExperienceGainedEvent(type, old_amount, new_amount);
     Bukkit.getPluginManager().callEvent(event);
     if(event.isCancelled()) return;
     
@@ -112,7 +115,7 @@ public class PlayerData implements Serializable
     
     int old_amount = this.experience.get(type);
     int new_amount = old_amount + amount;
-    ExperienceChangeEvent event = new ExperienceChangeEvent(type, old_amount, new_amount);
+    ExperienceGainedEvent event = new ExperienceGainedEvent(type, old_amount, new_amount);
     Bukkit.getPluginManager().callEvent(event);
     if(event.isCancelled()) return;
 

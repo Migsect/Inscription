@@ -22,6 +22,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -49,6 +50,11 @@ public class ExperienceManager
   
   private BlockTracker tracker;
 
+  /**Method that encompasses logic to be handled by the experience manager
+   * when another entity damages another.  Generally for player experience rewards.
+   * 
+   * @param event
+   */
   public void onEntityDamageEntity(EntityDamageByEntityEvent event)
   {
     Entity damaged = event.getEntity();
@@ -62,10 +68,14 @@ public class ExperienceManager
       return;
     }
     
-    EntityType damaged_t = damaged.getType();
+    EntityType damaged_t = damaged.getType(); // Getting the type of the damage entity.
     double damage_dealt = event.getFinalDamage();
     
     Map<String, Integer> exp_per = this.getExpPerDamage(damaged_t);
+    if(exp_per == null) return;
+    
+    // TODO Experience event
+    
     for(String s : exp_per.keySet())
     {
       int exp = (int) (exp_per.get(s) * damage_dealt);
@@ -94,6 +104,9 @@ public class ExperienceManager
     
     Map<String, Integer> exp_per = this.getExpPerKill(damaged_t);
     if(exp_per == null) return;
+    
+    // TODO Experience event
+    
     for(String s : exp_per.keySet())
     {
       int exp = exp_per.get(s);
@@ -119,6 +132,9 @@ public class ExperienceManager
     
     Map<String, Integer> exp_per = this.getExpPerBreak(material_data);
     if(exp_per == null) return;
+    
+    // TODO Experience event
+    
     for(String s : exp_per.keySet())
     {
       int exp = exp_per.get(s);
@@ -139,6 +155,9 @@ public class ExperienceManager
     
     Map<String, Integer> exp_per = this.getExpPerPlace(material_data);
     if(exp_per == null) return;
+    
+    // TODO Experience event
+    
     for(String s : exp_per.keySet())
     {
       int exp = exp_per.get(s);
@@ -198,6 +217,9 @@ public class ExperienceManager
           }
           Map<String, Integer> exp_per = Inscription.getInstance().getExperienceManager().getExpPerCraft(material_data);
           if(exp_per == null) return;
+          
+          // TODO Experience event
+          
           for(String s : exp_per.keySet())
           {
             int exp = exp_per.get(s);
@@ -224,6 +246,12 @@ public class ExperienceManager
       }
     }
   }
+  
+  public void onEnchantItem(EnchantItemEvent event)
+  {
+    // TODO
+  }
+  public void onAnvilRepair(){} // TODO Anvil events are most likely an inventory interact event
   
   public void setExpPerKill(EntityType type, String exp_type, int amount)
   {

@@ -146,6 +146,8 @@ public class Inscription extends JavaPlugin
     this.getExperienceManager().saveTracker(new File(this.getDataFolder(), "tracker.dat"));
   }
   
+  public void  
+  
   private void createCommands()
   {
     this.command_handler = new CommandHandler(this);
