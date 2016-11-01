@@ -147,7 +147,7 @@ public class DamageAttributeType implements AttributeType
             DamageAttributeType.Data damage_data = (DamageAttributeType.Data) data;
             
             // getting damage bonus relavant information
-            ItemStack item_in_hand = player_damager.getItemInHand();
+            ItemStack item_in_hand = player_damager.getInventory().getItemInMainHand();
             Material material = Material.AIR;
             if(item_in_hand != null) material = item_in_hand.getType();
             EntityType entity = event.getEntity().getType();

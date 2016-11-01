@@ -287,7 +287,7 @@ public class BlockBonusAttributeType implements AttributeType
           BlockBonusAttributeType.Data bonus_data = (BlockBonusAttributeType.Data) data;
           
           Block block = event.getBlock();
-          ItemStack tool = player.getItemInHand();
+          ItemStack tool = player.getInventory().getItemInMainHand();
           if(tool == null) tool = new ItemStack(Material.AIR);
           
           Material block_material = block.getType();

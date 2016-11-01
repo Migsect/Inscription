@@ -14,7 +14,6 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 
 import net.samongi.Inscription.Inscription;
-import net.samongi.Inscription.Experience.ExperienceGainedEvent;
 
 public class PlayerData implements Serializable
 {
@@ -101,25 +100,12 @@ public class PlayerData implements Serializable
   
   public void setExperience(String type, int amount)
   {
-    int old_amount = this.experience.get(type);
-    int new_amount = amount;
-    ExperienceGainedEvent event = new ExperienceGainedEvent(type, old_amount, new_amount);
-    Bukkit.getPluginManager().callEvent(event);
-    if(event.isCancelled()) return;
-    
-    this.experience.put(type, event.getNewValue());
+    this.experience.put(type, amount);
   }
   public void addExperience(String type, int amount)
   {
     if(!this.experience.containsKey(type)) this.experience.put(type, 0);
-    
-    int old_amount = this.experience.get(type);
-    int new_amount = old_amount + amount;
-    ExperienceGainedEvent event = new ExperienceGainedEvent(type, old_amount, new_amount);
-    Bukkit.getPluginManager().callEvent(event);
-    if(event.isCancelled()) return;
-
-    this.experience.put(type, event.getNewValue());
+    this.experience.put(type, this.experience.get(type) + amount);
   }
   public int getExperience(String type){return this.experience.get(type);}
   public Map<String, Integer> getExperience(){return this.experience;}
