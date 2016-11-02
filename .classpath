@@ -4,6 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SamongiLib"/>
-	<classpathentry kind="lib" path="C:/Users/Alex/Desktop/BuildTools/spigot-1.9.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Alex/Google Drive/Programs/Spigot/spigot-1.10.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
