@@ -44,13 +44,13 @@ public class CommandExperience extends BaseCommand
     {
       if (experience == null)
       {
-        Inscription.logDebug("Experience map returned null on key '" + k + "'");
+        Inscription.logger.warning("Experience map returned null on key '" + k + "'");
         continue;
       }
       Integer exp = experience.get(k);
       if (exp == null)
       {
-        Inscription.logDebug("Experience get returned null on key '" + k + "'");
+        Inscription.logger.warning("Experience get returned null on key '" + k + "'");
         continue;
       }
       player.sendMessage(ChatColor.WHITE + "- " + ChatColor.YELLOW + exp + " "

@@ -27,21 +27,6 @@ import org.bukkit.inventory.ItemStack;
 public class BlockBonusAttributeType extends ChanceAttributeType
 {
 
-  // Debug Methods
-  private static void log(String message)
-  {
-    Inscription.log("[BlockBonusAttributeType] " + message);
-  }
-  private static void logDebug(String message)
-  {
-    if (Inscription.debug()) BlockBonusAttributeType.log(Inscription.debug_tag + message);
-  }
-  @SuppressWarnings("unused")
-  private static boolean debug()
-  {
-    return Inscription.debug();
-  }
-
   /* *** static variables *** */
   private static final long serialVersionUID = 604221447378305403L;
   private static final String TYPE_IDENTIFIER = "BLOCK_BONUS";
@@ -73,16 +58,16 @@ public class BlockBonusAttributeType extends ChanceAttributeType
         if (cached_data == null) cached_data = new BlockBonusAttributeType.Data();
         if (!(cached_data instanceof BlockBonusAttributeType.Data)) return;
 
-        BlockBonusAttributeType.logDebug("  Caching attribute for " + name_description);
-        BlockBonusAttributeType.logDebug("    'block_materials' is global?: " + block_materials.isGlobal());
-        BlockBonusAttributeType.logDebug("    'tool_materials' is global?: " + tool_materials.isGlobal());
+        Inscription.logger.finer("  Caching attribute for " + name_description);
+        Inscription.logger.finer("    'block_materials' is global?: " + block_materials.isGlobal());
+        Inscription.logger.finer("    'tool_materials' is global?: " + tool_materials.isGlobal());
 
         BlockBonusAttributeType.Data bonus_data = (BlockBonusAttributeType.Data) cached_data;
         double chance = getChance(this.getGlyph());
         if (block_materials.isGlobal() && tool_materials.isGlobal())
         {
           double c = bonus_data.get();
-          BlockBonusAttributeType.logDebug("C- Added '" + chance + "' bonus");
+          Inscription.logger.finer("C- Added '" + chance + "' bonus");
           bonus_data.set(c + chance);
         }
         else if (block_materials.isGlobal())
@@ -90,7 +75,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType
           for (Material t : tool_materials.getMaterials())
           {
             double c = bonus_data.getTool(t);
-            BlockBonusAttributeType.logDebug("C- Added '" + chance + "' bonus to '" + t.toString() + "'");
+            Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + t.toString() + "'");
             bonus_data.setTool(t, c + chance);
           }
         }
@@ -99,7 +84,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType
           for (Material b : block_materials.getMaterials())
           {
             double c = bonus_data.getBlock(b);
-            BlockBonusAttributeType.logDebug("C- Added '" + chance + "' bonus to '" + b.toString() + "'");
+            Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + b.toString() + "'");
             bonus_data.setBlock(b, c + chance);
           }
         }
@@ -109,12 +94,12 @@ public class BlockBonusAttributeType extends ChanceAttributeType
             for (Material b : block_materials.getMaterials())
             {
               double c = bonus_data.getToolBlock(t, b);
-              BlockBonusAttributeType.logDebug("C- Added '" + chance + "' bonus to '" + t.toString() + "|"
+              Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + t.toString() + "|"
                   + b.toString() + "'");
               bonus_data.setToolBlock(t, b, c + chance);
             }
         }
-        BlockBonusAttributeType.logDebug("  Finished caching for " + name_description);
+        Inscription.logger.finer("  Finished caching for " + name_description);
         data.setData(bonus_data); // setting the data again.
       }
 
@@ -226,7 +211,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType
       double max_chance = section.getDouble("max-chance");
       if (min_chance > max_chance)
       {
-        BlockBonusAttributeType.log(section.getName() + " : min chance is bigger than max chance");
+        Inscription.logger.finer(section.getName() + " : min chance is bigger than max chance");
         return null;
       }
       double rarity_mult = section.getDouble("rarity-multiplier");
@@ -287,7 +272,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType
           block_bonus += bonus_data.getBlock(block_material);
           block_bonus += bonus_data.getToolBlock(tool_material, block_material);
 
-          BlockBonusAttributeType.logDebug("[Break Event] Bonus Chance: " + block_bonus);
+          Inscription.logger.finest("[Break Event] Bonus Chance: " + block_bonus);
 
           Location loc = block.getLocation();
 

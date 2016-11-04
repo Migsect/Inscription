@@ -20,58 +20,60 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayerListener implements Listener
 {
+
   @EventHandler
   public void onPlayerJoin(PlayerJoinEvent event)
   {
     Inscription.getInstance().getPlayerManager().onPlayerJoin(event);
   }
-  
+
   @EventHandler
   public void onPlayerQuit(PlayerQuitEvent event)
   {
-    Inscription.getInstance().getPlayerManager().onPlayerQuit(event); 
+    Inscription.getInstance().getPlayerManager().onPlayerQuit(event);
   }
-  
+
   @EventHandler
   public void onCraftItem(CraftItemEvent event)
   {
-    if(event.isCancelled()) return;
+    if (event.isCancelled()) return;
     Inscription.getInstance().getExperienceManager().onCraftItem(event);
   }
-  
+
   @EventHandler
   public void onInventoryClose(InventoryCloseEvent event)
   {
     GlyphInventory.onInventoryClose(event);
   }
-  
+
   @EventHandler
   public void onInventoryClick(InventoryClickEvent event)
   {
-    if(event.isCancelled()) return;
+    if (event.isCancelled()) return;
     GlyphInventory.onInventoryClick(event);
   }
-  
+
   @EventHandler
   public void onBlockRightClick(PlayerInteractEvent event)
   {
-    if(event.isCancelled()) return;
+    if (event.isCancelled()) return;
     Player player = event.getPlayer();
-    
+
     ItemStack hand_item = event.getItem();
-    if(hand_item == null) return;
+    if (hand_item == null) return;
     Block clicked_block = event.getClickedBlock();
-    if(clicked_block == null) return;
-    
+    if (clicked_block == null) return;
+
     Material clicked_material = clicked_block.getType();
     Material hand_material = hand_item.getType();
-    
-    if(clicked_material.equals(Material.ENCHANTMENT_TABLE) && hand_material.equals(Material.PAPER))
+
+    if (clicked_material.equals(Material.ENCHANTMENT_TABLE) && hand_material.equals(Material.PAPER))
     {
       PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
       GlyphInventory inventory = data.getGlyphInventory();
       BukkitRunnable task = new BukkitRunnable()
       {
+
         @Override
         public void run()
         {
@@ -79,8 +81,8 @@ public class PlayerListener implements Listener
         }
       };
       task.runTask(Inscription.getInstance());
-      Inscription.logDebug("Player Attempted to open Glyph Inventory through Enchanting table");
+      Inscription.logger.finest("Player Attempted to open Glyph Inventory through Enchanting table");
     }
   }
-  
+
 }

@@ -35,20 +35,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class ExperienceManager
 {
 
-  private static void log(String message)
-  {
-    Inscription.log("[ExperienceManager] " + message);
-  }
-  private static void logDebug(String message)
-  {
-    if (Inscription.debug()) ExperienceManager.log(Inscription.debug_tag + message);
-  }
-  @SuppressWarnings("unused")
-  private static boolean debug()
-  {
-    return Inscription.debug();
-  }
-
   // Experience mapping for entity related events
   private Map<EntityType, Map<String, Integer>> exp_per_kill = new HashMap<>();
   private Map<EntityType, Map<String, Integer>> exp_per_damage = new HashMap<>();
@@ -76,7 +62,7 @@ public class ExperienceManager
     PlayerData data = Inscription.getInstance().getPlayerManager().getData((Player) damager);
     if (data == null)
     {
-      ExperienceManager.log("ERROR: Player Data return null on call for: " + damager.getName() + ":"
+      Inscription.logger.severe("Player Data return null on call for: " + damager.getName() + ":"
           + damager.getUniqueId());
       return;
     }
@@ -110,7 +96,7 @@ public class ExperienceManager
     PlayerData data = Inscription.getInstance().getPlayerManager().getData((Player) damager);
     if (data == null)
     {
-      ExperienceManager.log("ERROR: Player Data return null on call for: " + damager.getName() + ":"
+      Inscription.logger.severe("Player Data return null on call for: " + damager.getName() + ":"
           + damager.getUniqueId());
       return;
     }
@@ -141,7 +127,7 @@ public class ExperienceManager
     PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
     if (data == null)
     {
-      ExperienceManager.log("ERROR: Player Data return null on call for: " + player.getName() + ":"
+      Inscription.logger.severe("Player Data return null on call for: " + player.getName() + ":"
           + player.getUniqueId());
       return;
     }
@@ -165,7 +151,7 @@ public class ExperienceManager
     PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
     if (data == null)
     {
-      ExperienceManager.log("ERROR: Player Data return null on call for: " + player.getName() + ":"
+      Inscription.logger.severe("Player Data return null on call for: " + player.getName() + ":"
           + player.getUniqueId());
       return;
     }
@@ -189,7 +175,7 @@ public class ExperienceManager
     Recipe recipe = event.getRecipe(); // getting the recipe
     ItemStack result = recipe.getResult(); // getting the result of the craft
                                            // event
-    ExperienceManager.logDebug("Heard Craft Item Event: Item Crafted Type: " + result.getType());
+    Inscription.logger.fine("Heard Craft Item Event: Item Crafted Type: " + result.getType());
     MaterialData material_data = result.getData();
 
     // Note that this result will not be the total number of items that were
@@ -219,21 +205,21 @@ public class ExperienceManager
             if (new_item != old_item)
             {
               if (!new_item.getData().equals(material_data)) continue;
-              ExperienceManager.logDebug("Found Inv Difference: " + new_item + " =/= " + old_item);
+              Inscription.logger.fine("Found Inv Difference: " + new_item + " =/= " + old_item);
               if (old_item == null || old_item.getType().equals(Material.AIR)) items_crafted += new_item.getAmount();
               else items_crafted += new_item.getAmount() - old_item.getAmount();
             }
           }
           // The total times the item was crafted
           int total_crafts = items_crafted / result.getAmount();
-          ExperienceManager.logDebug("  Items Crafted: " + items_crafted);
-          ExperienceManager.logDebug("  Result Amount: " + result.getAmount());
-          ExperienceManager.logDebug("  Total Crafts: " + total_crafts);
+          Inscription.logger.fine("  Items Crafted: " + items_crafted);
+          Inscription.logger.fine("  Result Amount: " + result.getAmount());
+          Inscription.logger.fine("  Total Crafts: " + total_crafts);
 
           PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
           if (data == null)
           {
-            ExperienceManager.log("ERROR: Player Data return null on call for: " + player.getName() + ":"
+            Inscription.logger.fine("ERROR: Player Data return null on call for: " + player.getName() + ":"
                 + player.getUniqueId());
             return;
           }
@@ -257,7 +243,7 @@ public class ExperienceManager
       PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
       if (data == null)
       {
-        ExperienceManager.log("ERROR: Player Data return null on call for: " + player.getName() + ":"
+        Inscription.logger.severe("Player Data return null on call for: " + player.getName() + ":"
             + player.getUniqueId());
         return;
       }
@@ -353,11 +339,11 @@ public class ExperienceManager
     // Entity Damage configuration reading and setting
     if (entity_damage != null)
     {
-      ExperienceManager.logDebug("Parsing Entity Damage Experience Rewards");
+      Inscription.logger.fine("Parsing Entity Damage Experience Rewards");
       Set<String> entity_damage_keys = entity_damage.getKeys(false);
       for (String k : entity_damage_keys)
       {
-        ExperienceManager.logDebug("  Parsing: " + k);
+        Inscription.logger.fine("  Parsing: " + k);
         EntityType t = EntityType.valueOf(k);
         if (t == null) continue;
 
@@ -374,11 +360,11 @@ public class ExperienceManager
     // Entity Kills configuration reading and setting
     if (entity_kill != null)
     {
-      ExperienceManager.logDebug("Parsing Entity Kill Experience Rewards");
+      Inscription.logger.fine("Parsing Entity Kill Experience Rewards");
       Set<String> entity_kill_keys = entity_kill.getKeys(false);
       for (String k : entity_kill_keys)
       {
-        ExperienceManager.logDebug("  Parsing: " + k);
+        Inscription.logger.fine("  Parsing: " + k);
         EntityType t = EntityType.valueOf(k);
         if (t == null) continue;
 
@@ -394,11 +380,11 @@ public class ExperienceManager
     // Material Breaking configuration reading and setting
     if (material_break != null)
     {
-      ExperienceManager.logDebug("Parsing Material Break Experience Rewards");
+      Inscription.logger.fine("Parsing Material Break Experience Rewards");
       Set<String> material_break_keys = material_break.getKeys(false);
       for (String k : material_break_keys)
       {
-        ExperienceManager.logDebug("  Parsing: " + k);
+        Inscription.logger.fine("  Parsing: " + k);
         MaterialData t = ItemUtil.getMaterialData(k);
         if (t == null) continue;
 
@@ -414,11 +400,11 @@ public class ExperienceManager
     // Material Crafting configuration reading and setting
     if (material_craft != null)
     {
-      ExperienceManager.logDebug("Parsing Material Place Experience Rewards");
+      Inscription.logger.fine("Parsing Material Place Experience Rewards");
       Set<String> material_craft_keys = material_craft.getKeys(false);
       for (String k : material_craft_keys)
       {
-        ExperienceManager.logDebug("  Parsing: " + k);
+        Inscription.logger.fine("  Parsing: " + k);
         MaterialData t = ItemUtil.getMaterialData(k);
         if (t == null) continue;
 
@@ -434,11 +420,11 @@ public class ExperienceManager
     // Material Placing configuration reading and setting
     if (material_place != null)
     {
-      ExperienceManager.logDebug("Parsing Material Craft Experience Rewards");
+      Inscription.logger.fine("Parsing Material Craft Experience Rewards");
       Set<String> material_place_keys = material_place.getKeys(false);
       for (String k : material_place_keys)
       {
-        ExperienceManager.logDebug("  Parsing: " + k);
+        Inscription.logger.fine("  Parsing: " + k);
         MaterialData t = ItemUtil.getMaterialData(k);
         if (t == null) continue;
 

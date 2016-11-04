@@ -1,4 +1,4 @@
-debug: true
+loggingLevel: FINEST
 placement-tracking:
  - STONE
  - ENDER_STONE

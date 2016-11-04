@@ -3,7 +3,6 @@ package net.samongi.Inscription.Glyphs.Attributes.Types;
 import java.util.HashMap;
 
 import net.md_5.bungee.api.ChatColor;
-import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Attributes.Attribute;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeTypeConstructor;
@@ -18,22 +17,6 @@ import org.bukkit.event.Listener;
 
 public class DurabilityAttributeType extends ChanceAttributeType
 {
-
-  /* Debug Methods */
-  private static void log(String message)
-  {
-    Inscription.log("[DurabilityAttributeType] " + message);
-  }
-  @SuppressWarnings("unused")
-  private static void logDebug(String message)
-  {
-    if (Inscription.debug()) DurabilityAttributeType.log(Inscription.debug_tag + message);
-  }
-  @SuppressWarnings("unused")
-  private static boolean debug()
-  {
-    return Inscription.debug();
-  }
 
   /* *** static variables *** */
   private static final long serialVersionUID = -8182691382483264948L;

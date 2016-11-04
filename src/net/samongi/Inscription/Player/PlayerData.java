@@ -18,19 +18,6 @@ import org.bukkit.Bukkit;
 public class PlayerData implements Serializable
 {
 
-  public static void log(String message)
-  {
-    Inscription.log("[PlayerData] " + message);
-  }
-  public static void logDebug(String message)
-  {
-    if (Inscription.debug()) PlayerManager.log(Inscription.debug_tag + message);
-  }
-  public static boolean debug()
-  {
-    return Inscription.debug();
-  }
-
   private static final long serialVersionUID = 3049177777841203611L;
 
   private transient Map<String, CacheData> cached_data = null;
@@ -180,8 +167,8 @@ public class PlayerData implements Serializable
     File file = new File(dir, player_UUID.toString() + ".dat");
     if (!file.exists() || file.isDirectory())
     {
-      PlayerData.logDebug("Data not found or is directory for file: " + file.getAbsolutePath());
-      PlayerData.logDebug("  Returning new profile object for player: '" + player_UUID + "'");
+      Inscription.logger.fine("Data not found or is directory for file: " + file.getAbsolutePath());
+      Inscription.logger.fine("  Returning new profile object for player: '" + player_UUID + "'");
       return new PlayerData(player_UUID);
     }
     PlayerData ret = null;
@@ -227,7 +214,7 @@ public class PlayerData implements Serializable
     {
       if (!file.exists())
       {
-        PlayerData.logDebug("File does not yet exist, making file: " + file.getAbsolutePath());
+        Inscription.logger.fine("File does not yet exist, making file: " + file.getAbsolutePath());
         file.createNewFile();
       }
       FileOutputStream file_out = new FileOutputStream(file);

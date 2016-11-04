@@ -208,7 +208,7 @@ public class LootManager
     GlyphGenerator generator = block_generators.get(type);
 
     this.dropGlyph(generator, location);
-    Inscription.logDebug("A Glyph was dropped!");
+    Inscription.logger.finest("A Glyph was dropped!");
   }
 
   private void dropGlyph(GlyphGenerator generator, Location loc)

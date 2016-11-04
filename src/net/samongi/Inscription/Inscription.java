@@ -41,7 +41,6 @@ public class Inscription extends JavaPlugin
   private static final String drops_config_file = "drops.yml";
 
   private static Inscription instance;
-  private static boolean debug = true;
 
   public static Inscription getInstance()
   {
@@ -49,21 +48,6 @@ public class Inscription extends JavaPlugin
   }
 
   public static Logger logger;
-
-  public static final String debug_tag = "###";
-
-  public static void log(String message)
-  {
-    Inscription.logger.info(message);
-  }
-  public static void logDebug(String message)
-  {
-    if (Inscription.debug) Inscription.logger.info(Inscription.debug_tag + message);
-  }
-  public static boolean debug()
-  {
-    return Inscription.debug;
-  }
 
   private CommandHandler command_handler;
 
@@ -86,18 +70,15 @@ public class Inscription extends JavaPlugin
     File config_file = new File(this.getDataFolder(), "config.yml");
     if (!config_file.exists())
     {
-      Inscription.log("Found no config file, copying over defaults...");
+      logger.info("Found no config file, copying over defaults...");
       this.getConfig().options().copyDefaults(true);
       this.saveConfig();
     }
 
-    /* Setting up debug boolean */
-    Inscription.debug = this.getConfig().getBoolean("debug", true);
-    Inscription.log("Debug set to: " + debug);
-
     /* Setting up the log level */
     String logLevel = this.getConfig().getString("loggingLevel", Level.INFO.toString()).toUpperCase();
-    Inscription.logger.setLevel(Level.parse(logLevel));
+    logger.setLevel(Level.parse(logLevel));
+    logger.info("Logger set to: " + logger.getLevel().toString());
 
     /* Creating the type class manager */
     this.type_class_manager = new TypeClassManager();
