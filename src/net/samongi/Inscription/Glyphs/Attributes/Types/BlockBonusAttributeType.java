@@ -198,8 +198,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType
     public AttributeType construct(ConfigurationSection section)
     {
       String type = section.getString("type");
-      if (type == null) return null;
-      if (!type.toUpperCase().equals(TYPE_IDENTIFIER)) return null;
+      if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER)) return null;
 
       String name = section.getString("name");
       if (name == null) return null;
@@ -241,7 +240,6 @@ public class BlockBonusAttributeType extends ChanceAttributeType
 
       return attribute_type;
     }
-
     @Override
     public Listener getListener()
     {
