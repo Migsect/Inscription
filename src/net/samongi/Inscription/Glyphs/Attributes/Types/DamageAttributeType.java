@@ -24,33 +24,21 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 
-public class DamageAttributeType implements AttributeType
+public class DamageAttributeType extends AttributeType
 {
 
   private static final long serialVersionUID = -8367848352344774887L;
   private static final String TYPE_IDENTIFIER = "DAMAGE";
 
-  // The type name
-  private final String type_name;
-  // The description of the attribute type (used within lore)
-  private final String name_description;
-
-  // The entity class that this DamageAttributeType will target
+  /* The entity class that this DamageAttributeType will target */
   private EntityClass target_entities;
-  // The material class that this DamageAttributeType will apply to
+  /* The material class that this DamageAttributeType will apply to */
   private MaterialClass target_materials;
 
-  // The minimum and maximum damage multiplier
+  /* The minimum and maximum damage multiplier */
   private double min_damage;
   private double max_damage;
-  // The rarity multiplier
-  private double rarity_mult;
 
-  // experience values
-  private Map<String, Integer> base_experience;
-  private Map<String, Integer> level_experience;
-
-  // TODO this constructor should be private
   /**
    * Consturctor for a DamageAttributeType
    * 
@@ -62,28 +50,16 @@ public class DamageAttributeType implements AttributeType
    *          The min damage this damage attribute can have
    * @param max_damage
    *          The max damage this damage attribute can have
-   * @param rarity_mult
-   *          The multiplier based on rarity level of the item.
    */
-  private DamageAttributeType(String type_name, String description, double min_damage, double max_damage,
-      double rarity_mult)
+  private DamageAttributeType(String type_name, String description, double min_damage, double max_damage)
   {
-    // TODO reduce the variables and handle them through setters instead
-    this.type_name = type_name;
-    this.name_description = description;
+    super(type_name, description);
 
     this.target_entities = EntityClass.getGlobalLiving("all creatures");
     this.target_materials = MaterialClass.getGlobal("any items");
 
     this.min_damage = min_damage;
     this.max_damage = max_damage;
-    this.rarity_mult = rarity_mult;
-  }
-
-  @Override
-  public double getRarityMultiplier()
-  {
-    return this.rarity_mult;
   }
 
   public static class Constructor implements AttributeTypeConstructor
@@ -114,10 +90,10 @@ public class DamageAttributeType implements AttributeType
       String target_entities = section.getString("target-entities");
       String target_materials = section.getString("target-materials");
 
-      DamageAttributeType attribute_type = new DamageAttributeType(name, descriptor, min_damage, max_damage,
-          rarity_mult);
-      attribute_type.base_experience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
-      attribute_type.level_experience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
+      DamageAttributeType attribute_type = new DamageAttributeType(name, descriptor, min_damage, max_damage);
+      attribute_type.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
+      attribute_type.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
+      attribute_type.setRarityMultiplier(rarity_mult);
 
       // Setting all the targeting if there is any
       if (target_entities != null)
@@ -194,7 +170,7 @@ public class DamageAttributeType implements AttributeType
         if (cached_data == null) cached_data = new DamageAttributeType.Data();
         if (!(cached_data instanceof DamageAttributeType.Data)) return;
 
-        Inscription.logger.fine("  Caching attribute for " + name_description);
+        Inscription.logger.fine("  Caching attribute for " + typeDescription);
         Inscription.logger.fine("    'target_entities' is global?: " + target_entities.isGlobal());
         Inscription.logger.fine("    'target_materials' is global?: " + target_materials.isGlobal());
 
@@ -236,7 +212,7 @@ public class DamageAttributeType implements AttributeType
               damage_data.set(e, m, d + damage);
             }
         }
-        Inscription.logger.fine("  Finished caching for " + name_description);
+        Inscription.logger.fine("  Finished caching for " + typeDescription);
         data.setData(damage_data); // setting the data again.
       }
 
@@ -346,7 +322,7 @@ public class DamageAttributeType implements AttributeType
     int glyph_level = glyph.getLevel();
     int rarity_level = glyph.getRarity().getRank();
 
-    double rarity_multiplier = 1 + rarity_mult * rarity_level;
+    double rarity_multiplier = 1 + rarityMultiplier * rarity_level;
     double base_damage = min_damage + (max_damage - min_damage) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
     return rarity_multiplier * base_damage;
   }
@@ -362,27 +338,6 @@ public class DamageAttributeType implements AttributeType
     return String.format("%.1f", this.getDamage(glyph) * 100);
   }
 
-  @Override
-  public Attribute parse(String line)
-  {
-    if (ChatColor.stripColor(line.toLowerCase().trim()).startsWith(name_description.toLowerCase()))
-    {
-      return this.generate();
-    }
-    else return null;
-  }
-
-  @Override
-  public String getName()
-  {
-    return this.type_name;
-  }
-  @Override
-  public String getNameDescriptor()
-  {
-    return this.name_description;
-  }
-
   public void setTargetEntities(EntityClass e_class)
   {
     this.target_entities = e_class;
@@ -390,16 +345,6 @@ public class DamageAttributeType implements AttributeType
   public void setTargetMaterials(MaterialClass m_class)
   {
     this.target_materials = m_class;
-  }
-  @Override
-  public Map<String, Integer> getBaseExperience()
-  {
-    return this.base_experience;
-  }
-  @Override
-  public Map<String, Integer> getLevelExperience()
-  {
-    return this.level_experience;
   }
 
 }

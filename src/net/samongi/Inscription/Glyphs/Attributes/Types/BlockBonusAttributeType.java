@@ -58,7 +58,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType
         if (cached_data == null) cached_data = new BlockBonusAttributeType.Data();
         if (!(cached_data instanceof BlockBonusAttributeType.Data)) return;
 
-        Inscription.logger.finer("  Caching attribute for " + name_description);
+        Inscription.logger.finer("  Caching attribute for " + typeDescription);
         Inscription.logger.finer("    'block_materials' is global?: " + block_materials.isGlobal());
         Inscription.logger.finer("    'tool_materials' is global?: " + tool_materials.isGlobal());
 
@@ -99,7 +99,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType
               bonus_data.setToolBlock(t, b, c + chance);
             }
         }
-        Inscription.logger.finer("  Finished caching for " + name_description);
+        Inscription.logger.finer("  Finished caching for " + typeDescription);
         data.setData(bonus_data); // setting the data again.
       }
 
@@ -206,22 +206,22 @@ public class BlockBonusAttributeType extends ChanceAttributeType
       String descriptor = section.getString("descriptor");
       if (descriptor == null) return null;
 
-      double min_chance = section.getDouble("min-chance");
-      double max_chance = section.getDouble("max-chance");
-      if (min_chance > max_chance)
+      double minChance = section.getDouble("min-chance");
+      double maxChance = section.getDouble("max-chance");
+      if (minChance > maxChance)
       {
-        Inscription.logger.finer(section.getName() + " : min chance is bigger than max chance");
+        Inscription.logger.warning(section.getName() + " : min chance is bigger than max chance");
         return null;
       }
-      double rarity_mult = section.getDouble("rarity-multiplier");
+      double rarityMultiplier = section.getDouble("rarity-multiplier");
 
       String target_blocks = section.getString("target-blocks");
       String target_materials = section.getString("target-materials");
 
       BlockBonusAttributeType attribute_type = new BlockBonusAttributeType(name, descriptor);
-      attribute_type.min_chance = min_chance;
-      attribute_type.max_chance = max_chance;
-      attribute_type.rarity_mult = rarity_mult;
+      attribute_type.setMin(minChance);
+      attribute_type.setMax(maxChance);
+      attribute_type.setRarityMultiplier(rarityMultiplier);
 
       attribute_type.base_experience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
       attribute_type.level_experience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));

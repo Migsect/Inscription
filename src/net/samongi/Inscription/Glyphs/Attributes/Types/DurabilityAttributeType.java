@@ -164,7 +164,7 @@ public class DurabilityAttributeType extends ChanceAttributeType
       DurabilityAttributeType attributeType = new DurabilityAttributeType(name, descriptor);
       attributeType.setMin(minChance);
       attributeType.setMax(maxChance);
-      attributeType.setMultiplier(rarityMult);
+      attributeType.setRarityMultiplier(rarityMult);
 
       attributeType.base_experience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
       attributeType.level_experience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));

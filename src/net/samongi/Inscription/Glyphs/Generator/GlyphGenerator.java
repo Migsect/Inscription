@@ -66,6 +66,15 @@ public class GlyphGenerator
     for (int i = 0; i < attribute_count; i++)
     {
       AttributeType attribute_generator = this.attribute_weights.getRandom();
+      if (attribute_generator == null)
+      {
+        Inscription.logger.warning("Attribute Generator return null - Attributes:");
+        for (AttributeType key : this.attribute_weights.keySet())
+        {
+          Inscription.logger.warning(" - " + key.getName());
+        }
+        continue;
+      }
       Attribute attribute = attribute_generator.generate();
       // Making sure there aren't duplicates of attributes.
       if (current_attributes.contains(attribute_generator.getName()))
