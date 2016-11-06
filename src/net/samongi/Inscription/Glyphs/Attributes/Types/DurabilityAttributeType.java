@@ -50,6 +50,9 @@ public class DurabilityAttributeType extends ChanceAttributeType
         if (cached_data == null) cached_data = new DurabilityAttributeType.Data();
         if (!(cached_data instanceof DurabilityAttributeType.Data)) return;
 
+        Inscription.logger.finer("  Caching attribute for " + typeDescription);
+        Inscription.logger.finer("    'tool_materials' is global?: " + tool_materials.isGlobal());
+
         DurabilityAttributeType.Data data = (DurabilityAttributeType.Data) cached_data;
         double chance = getChance(this.getGlyph());
         if (tool_materials.isGlobal())
@@ -58,15 +61,21 @@ public class DurabilityAttributeType extends ChanceAttributeType
           /* Multiplicative bonus */
           double newValue = currentValue + (1 - currentValue) * chance;
           data.set(newValue > 1 ? 1 : newValue);
+
+          Inscription.logger.finer("C- Added '" + chance + "' bonus");
+          Inscription.logger.finest("   Previous: " + currentValue + " Current: " + newValue);
         }
         else
         {
           for (Material t : tool_materials.getMaterials())
           {
-            double currentValue = data.get();
+            double currentValue = data.getTool(t);
             /* Multiplicative bonus */
             double newValue = currentValue + (1 - currentValue) * chance;
             data.setTool(t, newValue > 1 ? 1 : newValue);
+
+            Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + t.toString() + "'");
+            Inscription.logger.finest("   Previous: " + currentValue + " Current: " + newValue);
           }
         }
         playerData.setData(data);

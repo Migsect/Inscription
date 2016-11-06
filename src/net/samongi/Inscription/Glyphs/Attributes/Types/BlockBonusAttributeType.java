@@ -67,16 +67,18 @@ public class BlockBonusAttributeType extends ChanceAttributeType
         if (block_materials.isGlobal() && tool_materials.isGlobal())
         {
           double c = bonus_data.get();
-          Inscription.logger.finer("C- Added '" + chance + "' bonus");
           bonus_data.set(c + chance);
+
+          Inscription.logger.finer("C- Added '" + chance + "' bonus");
         }
         else if (block_materials.isGlobal())
         {
           for (Material t : tool_materials.getMaterials())
           {
             double c = bonus_data.getTool(t);
-            Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + t.toString() + "'");
             bonus_data.setTool(t, c + chance);
+
+            Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + t.toString() + "'");
           }
         }
         else if (tool_materials.isGlobal())
@@ -84,8 +86,9 @@ public class BlockBonusAttributeType extends ChanceAttributeType
           for (Material b : block_materials.getMaterials())
           {
             double c = bonus_data.getBlock(b);
-            Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + b.toString() + "'");
             bonus_data.setBlock(b, c + chance);
+
+            Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + b.toString() + "'");
           }
         }
         else
@@ -94,9 +97,10 @@ public class BlockBonusAttributeType extends ChanceAttributeType
             for (Material b : block_materials.getMaterials())
             {
               double c = bonus_data.getToolBlock(t, b);
+              bonus_data.setToolBlock(t, b, c + chance);
+
               Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + t.toString() + "|"
                   + b.toString() + "'");
-              bonus_data.setToolBlock(t, b, c + chance);
             }
         }
         Inscription.logger.finer("  Finished caching for " + typeDescription);

@@ -20,15 +20,29 @@ public class PlayerManager
     this.data_location = data_location;
   }
 
+  /**
+   * Overload for player objects.
+   * 
+   * @param player
+   *          The player
+   */
   public void loadPlayer(Player player)
   {
     this.loadPlayer(player.getUniqueId());
   }
+  /**
+   * Loads the player from the file location.
+   * This will also cache all their current glyphs.
+   * 
+   * @param player_UUID
+   *          The player's UUID
+   */
   public void loadPlayer(UUID player_UUID)
   {
     PlayerData data = PlayerData.load(data_location, player_UUID);
     if (data == null) return;
     this.players.put(player_UUID, data);
+    data.getGlyphInventory().cacheGlyphs(data);
   }
   public void unloadPlayer(Player player)
   {

@@ -2,7 +2,6 @@ package net.samongi.Inscription;
 
 import java.io.File;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import net.samongi.Inscription.Commands.CommandExperience;
 import net.samongi.Inscription.Commands.CommandGenerate;
@@ -24,6 +23,7 @@ import net.samongi.Inscription.TypeClasses.MaterialClass;
 import net.samongi.Inscription.TypeClasses.TypeClassManager;
 import net.samongi.SamongiLib.CommandHandling.CommandHandler;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
+import net.samongi.SamongiLib.Logger.BetterLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -48,7 +48,7 @@ public class Inscription extends JavaPlugin
     return Inscription.instance;
   }
 
-  public static Logger logger;
+  public static BetterLogger logger;
 
   private CommandHandler command_handler;
 
@@ -61,7 +61,7 @@ public class Inscription extends JavaPlugin
   public Inscription()
   {
     Inscription.instance = this;
-    Inscription.logger = this.getLogger();
+    Inscription.logger = new BetterLogger(this);
   }
 
   @Override
@@ -77,8 +77,8 @@ public class Inscription extends JavaPlugin
     }
 
     /* Setting up the log level */
-    String logLevel = this.getConfig().getString("loggingLevel", Level.INFO.toString()).toUpperCase();
-    logger.setLevel(Level.parse(logLevel));
+    Level logLevel = Level.parse(this.getConfig().getString("loggingLevel", Level.INFO.toString()).toUpperCase());
+    logger.setLevel(logLevel);
     logger.info("Logger set to: " + logger.getLevel().toString());
 
     /* Creating the type class manager */
@@ -121,7 +121,6 @@ public class Inscription extends JavaPlugin
 
     // Loading all the player profiles again
   }
-
   @Override
   public void onDisable()
   {

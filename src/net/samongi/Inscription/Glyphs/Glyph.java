@@ -50,8 +50,8 @@ public class Glyph implements Serializable
 
     // Parsing the type line
     String type_line = ChatColor.stripColor(lore.get(0)).toLowerCase().replace("glyph of ", "").replace("lv. ", "");
-    String[] split_type_line = type_line.split(" "); // Splitting the lore into
-                                                     // tokens
+    /* Splitting the lore into tokens */
+    String[] split_type_line = type_line.split(" ");
     // Example string: Lv. 20 Rare /Glyph of/ Time
     String level_string = split_type_line[0];
     String rarity_string = split_type_line[1];
@@ -87,15 +87,16 @@ public class Glyph implements Serializable
     }
 
     Map<String, Integer> experience_map = new HashMap<>();
-    // Parsing the experience the glyph has stored on it if it has any
+    /* Parsing the experience the glyph has stored on it if it has any */
     for (int i = 1; i < lore.size(); i++)
     {
       String line = ChatColor.stripColor(lore.get(i));
       String[] s_line = line.split(" ");
       if (s_line.length < 3) continue;
-      String token_first = s_line[0]; // first token (the experience)
-      String token_last = s_line[s_line.length - 2]; // second to last token
-                                                     // (the experience type)
+      /* first token (the experience) */
+      String token_first = s_line[0];
+      /* Second to last token is the experience type */
+      String token_last = s_line[s_line.length - 2];
       int experience = 0;
       try
       {
@@ -421,6 +422,7 @@ public class Glyph implements Serializable
    */
   public ItemStack getItemStack()
   {
+    /* TODO Use configuration to specify the items for glyphs */
     ItemStack item = new ItemStack(Material.PAPER);
     ItemMeta item_meta = item.getItemMeta();
 
@@ -435,7 +437,8 @@ public class Glyph implements Serializable
     List<String> lore = new ArrayList<>();
 
     // Creating the info line
-    String type_line = ChatColor.GRAY + "Lv. " + this.level + " " + rarity.getColor() + rarity.getDisplay()
+    String type_line = ChatColor.GRAY + "Lv. " + this.level + " "
+        + rarity.getColor() + rarity.getDisplay()
         + ChatColor.GRAY + " Glyph of " + element.getColor() + element.getDisplay();
     lore.add(type_line);
 

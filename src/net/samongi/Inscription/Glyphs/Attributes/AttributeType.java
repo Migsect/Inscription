@@ -84,11 +84,15 @@ public abstract class AttributeType implements Serializable
    */
   public Attribute parse(String line)
   {
-    if (ChatColor.stripColor(line.toLowerCase().trim()).startsWith(this.typeName.toLowerCase()))
+    String reduced = ChatColor.stripColor(line.toLowerCase().trim());
+    if (reduced.startsWith(this.typeDescription.toLowerCase()))
     {
       return this.generate();
     }
-    else return null;
+    else
+    {
+      return null;
+    }
   }
 
   /**
