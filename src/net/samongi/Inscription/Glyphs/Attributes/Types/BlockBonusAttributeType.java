@@ -268,8 +268,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType
 
           Collection<ItemStack> dropables = block.getDrops(tool);
 
-          double block_bonus = 0;
-          block_bonus += bonus_data.get();
+          double block_bonus = bonus_data.get();
           block_bonus += bonus_data.getTool(tool_material);
           block_bonus += bonus_data.getBlock(block_material);
           block_bonus += bonus_data.getToolBlock(tool_material, block_material);

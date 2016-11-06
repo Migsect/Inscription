@@ -11,6 +11,7 @@ import net.samongi.Inscription.Commands.CommandReload;
 import net.samongi.Inscription.Experience.ExperienceManager;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeManager;
 import net.samongi.Inscription.Glyphs.Attributes.Types.BlockBonusAttributeType;
+import net.samongi.Inscription.Glyphs.Attributes.Types.ChainBreakAttributeType;
 import net.samongi.Inscription.Glyphs.Attributes.Types.DamageAttributeType;
 import net.samongi.Inscription.Glyphs.Attributes.Types.DurabilityAttributeType;
 import net.samongi.Inscription.Listeners.BlockListener;
@@ -151,6 +152,7 @@ public class Inscription extends JavaPlugin
     this.attribute_manager.registerConstructor(new DamageAttributeType.Constructor());
     this.attribute_manager.registerConstructor(new BlockBonusAttributeType.Constructor());
     this.attribute_manager.registerConstructor(new DurabilityAttributeType.Constructor());
+    this.attribute_manager.registerConstructor(new ChainBreakAttributeType.Constructor());
   }
 
   public LootManager getLootHandler()
