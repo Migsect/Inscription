@@ -12,6 +12,7 @@ import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClasses.EntityClass;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
+import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -66,7 +67,7 @@ public class DamageAttributeType extends AttributeType
   {
 
     @Override
-    public AttributeType construct(ConfigurationSection section)
+    public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException
     {
       String type = section.getString("type");
       if (type == null) return null;
@@ -99,12 +100,20 @@ public class DamageAttributeType extends AttributeType
       if (target_entities != null)
       {
         EntityClass e_class = Inscription.getInstance().getTypeClassManager().getEntityClass(target_entities);
+        if (e_class == null)
+        {
+          throw new InvalidConfigurationException("Entitfy class was undefined:" + target_entities);
+        }
         attribute_type.setTargetEntities(e_class);
       }
       if (target_materials != null)
       {
         MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(target_materials);
         attribute_type.setTargetMaterials(m_class);
+        if (m_class == null)
+        {
+          throw new InvalidConfigurationException("Material class was undefined:" + target_materials);
+        }
       }
 
       return attribute_type;

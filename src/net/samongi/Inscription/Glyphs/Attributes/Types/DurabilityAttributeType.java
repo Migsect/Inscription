@@ -12,6 +12,7 @@ import net.samongi.Inscription.Glyphs.Attributes.Base.ChanceAttributeType;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
+import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -149,7 +150,7 @@ public class DurabilityAttributeType extends ChanceAttributeType
   {
 
     @Override
-    public AttributeType construct(ConfigurationSection section)
+    public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException
     {
       String type = section.getString("type");
       if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER)) return null;
@@ -175,13 +176,17 @@ public class DurabilityAttributeType extends ChanceAttributeType
       attributeType.setMax(maxChance);
       attributeType.setRarityMultiplier(rarityMult);
 
-      attributeType.base_experience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
-      attributeType.level_experience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
+      attributeType.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
+      attributeType.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
 
       /* Setting all the targeting if there is any */
       if (targetMaterials != null)
       {
         MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetMaterials);
+        if (m_class == null)
+        {
+          throw new InvalidConfigurationException("Material class was undefined");
+        }
         attributeType.tool_materials = m_class;
       }
 

@@ -13,6 +13,7 @@ import net.samongi.Inscription.Glyphs.Attributes.Base.ChanceAttributeType;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
+import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -199,7 +200,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType
   {
 
     @Override
-    public AttributeType construct(ConfigurationSection section)
+    public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException
     {
       String type = section.getString("type");
       if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER)) return null;
@@ -227,18 +228,26 @@ public class BlockBonusAttributeType extends ChanceAttributeType
       attribute_type.setMax(maxChance);
       attribute_type.setRarityMultiplier(rarityMultiplier);
 
-      attribute_type.base_experience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
-      attribute_type.level_experience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
+      attribute_type.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
+      attribute_type.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
 
       // Setting all the targeting if there is any
       if (target_materials != null)
       {
         MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(target_materials);
+        if (m_class == null)
+        {
+          throw new InvalidConfigurationException("Material class was undefined:" + target_materials);
+        }
         attribute_type.tool_materials = m_class;
       }
       if (target_blocks != null)
       {
         MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(target_blocks);
+        if (m_class == null)
+        {
+          throw new InvalidConfigurationException("Material class was undefined:" + target_blocks);
+        }
         attribute_type.block_materials = m_class;
       }
 

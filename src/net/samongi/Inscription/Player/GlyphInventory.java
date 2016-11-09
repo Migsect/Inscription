@@ -6,15 +6,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import net.md_5.bungee.api.ChatColor;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Glyphs.Attributes.Attribute;
+import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -32,7 +36,7 @@ public class GlyphInventory implements Serializable
   private static final int ROW_LENGTH = 9;
   private static final int ROW_NUNMBER = 5;
 
-  private static int getMaxGlyphSlots()
+  public static int getMaxGlyphSlots()
   {
     return ROW_LENGTH * ROW_NUNMBER;
   }
@@ -112,9 +116,51 @@ public class GlyphInventory implements Serializable
   {
     this.owner = owner;
     for (int i = 0; i < getMaxGlyphSlots(); i++)
+    {
       locked_slots[i] = true;
+    }
   }
+  public GlyphInventory(UUID owner, ConfigurationSection section) throws InvalidConfigurationException
+  {
+    this.owner = owner;
 
+    /* Setting the locked slots */
+    for (int i = 0; i < getMaxGlyphSlots(); i++)
+    {
+      locked_slots[i] = true;
+    }
+    List<Integer> unlockedSlotsSection = section.getIntegerList("unlocked-slots");
+    if (unlockedSlotsSection == null) throw new InvalidConfigurationException("No 'unlocked-slots' key");
+    for (int i : unlockedSlotsSection)
+    {
+      this.locked_slots[i] = false;
+    }
+
+    /* Setting the glyphs */
+    ConfigurationSection glyphsSection = section.getConfigurationSection("glyphs");
+    if (glyphsSection == null) throw new InvalidConfigurationException("No 'glyphs' key");
+    Set<String> keys = glyphsSection.getKeys(false);
+    for (String k : keys)
+    {
+
+      Integer slot = -1;
+      try
+      {
+        slot = Integer.parseInt(k);
+      }
+      catch (NumberFormatException error)
+      {
+        throw new InvalidConfigurationException("Invalid key: 'glyphs." + k + "'");
+      }
+
+      ConfigurationSection glyphSection = glyphsSection.getConfigurationSection(k);
+      if (glyphSection == null) throw new InvalidConfigurationException("No 'glyphs." + k + "' key");
+      Glyph glyph = Glyph.getGlyph(glyphSection);
+      this.glyphs.put(slot, glyph);
+
+    }
+
+  }
   public void setLocked(int slot, boolean is_locked)
   {
     this.locked_slots[slot] = is_locked;
@@ -173,6 +219,7 @@ public class GlyphInventory implements Serializable
     if (this.inventory == null || this.inventory.getViewers().size() == 0)
     {
       this.inventory = Bukkit.getServer().createInventory(null, GlyphInventory.getMaxGlyphSlots(), ChatColor.BLUE + "Glyph Inventory");
+      Inscription.logger.finest("Glyphs lazy: " + glyphs);
       for (int i : glyphs.keySet())
         this.inventory.setItem(i, glyphs.get(i).getItemStack());
       GlyphInventory.glyph_inventories.put(inventory, this);
@@ -207,6 +254,30 @@ public class GlyphInventory implements Serializable
       inventory.setItem(i, lock_item);
 
     }
+  }
+
+  public ConfigurationSection getAsConfigurationSection()
+  {
+    ConfigurationSection section = new YamlConfiguration();
+
+    /* Getting all the slots that are locked */
+    List<Integer> unlockedSlots = new ArrayList<>();
+    for (int i = 0; i < this.locked_slots.length; i++)
+    {
+      if (!this.locked_slots[i]) unlockedSlots.add(i);
+    }
+    section.set("unlocked-slots", unlockedSlots);
+
+    /* Setting all the glyphs */
+    ConfigurationSection glyphs = new YamlConfiguration();
+    for (Integer key : this.glyphs.keySet())
+    {
+      Glyph glyph = this.glyphs.get(key);
+      glyphs.set("" + key, glyph.getAsConfigurationSection());
+    }
+    section.set("glyphs", glyphs);
+
+    return section;
   }
 
   /**

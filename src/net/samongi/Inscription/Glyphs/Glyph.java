@@ -5,13 +5,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.md_5.bungee.api.ChatColor;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Attributes.Attribute;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeManager;
+import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
 
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -116,8 +120,49 @@ public class Glyph implements Serializable
     glyph.setRarity(rarity);
     glyph.setElement(element);
     for (Attribute a : attributes)
+    {
       glyph.addAttribute(a);
+    }
     glyph.setExperience(experience_map);
+
+    return glyph;
+  }
+
+  public static Glyph getGlyph(ConfigurationSection section)
+  {
+    Glyph glyph = new Glyph();
+
+    String rarityString = section.getString("rarity");
+    GlyphRarity rarity = GlyphRarity.valueOf(rarityString);
+    if (rarity == null) return null;
+    glyph.setRarity(rarity);
+
+    String elementString = section.getString("element");
+    GlyphElement element = GlyphElement.valueOf(elementString);
+    if (element == null) return null;
+    glyph.setElement(element);
+
+    int level = section.getInt("level", -1);
+    if (level < 0) return null;
+    glyph.setLevel(level);
+
+    ConfigurationSection experienceSection = section.getConfigurationSection("experience");
+    Set<String> keys = experienceSection.getKeys(false);
+    for (String k : keys)
+    {
+      int experience = experienceSection.getInt(k, -1);
+      if (experience < 0) continue;
+      glyph.setExperience(k, experience);
+    }
+
+    List<String> attributeList = section.getStringList("attributes");
+    if (attributeList == null) return null;
+    AttributeManager attributeManager = Inscription.getInstance().getAttributeManager();
+    for (String a : attributeList)
+    {
+      AttributeType attributeType = attributeManager.getAttributeType(a);
+      glyph.addAttribute(attributeType.generate());
+    }
 
     return glyph;
   }
@@ -495,5 +540,36 @@ public class Glyph implements Serializable
     for (String s : lore)
       System.out.println(s);
 
+  }
+
+  public ConfigurationSection getAsConfigurationSection()
+  {
+    ConfigurationSection section = new YamlConfiguration();
+
+    /* Setting the rarity */
+    section.set("rarity", this.rarity.toString());
+    /* Setting the element */
+    section.set("element", this.element.toString());
+    /* Setting the level */
+    section.set("level", this.level);
+
+    /* Setting the experience */
+    ConfigurationSection experienceSection = new YamlConfiguration();
+    for (String key : this.experience.keySet())
+    {
+      int amount = this.experience.get(key);
+      experienceSection.set(key, amount);
+    }
+    section.set("experience", experienceSection);
+
+    /* Setting the attributes */
+    List<String> attributes = new ArrayList<>();
+    for (Attribute a : this.attributes)
+    {
+      attributes.add(a.getType().getName());
+    }
+    section.set("attributes", attributes);
+
+    return section;
   }
 }

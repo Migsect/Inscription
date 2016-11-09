@@ -1,19 +1,18 @@
 package net.samongi.Inscription.Player;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import net.samongi.Inscription.Inscription;
+import net.samongi.SamongiLib.Configuration.ConfigFile;
+import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 
 public class PlayerData implements Serializable
 {
@@ -45,6 +44,33 @@ public class PlayerData implements Serializable
     this.glyphs = new GlyphInventory(player_UUID);
   }
 
+  public PlayerData(ConfigFile file) throws InvalidConfigurationException
+  {
+    ConfigurationSection section = file.getConfig();
+
+    /* Grabbing the UUID */
+    String uuid = section.getString("uuid");
+    if (uuid == null)
+    {
+      throw new InvalidConfigurationException("UUID was not defined.");
+    }
+    try
+    {
+      this.player_UUID = UUID.fromString(uuid);
+    }
+    catch (IllegalArgumentException e)
+    {
+      throw new InvalidConfigurationException("UUID is not a valid UUID.");
+    }
+
+    /* Grabbing the player's name */
+    this.player_name = Bukkit.getPlayer(player_UUID).getName();
+
+    /* Setting up the glyph Inventory */
+    ConfigurationSection glyphsSection = section.getConfigurationSection("glyphs");
+    this.glyphs = new GlyphInventory(this.player_UUID, glyphsSection);
+
+  }
   /**
    * Returns the UUID of the player for this data
    * 
@@ -164,36 +190,25 @@ public class PlayerData implements Serializable
    */
   public static PlayerData load(File dir, UUID player_UUID)
   {
-    File file = new File(dir, player_UUID.toString() + ".dat");
+    File file = new File(dir, player_UUID.toString() + ".yml");
     if (!file.exists() || file.isDirectory())
     {
       Inscription.logger.fine("Data not found or is directory for file: " + file.getAbsolutePath());
       Inscription.logger.fine("  Returning new profile object for player: '" + player_UUID + "'");
       return new PlayerData(player_UUID);
     }
-    PlayerData ret = null;
+    ConfigFile configFile = new ConfigFile(file);
+    PlayerData playerData = null;
     try
     {
-      FileInputStream file_in = new FileInputStream(file);
-      ObjectInputStream obj_in = new ObjectInputStream(file_in);
-
-      Object o = obj_in.readObject();
-      ret = (PlayerData) o;
-
-      obj_in.close();
-      file_in.close();
+      playerData = new PlayerData(configFile);
     }
-    catch (IOException e)
+    catch (InvalidConfigurationException e)
     {
-      e.printStackTrace();
       return new PlayerData(player_UUID);
     }
-    catch (ClassNotFoundException e)
-    {
-      e.printStackTrace();
-      return new PlayerData(player_UUID);
-    }
-    return ret;
+
+    return playerData;
   }
   /**
    * Will attempt to save the specified player data file
@@ -209,7 +224,8 @@ public class PlayerData implements Serializable
   public static boolean save(PlayerData data, File dir)
   {
     if (!dir.isDirectory()) return false;
-    File file = new File(dir, data.getPlayerUUID().toString() + ".dat");
+    File file = new File(dir, data.getPlayerUUID().toString() + ".yml");
+
     try
     {
       if (!file.exists())
@@ -217,19 +233,21 @@ public class PlayerData implements Serializable
         Inscription.logger.fine("File does not yet exist, making file: " + file.getAbsolutePath());
         file.createNewFile();
       }
-      FileOutputStream file_out = new FileOutputStream(file);
-      ObjectOutputStream obj_out = new ObjectOutputStream(file_out);
-
-      obj_out.writeObject(data);
-
-      obj_out.close();
-      file_out.close();
     }
     catch (IOException e)
     {
       e.printStackTrace();
       return false;
     }
+
+    /* Saving to the config file */
+    ConfigFile configFile = new ConfigFile(file);
+    ConfigurationSection section = configFile.getConfig();
+    section.set("uuid", data.player_UUID.toString());
+    section.set("glyphs", data.glyphs.getAsConfigurationSection());
+
+    configFile.saveConfig();
+
     return true;
   }
 }

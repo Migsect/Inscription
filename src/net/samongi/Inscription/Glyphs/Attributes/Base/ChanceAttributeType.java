@@ -1,7 +1,5 @@
 package net.samongi.Inscription.Glyphs.Attributes.Base;
 
-import java.util.Map;
-
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
 
@@ -17,9 +15,6 @@ public abstract class ChanceAttributeType extends AttributeType
 {
 
   private static final long serialVersionUID = -3776352837090077238L;
-
-  protected Map<String, Integer> base_experience;
-  protected Map<String, Integer> level_experience;
 
   protected double min_chance;
   protected double max_chance;

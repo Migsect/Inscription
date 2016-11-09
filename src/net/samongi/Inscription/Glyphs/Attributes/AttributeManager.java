@@ -9,6 +9,7 @@ import java.util.Set;
 
 import net.samongi.Inscription.Inscription;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
+import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.PluginManager;
@@ -116,7 +117,17 @@ public class AttributeManager
   {
     for (AttributeTypeConstructor c : attribute_constructors)
     {
-      AttributeType type = c.construct(section);
+      AttributeType type = null;
+
+      try
+      {
+        type = c.construct(section);
+      }
+      catch (InvalidConfigurationException e)
+      {
+        Inscription.logger.warning(e.getMessage());
+      }
+
       if (type == null) continue;
       return type;
     }

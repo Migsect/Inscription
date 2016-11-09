@@ -16,6 +16,7 @@ import net.samongi.Inscription.Glyphs.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
+import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -254,7 +255,7 @@ public class ChainBreakAttributeType extends AttributeType
   {
 
     @Override
-    public AttributeType construct(ConfigurationSection section)
+    public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException
     {
       String type = section.getString("type");
       if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER)) return null;
@@ -289,11 +290,19 @@ public class ChainBreakAttributeType extends AttributeType
       if (target_materials != null)
       {
         MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(target_materials);
+        if (m_class == null)
+        {
+          throw new InvalidConfigurationException("Material class was undefined:" + target_materials);
+        }
         attributeType.toolMaterials = m_class;
       }
       if (target_blocks != null)
       {
         MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(target_blocks);
+        if (m_class == null)
+        {
+          throw new InvalidConfigurationException("Material class was undefined:" + target_blocks);
+        }
         attributeType.blockMaterials = m_class;
       }
 

@@ -52,6 +52,10 @@ public class PlayerManager
   {
     PlayerData data = this.getData(player_UUID);
     if (data == null) return;
+    if (!data_location.exists() || !data_location.isDirectory())
+    {
+      data_location.mkdirs();
+    }
     PlayerData.save(data, data_location);
     this.players.remove(player_UUID);
   }
