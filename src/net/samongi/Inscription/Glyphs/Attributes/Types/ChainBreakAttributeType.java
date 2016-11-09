@@ -315,7 +315,7 @@ public class ChainBreakAttributeType extends AttributeType
       return new Listener()
       {
 
-        private Set<BlockBreakEvent> createdEvents = new HashSet<>();
+        private Set<Location> usedLocations = new HashSet<>();
 
         @SuppressWarnings("deprecation")
         private boolean isSimilarData(MaterialData block1, MaterialData block2)
@@ -350,8 +350,11 @@ public class ChainBreakAttributeType extends AttributeType
         @EventHandler
         public void onBlockBreak(BlockBreakEvent event)
         {
-          /* Making sure we don't respond to self made events */
-          if (createdEvents.contains(event)) return;
+          /*
+           * Making sure we don't respond to self made events (determined by the
+           * block location)
+           */
+          if (usedLocations.contains(event.getBlock().getLocation())) return;
 
           Player player = event.getPlayer();
           PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
@@ -420,15 +423,19 @@ public class ChainBreakAttributeType extends AttributeType
 
             /* Breaking the block */
             BlockBreakEvent blockBreakEvent = new BlockBreakEvent(target, player);
-            createdEvents.add(blockBreakEvent);
+            usedLocations.add(location);
             Bukkit.getPluginManager().callEvent(blockBreakEvent);
             if (blockBreakEvent.isCancelled())
             {
               continue;
             }
-            createdEvents.remove(blockBreakEvent);
             /* NOTE May not drop the normal items based on fortune */
             target.breakNaturally(tool);
+            /*
+             * Remove the location from the set to allow it to be triggered
+             * again
+             */
+            usedLocations.remove(location);
 
             /* Damaging the tool */
             PlayerItemDamageEvent itemDamageEvent = new PlayerItemDamageEvent(player, tool, 1);
