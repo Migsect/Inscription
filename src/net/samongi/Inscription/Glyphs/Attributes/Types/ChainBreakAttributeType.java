@@ -357,6 +357,10 @@ public class ChainBreakAttributeType extends AttributeType
           if (usedLocations.contains(event.getBlock().getLocation())) return;
 
           Player player = event.getPlayer();
+
+          /* If the player is shifting, cancel the ability */
+          if (player.isSneaking()) return;
+
           PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
           CacheData cacheData = playerData.getData(ChainBreakAttributeType.TYPE_IDENTIFIER);
           if (!(cacheData instanceof ChainBreakAttributeType.Data)) return;
@@ -393,6 +397,7 @@ public class ChainBreakAttributeType extends AttributeType
             Block target = blockQueue.poll();
             if (target == null) break;
 
+            /* Looping through all the relative blocks */
             for (int x = -1; x <= 1; x++)
               for (int y = -1; y <= 1; y++)
                 for (int z = -1; z <= 1; z++)
