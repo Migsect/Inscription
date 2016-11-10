@@ -134,6 +134,7 @@ public class GlyphInventory implements Serializable
     for (int i : unlockedSlotsSection)
     {
       this.locked_slots[i] = false;
+      this.unlocked_slots++;
     }
 
     /* Setting the glyphs */
@@ -409,12 +410,11 @@ public class GlyphInventory implements Serializable
     Random rand = new Random(); // creating a random number generator.
     int exp_pool = amount; // creating an exp_pool to pull from for each glyph
     List<Glyph> glyph_pool = new ArrayList<>(glyph_group);
-    while (exp_pool > 0 && glyph_pool.size() > 0) // if we run out of experience
-                                                  // or if we're out of glyphs
+    /* if we run out of experience or if we're out of glyphs */
+    while (exp_pool > 0 && glyph_pool.size() > 0)
     {
-      int rand_int = rand.nextInt(glyph_pool.size()); // getting the index of
-                                                      // one of the glyphs from
-                                                      // the group
+      /* getting the index of one of the glyphs from the group */
+      int rand_int = rand.nextInt(glyph_pool.size());
       Glyph g = glyph_pool.get(rand_int);
 
       int available_exp = 0;
@@ -430,19 +430,22 @@ public class GlyphInventory implements Serializable
         exp_pool -= increment;
       }
 
-      // Adding the experience and attempting to levelup the glyph
-      g.addExperience(type, available_exp);
-      int prior_level = g.getLevel();
-      boolean did_level = g.attemptLevelup();
-      boolean do_text = did_level;
-      while (did_level)
-        did_level = g.attemptLevelup(); // levelup attempt
-      if (do_text)
+      if (g.getLevel() < Glyph.MAX_LEVEL)
       {
-        Player owner = Bukkit.getPlayer(this.owner);
-        owner.sendMessage(ChatColor.YELLOW + "Congratulations!");
-        owner.sendMessage(ChatColor.WHITE + "[" + g.getItemStack().getItemMeta().getDisplayName() + ChatColor.WHITE + "] " + ChatColor.YELLOW +
-            "has leveled up to " + ChatColor.GREEN + "Level " + g.getLevel() + ChatColor.WHITE + " from " + ChatColor.GREEN + "Level " + prior_level);
+        // Adding the experience and attempting to levelup the glyph
+        g.addExperience(type, available_exp);
+        int prior_level = g.getLevel();
+        boolean did_level = g.attemptLevelup();
+        boolean do_text = did_level;
+        while (did_level)
+          did_level = g.attemptLevelup(); // levelup attempt
+        if (do_text)
+        {
+          Player owner = Bukkit.getPlayer(this.owner);
+          owner.sendMessage(ChatColor.YELLOW + "Congratulations!");
+          owner.sendMessage(ChatColor.WHITE + "[" + g.getItemStack().getItemMeta().getDisplayName() + ChatColor.WHITE + "] " + ChatColor.YELLOW +
+              "has leveled up to " + ChatColor.GREEN + "Level " + g.getLevel() + ChatColor.WHITE + " from " + ChatColor.GREEN + "Level " + prior_level);
+        }
       }
       glyph_pool.remove(rand_int); // removing the glyph from the list
     }
