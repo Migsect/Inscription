@@ -1,7 +1,8 @@
 name: Inscription
 main: net.samongi.Inscription.Inscription
-version: 0.5
-description: Adds levelable glyphs which augment a player
+version: 1.0
+api-version: 1.13
+description: Adds the ability to buff your player using glyphs
 author: Migsect
 website: https://github.com/Migsect/Inscription/
 depend: [SamongiLib]
