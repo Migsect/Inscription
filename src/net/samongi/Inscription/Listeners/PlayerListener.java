@@ -67,7 +67,7 @@ public class PlayerListener implements Listener
     Material clicked_material = clicked_block.getType();
     Material hand_material = hand_item.getType();
 
-    if (clicked_material.equals(Material.ENCHANTMENT_TABLE) && hand_material.equals(Material.PAPER))
+    if (clicked_material.equals(Material.ENCHANTING_TABLE) && hand_material.equals(Material.PAPER))
     {
       PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
       GlyphInventory inventory = data.getGlyphInventory();

@@ -237,11 +237,11 @@ public class GlyphInventory implements Serializable
       {
         ItemStack item = inventory.getItem(i);
         if (item == null) continue;
-        if (!item.getType().equals(Material.STAINED_GLASS_PANE)) continue;
+        if (!item.getType().equals(Material.GRAY_STAINED_GLASS)) continue;
         inventory.clear(i);
         continue;
       }
-      ItemStack lock_item = new ItemStack(Material.STAINED_GLASS_PANE, 1);
+      ItemStack lock_item = new ItemStack(Material.GRAY_STAINED_GLASS, 1);
       lock_item.setDurability((short) 15);
 
       ItemMeta im = lock_item.getItemMeta();
