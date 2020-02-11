@@ -13,7 +13,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="jdk" jdkName="11" jdkType="JavaSDK" />
+    <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
     <orderEntry type="module-library">
       <library name="junit4">
         <CLASSES>
@@ -39,11 +39,16 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../SamongiLib/classes/artifacts/SamongiLib_jar/SamongiLib.jar!/" />
+          <root url="file://$MODULE_DIR$/../SamongiLib" />
         </CLASSES>
-        <JAVADOC />
-        <SOURCES />
+        <JAVADOC>
+          <root url="file://$MODULE_DIR$/../SamongiLib/doc" />
+        </JAVADOC>
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../SamongiLib/src" />
+        </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="library" name="SamongiLib" level="project" />
   </component>
 </module>

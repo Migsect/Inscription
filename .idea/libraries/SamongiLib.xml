@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="SamongiLib">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../SamongiLib/out/artifacts/SamongiLib_jar/SamongiLib.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
