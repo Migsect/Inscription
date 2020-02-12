@@ -278,18 +278,22 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
 
                     Location loc = block.getLocation();
 
-                    int free_drops = 0;
+                    int freeDrops = 0;
                     // we need to remove the extra 100%'s and give the reward for those
                     while (block_bonus > 1.0) {
                         block_bonus -= 1.0; // subtracting 100% for a free items
-                        free_drops += 1;
+                        freeDrops += 1;
                     }
                     Random rand = new Random();
-                    for (ItemStack i : dropables) {
-                        int drops = free_drops;
-                        ItemStack drop = i.clone();
-                        if (drop.getAmount() > 1) drop.setAmount(1);
-                        if (rand.nextDouble() < block_bonus) drops++;
+                    for (ItemStack item : dropables) {
+                        int drops = freeDrops;
+                        ItemStack drop = item.clone();
+                        if (drop.getAmount() > 1) {
+                            drop.setAmount(1);
+                        }
+                        if (rand.nextDouble() < block_bonus) {
+                            drops++;
+                        }
                         for (int c = 0; c < drops; c++)
                             loc.getWorld().dropItem(loc, drop);
                     }

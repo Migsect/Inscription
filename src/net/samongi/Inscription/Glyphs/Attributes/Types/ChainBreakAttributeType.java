@@ -120,11 +120,11 @@ public class ChainBreakAttributeType extends AttributeType {
 
                     Inscription.logger.finer("C- Added '" + amount + "' bonus");
                 } else if (blockMaterials.isGlobal()) {
-                    for (Material t : toolMaterials.getMaterials()) {
-                        int a = bonusData.getTool(t);
-                        bonusData.setTool(t, a + amount);
+                    for (Material tool : toolMaterials.getMaterials()) {
+                        int a = bonusData.getTool(tool);
+                        bonusData.setTool(tool, a + amount);
 
-                        Inscription.logger.finer("C- Added '" + amount + "' bonus to '" + t.toString() + "'");
+                        Inscription.logger.finer("C- Added '" + amount + "' bonus to '" + tool.toString() + "'");
                     }
                 } else if (toolMaterials.isGlobal()) {
                     for (BlockData blockData : blockMaterials.getBlockData()) {
@@ -139,8 +139,7 @@ public class ChainBreakAttributeType extends AttributeType {
                             int a = bonusData.getToolBlock(type, blockData);
                             bonusData.setToolBlock(type, blockData, a + amount);
 
-                            Inscription.logger.finer("C- Added '" + amount + "' bonus to '" + type.toString() + "|"
-                                + blockData.toString() + "'");
+                            Inscription.logger.finer("C- Added '" + amount + "' bonus to '" + type.toString() + "|" + blockData.toString() + "'");
                         }
                 }
                 Inscription.logger.finer("  Finished caching for " + typeDescription);
@@ -362,7 +361,7 @@ public class ChainBreakAttributeType extends AttributeType {
                 public void onBlockBreak(BlockBreakEvent event)
                 {
                     /*Making sure we don't respond to self made events (determined by the block location)*/
-                    if (usedLocations.contains(event.getBlock().getLocation())) {
+                    if (usedLocations.contains(event.getBlock().getLocation()) || event.isCancelled()) {
                         return;
                     }
 
@@ -396,7 +395,7 @@ public class ChainBreakAttributeType extends AttributeType {
 
                     Inscription.logger.finest("[Break Event] Chain Amount: " +
                         totalBlocks +
-                        "(" + blockData.getMaterial() + "/" + blockData.getAsString(true) + ")"
+                        " (" + blockData.getMaterial() + "/" + blockData.getAsString(true) + ")"
                     );
 
                     /* No need to check for materials if this is less-than-equal to 0 */
@@ -412,15 +411,17 @@ public class ChainBreakAttributeType extends AttributeType {
 
                     /* Loop while we have a queue or we haven't out grown our quota */
                     while (markedLocations.size() <= totalBlocks && blockQueue.size() > 0) {
-                        Inscription.logger.finest("Marked Size:" + markedLocations.size() + ", Queue Size:" + blockQueue.size());
+                        Inscription.logger.finest("Marked Size:" + markedLocations.size() + "/" + totalBlocks + ", Queue Size:" + blockQueue.size());
                         Block target = blockQueue.poll();
-                        if (target == null) break;
+                        if (target == null) {
+                            break;
+                        }
 
                         // We are going to use a predefined list of vectors. Note that these vectors will prioritize the closer.
                         // vectors first before the further surrounding vectors.
                         // NOTE: We may want to shuffle the vectors here, or at least shuffle the subgroups to allow for more
                         // interesting breaks (and less predictable ones.)
-                        List<SamIntVector> vectors = SamIntVector.getSurroundingVectors();
+                        List<SamIntVector> vectors = SamIntVector.getSurroundingVectorsSemiScrambled();
                         for (SamIntVector vector : vectors) {
                             Block relative = target.getRelative(vector.X(), vector.Y(), vector.Z());
 
@@ -437,7 +438,9 @@ public class ChainBreakAttributeType extends AttributeType {
                             if (markedLocations.size() >= totalBlocks) {
                                 break;
                             }
-
+                        }
+                        if (markedLocations.size() >= totalBlocks) {
+                            break;
                         }
                     }
 
@@ -460,7 +463,8 @@ public class ChainBreakAttributeType extends AttributeType {
                         // Remove the location from the set to allow it to be triggered again
                         usedLocations.remove(location);
 
-                        ItemUtil.damageItem(player, tool);
+                        boolean damaged = ItemUtil.damageItem(player, tool);
+
                     }
                 }
             }

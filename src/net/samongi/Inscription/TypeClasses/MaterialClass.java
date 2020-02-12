@@ -58,7 +58,7 @@ public class MaterialClass implements Serializable {
         MaskedBlockData.Mask.MATERIAL,
         MaskedBlockData.Mask.AGEABLE
     };
-    private final Set<MaskedBlockData> m_blockData = new TreeSet<>();
+    private final Set<MaskedBlockData> m_blockData = new HashSet<>();
     private final Set<String> m_inherited = new HashSet<>();
 
     /**
@@ -175,8 +175,8 @@ public class MaterialClass implements Serializable {
             }
         }
 
-        for (String type : this.m_inherited) {
-            MaterialClass materialClass = manager.getMaterialClass(type);
+        for (String materialClassKey : this.m_inherited) {
+            MaterialClass materialClass = manager.getMaterialClass(materialClassKey);
             if (materialClass == null) {
                 continue;
             }
@@ -188,16 +188,16 @@ public class MaterialClass implements Serializable {
     /**
      * Adds the material type to the material class.
      *
-     * @param type
+     * @param material
      */
-    public void addMaterial(@Nonnull Material type)
+    public void addMaterial(@Nonnull Material material)
     {
-        this.m_materialData.add(type);
+        this.m_materialData.add(material);
     }
 
-    public void addMaterial(@Nonnull BlockData type)
+    public void addMaterial(@Nonnull BlockData blockData)
     {
-        MaskedBlockData key = new MaskedBlockData(type, BLOCKDATA_MASKS);
+        MaskedBlockData key = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
         this.m_blockData.add(key);
     }
 
@@ -234,11 +234,11 @@ public class MaterialClass implements Serializable {
     /**
      * Adds a class to be inherited by this class.
      *
-     * @param class_name
+     * @param className
      */
-    public void addInherited(@Nonnull String class_name)
+    public void addInherited(@Nonnull String className)
     {
-        this.m_inherited.add(class_name);
+        this.m_inherited.add(className);
     }
 
     /**
@@ -252,8 +252,8 @@ public class MaterialClass implements Serializable {
         if (this.m_isGlobal) return true;
 
         TypeClassManager manager = Inscription.getInstance().getTypeClassManager();
-        for (String i : this.m_inherited)
-            if (manager.getMaterialClass(i) != null && manager.getMaterialClass(i).isGlobal()) return true;
+        for (String inherited : this.m_inherited)
+            if (manager.getMaterialClass(inherited) != null && manager.getMaterialClass(inherited).isGlobal()) return true;
         return false;
     }
 
