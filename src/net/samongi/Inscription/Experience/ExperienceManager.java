@@ -150,9 +150,19 @@ public class ExperienceManager {
             return;
         }
 
-        for (String key : experienceMapping.keySet()) {
-            int exp = experienceMapping.get(key);
-            data.getGlyphInventory().distributeExperience(key, exp);
+        for (String experienceType : experienceMapping.keySet()) {
+            int experienceAmount = experienceMapping.get(experienceType);
+            boolean experienceDistributed = data.getGlyphInventory().distributeExperience(experienceType, experienceAmount);
+
+            // If the experience wasn't actually distributed, we need to trigger an event that the experience overflowed
+            // back to the character profile.
+            if (!experienceDistributed) {
+                PlayerExperienceOverflowEvent overflowEvent = new PlayerExperienceOverflowEvent(player, experienceType, experienceAmount);
+                Bukkit.getPluginManager().callEvent(overflowEvent);
+
+                // The amount may have been changed during the event calls.
+                data.addExperience(experienceType, overflowEvent.getAmount());
+            }
         }
     }
     public void onBlockPlace(BlockPlaceEvent event)

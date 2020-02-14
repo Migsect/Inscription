@@ -49,12 +49,15 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
 
                 double multiplier = getMultiplier(this.getGlyph());
                 double currentValue = data.get();
-                double newValue = currentValue + (1 - currentValue) * multiplier;
+                double newValue = currentValue + multiplier;
 
                 data.set(newValue > 1 ? 1 : newValue);
-                Inscription.logger.finer("  +C Added '" + multiplier + "' bonus " + currentValue + "->" + newValue);
+                Inscription.logger.finer(
+                    "  +C Added '" + multiplier + "' bonus " + currentValue + "->" + newValue
+                );
 
                 playerData.setData(data);
+                Inscription.logger.finer("Finished caching for " + typeDescription);
             }
 
             @Override public String getLoreLine() {
@@ -121,12 +124,12 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
                 Inscription.logger.warning(section.getName() + " : min multiplier is bigger than max chance");
                 return null;
             }
-            double rarityMult = section.getDouble("rarity-multiplier");
+            double rarityMultiplier = section.getDouble("rarity-multiplier");
 
             ExperienceBonusAttributeType attributeType = new ExperienceBonusAttributeType(name, descriptor);
             attributeType.setMin(minMultiplier);
             attributeType.setMax(maxMultiplier);
-            attributeType.setRarityMultiplier(rarityMult);
+            attributeType.setRarityMultiplier(rarityMultiplier);
 
             attributeType.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
             attributeType.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));

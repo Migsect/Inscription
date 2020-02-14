@@ -11,12 +11,15 @@ import net.samongi.SamongiLib.Configuration.ConfigFile;
 
 import org.bukkit.configuration.ConfigurationSection;
 
+import javax.annotation.Nonnull;
+
 public class TypeClassManager implements Serializable {
 
     private static final long serialVersionUID = 6093085594741035831L;
 
     private final Map<String, EntityClass> m_entityClasses = new HashMap<>();
     private final Map<String, MaterialClass> m_materialClasses = new HashMap<>();
+    private final Map<String, DamageClass> m_damageClasses = new HashMap<>();
 
     public void registerEntityClass(EntityClass entityClass)
     {
@@ -30,14 +33,25 @@ public class TypeClassManager implements Serializable {
         m_materialClasses.put(typeName, materialClass);
     }
 
-    public EntityClass getEntityClass(String typeName)
+    public void registerDamageClass(DamageClass damageClass)
+    {
+        String typeName = damageClass.getTypeName();
+        m_damageClasses.put(typeName, damageClass);
+    }
+
+    public EntityClass getEntityClass(@Nonnull String typeName)
     {
         return this.m_entityClasses.get(TypeClassManager.convertToTypeName(typeName));
     }
 
-    public MaterialClass getMaterialClass(String typeName)
+    public MaterialClass getMaterialClass(@Nonnull String typeName)
     {
         return this.m_materialClasses.get(TypeClassManager.convertToTypeName(typeName));
+    }
+
+    public DamageClass getDamageClass(@Nonnull String typeName)
+    {
+        return this.m_damageClasses.get(TypeClassManager.convertToTypeName(typeName));
     }
 
     private static String convertToTypeName(String string)
@@ -47,16 +61,16 @@ public class TypeClassManager implements Serializable {
 
     public void parseEntities(ConfigurationSection section)
     {
-        Inscription.logger.fine("Found EnityClass Definitions:");
+        Inscription.logger.fine("Found EntityClass Definitions:");
         Set<String> entityClassesKeys = section.getKeys(false);
         for (String key : entityClassesKeys) {
             Inscription.logger.fine("  Parsing Key: '" + key + "'");
             ConfigurationSection classSection = section.getConfigurationSection(key);
-            EntityClass e_class = EntityClass.parse(classSection);
-            if (e_class == null) {
+            EntityClass entityClass = EntityClass.parse(classSection);
+            if (entityClass == null) {
                 continue;
             }
-            this.registerEntityClass(e_class);
+            this.registerEntityClass(entityClass);
         }
     }
     public void parseMaterials(ConfigurationSection section)
@@ -66,11 +80,26 @@ public class TypeClassManager implements Serializable {
         for (String key : materialClassesKeys) {
             Inscription.logger.fine("  Parsing Key: '" + key + "'");
             ConfigurationSection classSection = section.getConfigurationSection(key);
-            MaterialClass m_class = MaterialClass.parse(classSection);
-            if (m_class == null) {
+            MaterialClass materialClass = MaterialClass.parse(classSection);
+            if (materialClass == null) {
                 continue;
             }
-            this.registerMaterialClass(m_class);
+            this.registerMaterialClass(materialClass);
+        }
+    }
+
+    public void parseDamageTypes(ConfigurationSection section)
+    {
+        Inscription.logger.fine("Found DamageClass Definitions:");
+        Set<String> damageClassKeys = section.getKeys(false);
+        for (String key : damageClassKeys) {
+            Inscription.logger.fine("  Parsing Key: '" + key + "'");
+            ConfigurationSection classSection = section.getConfigurationSection(key);
+            DamageClass damageClass = DamageClass.parse(classSection);
+            if (damageClass == null) {
+                continue;
+            }
+            this.registerDamageClass(damageClass);
         }
     }
     /**
@@ -100,6 +129,11 @@ public class TypeClassManager implements Serializable {
             ConfigurationSection materialClasses = config.getConfig().getConfigurationSection("material-classes");
             if (materialClasses != null) {
                 this.parseMaterials(materialClasses);
+            }
+
+            ConfigurationSection damageClasses = config.getConfig().getConfigurationSection("damage-classes");
+            if (damageClasses != null) {
+                this.parseDamageTypes(damageClasses);
             }
         }
         // Done parsing

@@ -93,7 +93,6 @@ public class MaterialClass implements Serializable {
     @Nonnull
     public String getTypeName()
     {
-
         return this.m_name.replace(" ", "_").toUpperCase();
     }
     /**
@@ -252,8 +251,11 @@ public class MaterialClass implements Serializable {
         if (this.m_isGlobal) return true;
 
         TypeClassManager manager = Inscription.getInstance().getTypeClassManager();
-        for (String inherited : this.m_inherited)
-            if (manager.getMaterialClass(inherited) != null && manager.getMaterialClass(inherited).isGlobal()) return true;
+        for (String inherited : this.m_inherited) {
+            if (manager.getMaterialClass(inherited) != null && manager.getMaterialClass(inherited).isGlobal()) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -279,7 +281,11 @@ public class MaterialClass implements Serializable {
         if (materials != null) {
             Inscription.logger.fine("Found Materials:");
             for (String material : materials) {
-                materialClass.addMaterial(material);
+                boolean valid = materialClass.addMaterial(material);
+                if (!valid) {
+                    Inscription.logger.warning("'" + material + " is not a valid type for MaterialClass: '" + name + "'");
+                    continue;
+                }
                 Inscription.logger.fine(" - '" + material + "'");
             }
         }

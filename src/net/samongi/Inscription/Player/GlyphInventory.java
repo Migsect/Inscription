@@ -354,74 +354,92 @@ public class GlyphInventory implements Serializable {
      *
      * @param type   The type
      * @param amount
+     * @return false if the experience wasn't used.
      */
-    public void distributeExperience(String type, int amount)
+    public boolean distributeExperience(String type, int amount)
     {
         Inscription.logger.fine("Distributing Experience: " + type + ", amount:" + amount);
+
         // We are going to get a list of all the glyphs
-        List<Glyph> glyph_group = new ArrayList<>();
-        for (Glyph g : this.glyphs.values()) {
+        List<Glyph> glyphGroup = new ArrayList<>();
+        for (Glyph glyph : this.glyphs.values()) {
             // First we need to get the experience that the glyph needs
-            int g_experience = g.remainingExperience(type);
-            if (g_experience <= 0) continue; // If it doesn't need any experience, we
-            // will ignore it
-            glyph_group.add(g); // Adding the glyph to the group
+            int glyphExperience = glyph.remainingExperience(type);
+            // If it doesn't need any experience or is max level we will ignore it
+            if (glyphExperience <= 0 || glyph.isMaxLevel()) {
+                continue;
+            }
+            glyphGroup.add(glyph); // Adding the glyph to the group
         }
-        // If it is zero, we'll grab a group that can accept the experience (but
-        // doesn't really need it)
-        if (glyph_group.size() == 0) for (Glyph g : this.glyphs.values()) {
-            int exp_to_level = g.getExperienceToLevel(type);
-            if (exp_to_level > 0) glyph_group.add(g);
+
+        // If we don't have any glyphs that can receive this experience, then we'll cache
+        // the experience.
+        if (glyphGroup.size() == 0) {
+            Inscription.logger.fine("Could not find any glyphs to distribute to");
+            return false;
         }
 
         // Getting the size of the glyph group
-        int g_amount = glyph_group.size();
-        if (g_amount == 0) return; // No divide by 0s here!
-        int increment = amount / g_amount; // This will truncate any decimals, some
-        // glyphs won't get experience
-        if (amount % g_amount > 0) increment++; // If we do have remainders, we will
-        // round up.
+        int validGlyphs = glyphGroup.size();
+
+        // This will truncate any decimals, some glyphs won't get experience
+        int experienceIncrement = amount / validGlyphs;
+        // The excess will be added to the first-come glyphs during the distribution.
+        int experienceExcessPool = amount % validGlyphs;
 
         Random rand = new Random(); // creating a random number generator.
-        int exp_pool = amount; // creating an exp_pool to pull from for each glyph
-        List<Glyph> glyph_pool = new ArrayList<>(glyph_group);
-        /* if we run out of experience or if we're out of glyphs */
-        while (exp_pool > 0 && glyph_pool.size() > 0) {
-            /* getting the index of one of the glyphs from the group */
-            int rand_int = rand.nextInt(glyph_pool.size());
-            Glyph g = glyph_pool.get(rand_int);
+        int experiencePool = amount - experienceExcessPool; // creating an experiencePool to pull from for each glyph
+        List<Glyph> glyphPool = new ArrayList<>(glyphGroup);
 
-            int available_exp = 0;
-            if (increment > exp_pool) // if the pool doesn't have enough
+        /* if we run out of experience or if we're out of glyphs */
+        while (experiencePool > 0 && glyphPool.size() > 0) {
+            /* getting the index of one of the glyphs from the group */
+            int randomIndex = rand.nextInt(glyphPool.size());
+            Glyph glyph = glyphPool.get(randomIndex);
+
+            int availableExperience = 0;
+            if (experienceIncrement > experiencePool) // if the pool doesn't have enough
             {
-                available_exp = exp_pool;
-                exp_pool = 0;
-            } else
-            // if the pool has enough experience
-            {
-                available_exp = increment;
-                exp_pool -= increment;
+                availableExperience = experiencePool;
+                experiencePool = 0;
+            } else {
+                // if the pool has enough experience
+                availableExperience = experienceIncrement;
+                experiencePool -= experienceIncrement;
             }
 
-            if (g.getLevel() < Glyph.MAX_LEVEL) {
+            // The excess pool will contribute 1 experience to the first glyphs that get experience.
+            if (experienceExcessPool > 0) {
+                availableExperience += 1;
+                experienceExcessPool -= 1;
+            }
+
+            if (glyph.getLevel() < Glyph.MAX_LEVEL) {
                 // Adding the experience and attempting to levelup the glyph
-                g.addExperience(type, available_exp);
-                int prior_level = g.getLevel();
-                boolean did_level = g.attemptLevelup();
-                boolean do_text = did_level;
-                while (did_level)
-                    did_level = g.attemptLevelup(); // levelup attempt
-                if (do_text) {
+                glyph.addExperience(type, availableExperience);
+                int prior_level = glyph.getLevel();
+                boolean did_level = glyph.attemptLevelup();
+
+                // Leveling up the glyph if it can.
+                while (did_level) {
+                    did_level = glyph.attemptLevelup();
+                }
+
+                if (did_level) {
                     Player owner = Bukkit.getPlayer(this.owner);
                     owner.sendMessage(ChatColor.YELLOW + "Congratulations!");
-                    owner.sendMessage(ChatColor.WHITE + "[" + g.getItemStack().getItemMeta().getDisplayName() + ChatColor.WHITE + "] " + ChatColor.YELLOW +
-                        "has leveled up to " + ChatColor.GREEN + "Level " + g.getLevel() + ChatColor.WHITE + " from " + ChatColor.GREEN + "Level " + prior_level);
+                    owner.sendMessage(ChatColor.WHITE + "[" + glyph.getItemStack().getItemMeta().getDisplayName() + ChatColor.WHITE + "] " + ChatColor.YELLOW +
+                        "has leveled up to " + ChatColor.GREEN + "Level " + glyph.getLevel() + ChatColor.WHITE + " from " + ChatColor.GREEN + "Level " + prior_level);
                     owner.playSound(owner.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
                 }
             }
-            glyph_pool.remove(rand_int); // removing the glyph from the list
+            glyphPool.remove(randomIndex); // removing the glyph from the list
         }
         // Cleaning up the rest of experience pool to make sure there is no waste
-        if (exp_pool > 0) glyph_group.get(rand.nextInt(glyph_group.size())).addExperience(type, exp_pool);
+        if (experiencePool > 0) {
+            glyphGroup.get(rand.nextInt(glyphGroup.size())).addExperience(type, experiencePool);
+        }
+
+        return true;
     }
 }

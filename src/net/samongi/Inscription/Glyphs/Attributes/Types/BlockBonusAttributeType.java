@@ -33,16 +33,16 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
     private static final long serialVersionUID = 604221447378305403L;
     private static final String TYPE_IDENTIFIER = "BLOCK_BONUS";
 
-    /* *** class members *** */
-    /* Material classes */
+    //----------------------------------------------------------------------------------------------------------------//
+
     /* The blocks where the bonus occurs */
     private MaterialClass m_blockMaterials = MaterialClass.getGlobal("any items");
     /* The tools that the bonus occurs with */
     private MaterialClass m_toolMaterials = MaterialClass.getGlobal("any items");
 
-    private BlockBonusAttributeType(String type_name, String description)
+    private BlockBonusAttributeType(String typeName, String description)
     {
-        super(type_name, description);
+        super(typeName, description);
     }
 
     @Override
@@ -56,8 +56,12 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
             public void cache(PlayerData data)
             {
                 CacheData cached_data = data.getData(BlockBonusAttributeType.TYPE_IDENTIFIER);
-                if (cached_data == null) cached_data = new BlockBonusAttributeType.Data();
-                if (!(cached_data instanceof BlockBonusAttributeType.Data)) return;
+                if (cached_data == null) {
+                    cached_data = new BlockBonusAttributeType.Data();
+                }
+                if (!(cached_data instanceof BlockBonusAttributeType.Data)) {
+                    return;
+                }
 
                 Inscription.logger.finer("  Caching attribute for " + typeDescription);
                 Inscription.logger.finer("    'block_materials' is global?: " + m_blockMaterials.isGlobal());
@@ -166,7 +170,9 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
         }
         public double getToolBlock(Material tool, BlockData blockData)
         {
-            if (!this.tool_block_bonus.containsKey(tool)) return 0;
+            if (!this.tool_block_bonus.containsKey(tool)) {
+                return 0;
+            }
             HashMap<MaskedBlockData, Double> block_bonus = this.tool_block_bonus.get(tool);
 
             MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
@@ -201,13 +207,19 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
         public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException
         {
             String type = section.getString("type");
-            if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER)) return null;
+            if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER)) {
+                return null;
+            }
 
             String name = section.getString("name");
-            if (name == null) return null;
+            if (name == null) {
+                return null;
+            }
 
             String descriptor = section.getString("descriptor");
-            if (descriptor == null) return null;
+            if (descriptor == null) {
+                return null;
+            }
 
             double minChance = section.getDouble("min-chance");
             double maxChance = section.getDouble("max-chance");
@@ -232,7 +244,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
             if (target_materials != null) {
                 MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(target_materials);
                 if (m_class == null) {
-                    throw new InvalidConfigurationException("Material class was undefined:" + target_materials);
+                    throw new InvalidConfigurationException("Material class was undefined: " + target_materials);
                 }
                 attribute_type.m_toolMaterials = m_class;
             }

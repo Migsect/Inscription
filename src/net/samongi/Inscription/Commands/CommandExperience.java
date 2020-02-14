@@ -14,48 +14,42 @@ import org.bukkit.entity.Player;
 
 /**
  * Displays the current experience of the player's glyphs.
- * 
- * @author Alex
  *
+ * @author Alex
  */
-public class CommandExperience extends BaseCommand
-{
+public class CommandExperience extends BaseCommand {
 
-  public CommandExperience(String command_path)
-  {
-    super(command_path);
-    this.permission = "inscription.experience";
-    this.allowed_senders.add(SenderType.PLAYER);
-    this.allowed_arguments.add(new ArgumentType[0]);
-  }
-  @Override
-  public boolean run(CommandSender sender, String[] args)
-  {
-    Player player = (Player) sender;
-    PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
-    Map<String, Integer> experience = data.getExperience();
-    if (experience == null)
+    public CommandExperience(String command_path)
     {
-      player.sendMessage(ChatColor.RED + "Experience data could not be found...");
-      return true;
+        super(command_path);
+        this.permission = "inscription.experience";
+        this.allowed_senders.add(SenderType.PLAYER);
+        this.allowed_arguments.add(new ArgumentType[0]);
     }
-    player.sendMessage(ChatColor.GOLD + "Current Experience");
-    for (String k : experience.keySet())
+    @Override
+    public boolean run(CommandSender sender, String[] args)
     {
-      if (experience == null)
-      {
-        Inscription.logger.warning("Experience map returned null on key '" + k + "'");
-        continue;
-      }
-      Integer exp = experience.get(k);
-      if (exp == null)
-      {
-        Inscription.logger.warning("Experience get returned null on key '" + k + "'");
-        continue;
-      }
-      player.sendMessage(ChatColor.WHITE + "- " + ChatColor.YELLOW + exp + " "
-          + k + ChatColor.WHITE + " Exp");
+        Player player = (Player) sender;
+        PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
+        Map<String, Integer> experience = data.getExperience();
+        if (experience == null) {
+            player.sendMessage(ChatColor.RED + "Experience data could not be found...");
+            return true;
+        }
+        player.sendMessage(ChatColor.GOLD + "Current Experience");
+        for (String k : experience.keySet()) {
+            if (experience == null) {
+                Inscription.logger.warning("Experience map returned null on key '" + k + "'");
+                continue;
+            }
+            Integer exp = experience.get(k);
+            if (exp == null) {
+                Inscription.logger.warning("Experience get returned null on key '" + k + "'");
+                continue;
+            }
+            player.sendMessage(ChatColor.WHITE + "- " + ChatColor.YELLOW + exp + " "
+                + k + ChatColor.WHITE + " Exp");
+        }
+        return true;
     }
-    return true;
-  }
 }

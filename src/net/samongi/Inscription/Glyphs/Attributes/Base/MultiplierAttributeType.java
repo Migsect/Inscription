@@ -38,4 +38,7 @@ public abstract class MultiplierAttributeType extends AttributeType {
     {
         return String.format("%.1f", this.getMultiplier(glyph));
     }
+    public String getMultiplierPercentageString(Glyph glyph) {
+        return String.format("%.1f", this.getMultiplier(glyph) * 100);
+    }
 }
