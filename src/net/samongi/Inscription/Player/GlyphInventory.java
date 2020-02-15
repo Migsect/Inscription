@@ -418,14 +418,14 @@ public class GlyphInventory implements Serializable {
                 // Adding the experience and attempting to levelup the glyph
                 glyph.addExperience(type, availableExperience);
                 int prior_level = glyph.getLevel();
-                boolean did_level = glyph.attemptLevelup();
-
+                boolean didLevel = glyph.attemptLevelup();
+                boolean displayLevelMessage = didLevel;
                 // Leveling up the glyph if it can.
-                while (did_level) {
-                    did_level = glyph.attemptLevelup();
+                while (didLevel) {
+                    didLevel = glyph.attemptLevelup();
                 }
 
-                if (did_level) {
+                if (displayLevelMessage) {
                     Player owner = Bukkit.getPlayer(this.owner);
                     owner.sendMessage(ChatColor.YELLOW + "Congratulations!");
                     owner.sendMessage(ChatColor.WHITE + "[" + glyph.getItemStack().getItemMeta().getDisplayName() + ChatColor.WHITE + "] " + ChatColor.YELLOW +

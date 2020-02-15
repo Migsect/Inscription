@@ -83,15 +83,17 @@ public class PlayerListener implements Listener {
         if (handItem == null) {
             return;
         }
-        Block clicked_block = event.getClickedBlock();
-        if (clicked_block == null) {
+        Block clickedBlock = event.getClickedBlock();
+        if (clickedBlock == null) {
             return;
         }
 
-        Material clicked_material = clicked_block.getType();
-        Material hand_material = handItem.getType();
+        Material clickedMaterial = clickedBlock.getType();
+        Material handMaterial = handItem.getType();
 
-        if (clicked_material.equals(Material.ENCHANTING_TABLE) && hand_material.equals(Material.PAPER)) {
+        if ((clickedMaterial.equals(Material.ENCHANTING_TABLE) || clickedMaterial.equals(Material.LECTERN)) &&
+            handMaterial.equals(Material.PAPER))
+        {
             PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
             GlyphInventory inventory = data.getGlyphInventory();
             BukkitRunnable task = new BukkitRunnable() {

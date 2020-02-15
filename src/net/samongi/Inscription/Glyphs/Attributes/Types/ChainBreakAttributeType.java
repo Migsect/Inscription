@@ -463,7 +463,23 @@ public class ChainBreakAttributeType extends AttributeType {
                         // Remove the location from the set to allow it to be triggered again
                         usedLocations.remove(location);
 
-                        boolean damaged = ItemUtil.damageItem(player, tool);
+                        ItemUtil.damageItem(player, tool);
+
+                        if (tool.getItemMeta() instanceof Damageable) {
+                            Damageable damageableMeta = (Damageable) tool.getItemMeta();
+                            if (damageableMeta.getDamage() >= tool.getType().getMaxDurability()) {
+                                player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+
+                                // Making the sound the broken item.
+                                player.playSound(
+                                    player.getLocation(),
+                                    Sound.ENTITY_ITEM_BREAK, 1F, 1F
+                                );
+
+                                break;
+                            }
+
+                        }
 
                     }
                 }
