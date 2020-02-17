@@ -16,7 +16,10 @@ import net.samongi.Inscription.Glyphs.Attributes.AttributeManager;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 public class GlyphGenerator {
 
@@ -31,38 +34,38 @@ public class GlyphGenerator {
     private int m_minLevel = 1;
     private int m_maxLevel = 100;
 
+    private int m_consumableModel = 0;
+
     /**
      * Constructs a GlyphGenerator with the following type name.
      *
      * @param typeName This will be upcased and underscored spaced.
      */
-    public GlyphGenerator(String typeName)
-    {
+    public GlyphGenerator(String typeName) {
         this.m_typeName = typeName.toUpperCase().replace(" ", "_");
         this.m_displayName = m_typeName;
     }
 
-    public GlyphGenerator(String typeName, String displayName)
-    {
+    public GlyphGenerator(String typeName, String displayName) {
         this.m_typeName = typeName.toUpperCase().replace(" ", "_");
         this.m_displayName = displayName;
     }
 
-    public String getTypeName()
-    {
+    public String getTypeName() {
         return this.m_typeName;
     }
-    public String getDisplayName()
-    {
+    public String getDisplayName() {
         return this.m_displayName;
+    }
+    public int getConsumableModel() {
+        return this.m_consumableModel;
     }
 
     public Glyph getGlyph() {
         return this.getGlyph(m_minLevel, m_maxLevel);
     }
-    public Glyph getGlyph(
-        int min_level, int max_level)
-    {
+
+    public Glyph getGlyph(int min_level, int max_level) {
         Random rand = new Random();
 
         // Creating the new parser
@@ -86,8 +89,11 @@ public class GlyphGenerator {
             // Making sure there aren't duplicates of attributes.
             if (current_attributes.contains(attribute_generator.getName())) {
                 i--;
-                if (i < 0) break;
-                else continue;
+                if (i < 0) {
+                    break;
+                } else {
+                    continue;
+                }
             }
             // Adding the attribute to the list of attributes that have already been
             // selected
@@ -99,40 +105,34 @@ public class GlyphGenerator {
         return glyph;
     }
 
-    public void setMinLevel(int level)
-    {
+    public void setMinLevel(int level) {
         this.m_minLevel = level;
     }
-    public void setMaxLevel(int level)
-    {
+    public void setMaxLevel(int level) {
         this.m_maxLevel = level;
     }
-    public void addAttributeCount(int count, int weight)
-    {
+    public void addAttributeCount(int count, int weight) {
         if (weight <= 0) {
             Inscription.logger.fine("AttrbiuteCount '" + count + "' attempted to be registered with weight " + weight);
             return;
         }
         this.m_attributeCountsWeights.put(count, weight);
     }
-    public void addAttributeType(AttributeType type, int weight)
-    {
+    public void addAttributeType(AttributeType type, int weight) {
         if (weight <= 0) {
             Inscription.logger.fine("AttributeType '" + type.getName() + "' attempted to be registered with weight " + weight);
             return;
         }
         this.m_attributeWeights.put(type, weight);
     }
-    public void addRarity(GlyphRarity rarity, int weight)
-    {
+    public void addRarity(GlyphRarity rarity, int weight) {
         if (weight <= 0) {
             Inscription.logger.fine("Rarity '" + rarity + "' attempted to be registered with weight " + weight);
             return;
         }
         this.m_rarityWeights.put(rarity, weight);
     }
-    public void addElement(GlyphElement element, int weight)
-    {
+    public void addElement(GlyphElement element, int weight) {
         if (weight <= 0) {
             Inscription.logger.fine("GlyphElement '" + element + "' attempted to be registered with weight " + weight);
             return;
@@ -140,22 +140,21 @@ public class GlyphGenerator {
         this.m_elementWeight.put(element, weight);
     }
 
-    public static List<GlyphGenerator> parse(File file)
-    {
+    public static List<GlyphGenerator> parse(File file) {
         ConfigFile config = new ConfigFile(file);
 
         List<GlyphGenerator> generators = new ArrayList<GlyphGenerator>();
         ConfigurationSection root = config.getConfig().getConfigurationSection("generators");
         for (String s : root.getKeys(false)) {
             GlyphGenerator generator = GlyphGenerator.parse(root.getConfigurationSection(s));
-            if (generator == null) continue;
+            if (generator == null)
+                continue;
             generators.add(generator);
         }
 
         return generators;
     }
-    public static GlyphGenerator parse(ConfigurationSection section)
-    {
+    public static GlyphGenerator parse(ConfigurationSection section) {
         // Getting the generator's name
         String typeName = section.getString("type-name");
         if (typeName == null) {
@@ -168,6 +167,8 @@ public class GlyphGenerator {
 
         // Creating the generator
         GlyphGenerator generator = new GlyphGenerator(typeName, displayName == null ? typeName : displayName);
+
+        generator.m_consumableModel = section.getInt("model", 1);
 
         // min and max level setting of the generator
         int minLevel = section.getInt("min-level", 1);
@@ -182,7 +183,8 @@ public class GlyphGenerator {
         Set<String> elementKeys = elements.getKeys(false);
         for (String elementKey : elementKeys) {
             GlyphElement glyphElement = GlyphElement.valueOf(elementKey);
-            if (glyphElement == null) continue; // TODO error message
+            if (glyphElement == null)
+                continue; // TODO error message
 
             int weight = elements.getInt(elementKey);
             generator.addElement(glyphElement, weight);
@@ -196,7 +198,8 @@ public class GlyphGenerator {
         Set<String> rarityKeys = rarities.getKeys(false);
         for (String rarityKey : rarityKeys) {
             GlyphRarity r = GlyphRarity.valueOf(rarityKey);
-            if (r == null) continue; // TODO error message
+            if (r == null)
+                continue; // TODO error message
 
             int weight = rarities.getInt(rarityKey);
             generator.addRarity(r, weight);
@@ -215,7 +218,8 @@ public class GlyphGenerator {
             }
             catch (NumberFormatException e) {
             }
-            if (int_k <= 0) continue; // TODO error message
+            if (int_k <= 0)
+                continue; // TODO error message
 
             int weight = attribute_counts.getInt(k);
             generator.addAttributeCount(int_k, weight);

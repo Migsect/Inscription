@@ -31,21 +31,16 @@ public class DurabilityAttributeType extends ChanceAttributeType {
     /* *** class members *** */
     private MaterialClass m_toolMaterials = MaterialClass.getGlobal("any items");
 
-    private DurabilityAttributeType(String type_name, String description)
-    {
+    private DurabilityAttributeType(String type_name, String description) {
 
         super(type_name, description);
     }
-    @Override
-    public Attribute generate()
-    {
+    @Override public Attribute generate() {
         return new Attribute(this) {
 
             private static final long serialVersionUID = -6354912159590917251L;
 
-            @Override
-            public void cache(PlayerData playerData)
-            {
+            @Override public void cache(PlayerData playerData) {
                 CacheData cached_data = playerData.getData(DurabilityAttributeType.TYPE_IDENTIFIER);
                 if (cached_data == null) {
                     cached_data = new DurabilityAttributeType.Data();
@@ -65,9 +60,7 @@ public class DurabilityAttributeType extends ChanceAttributeType {
                     double newValue = currentValue + (1 - currentValue) * chance;
                     data.set(newValue > 1 ? 1 : newValue);
 
-                    Inscription.logger.finer(
-                        "  +C Added '" + chance + "' bonus " + currentValue + "-->" + newValue
-                    );
+                    Inscription.logger.finer("  +C Added '" + chance + "' bonus " + currentValue + "-->" + newValue);
                 } else {
                     for (Material t : m_toolMaterials.getMaterials()) {
                         double currentValue = data.getTool(t);
@@ -75,22 +68,17 @@ public class DurabilityAttributeType extends ChanceAttributeType {
                         double newValue = currentValue + (1 - currentValue) * chance;
                         data.setTool(t, newValue > 1 ? 1 : newValue);
 
-                        Inscription.logger.finer(
-                            "  +C Added '" + chance + "' bonus to '" + t.toString() + "' " + currentValue + "->" + newValue
-                        );
+                        Inscription.logger.finer("  +C Added '" + chance + "' bonus to '" + t.toString() + "' " + currentValue + "->" + newValue);
                     }
                 }
                 playerData.setData(data);
             }
 
-            @Override
-            public String getLoreLine()
-            {
+            @Override public String getLoreLine() {
                 String chanceString = getChanceString(this.getGlyph());
                 String toolClass = m_toolMaterials.getName();
 
-                String info_line = ChatColor.BLUE + "+" + chanceString + "%" + ChatColor.YELLOW +
-                    " chance to not use durability using " + ChatColor.BLUE + toolClass;
+                String info_line = ChatColor.BLUE + "+" + chanceString + "%" + ChatColor.YELLOW + " chance to not use durability using " + ChatColor.BLUE + toolClass;
                 return this.getType().getDescriptionLoreLine() + info_line;
             }
 
@@ -104,42 +92,33 @@ public class DurabilityAttributeType extends ChanceAttributeType {
         private HashMap<Material, Double> tool_chance = new HashMap<>();
 
         /* *** Setters *** */
-        public void set(Double amount)
-        {
+        public void set(Double amount) {
             this.global = amount;
         }
-        public void setTool(Material mat, double amount)
-        {
+        public void setTool(Material mat, double amount) {
             this.tool_chance.put(mat, amount);
         }
 
         /* *** Getters *** */
-        public double get()
-        {
+        public double get() {
             return this.global;
         }
-        public double getTool(Material mat)
-        {
-            if (!this.tool_chance.containsKey(mat)) return 0;
+        public double getTool(Material mat) {
+            if (!this.tool_chance.containsKey(mat))
+                return 0;
             return this.tool_chance.get(mat);
         }
 
-        @Override
-        public void clear()
-        {
+        @Override public void clear() {
             this.global = 0.0;
             this.tool_chance = new HashMap<>();
         }
 
-        @Override
-        public String getType()
-        {
+        @Override public String getType() {
             return TYPE_IDENTIFIER;
         }
 
-        @Override
-        public String getData()
-        {
+        @Override public String getData() {
             // TODO This returns the data as a string
             return "";
         }
@@ -147,19 +126,20 @@ public class DurabilityAttributeType extends ChanceAttributeType {
     }
 
     //--------------------------------------------------------------------------------------------------------------------//
-    public static class Constructor implements AttributeTypeConstructor {
+    public static class Constructor extends AttributeTypeConstructor {
 
-        @Override
-        public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException
-        {
+        @Override public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException {
             String type = section.getString("type");
-            if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER)) return null;
+            if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER))
+                return null;
 
             String name = section.getString("name");
-            if (name == null) return null;
+            if (name == null)
+                return null;
 
             String descriptor = section.getString("descriptor");
-            if (descriptor == null) return null;
+            if (descriptor == null)
+                return null;
 
             double minChance = section.getDouble("min-chance");
             double maxChance = section.getDouble("max-chance");
@@ -174,6 +154,9 @@ public class DurabilityAttributeType extends ChanceAttributeType {
             attributeType.setMin(minChance);
             attributeType.setMax(maxChance);
             attributeType.setRarityMultiplier(rarityMult);
+
+            int modelIncrement = section.getInt("model", 0);
+            attributeType.setModelIncrement(modelIncrement);
 
             attributeType.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
             attributeType.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
@@ -190,14 +173,10 @@ public class DurabilityAttributeType extends ChanceAttributeType {
             return attributeType;
         }
 
-        @Override
-        public Listener getListener()
-        {
+        @Override public Listener getListener() {
             return new Listener() {
 
-                @EventHandler
-                public void onItemDamaged(PlayerItemDamageEvent event)
-                {
+                @EventHandler public void onItemDamaged(PlayerItemDamageEvent event) {
                     Player player = event.getPlayer();
                     PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
                     CacheData cacheData = playerData.getData(DurabilityAttributeType.TYPE_IDENTIFIER);

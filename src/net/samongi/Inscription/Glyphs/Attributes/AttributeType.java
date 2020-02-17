@@ -20,14 +20,15 @@ public abstract class AttributeType implements Serializable {
      * @param section The section to map
      * @return
      */
-    public static Map<String, Integer> getIntMap(ConfigurationSection section)
-    {
+    public static Map<String, Integer> getIntMap(ConfigurationSection section) {
         Map<String, Integer> map = new HashMap<>();
-        if (section == null) return map;
+        if (section == null)
+            return map;
         Set<String> base_key = section.getKeys(false);
         for (String k : base_key) {
             int amount = section.getInt(k);
-            if (amount == 0) continue;
+            if (amount == 0)
+                continue;
             map.put(k, amount);
         }
         return map;
@@ -37,12 +38,12 @@ public abstract class AttributeType implements Serializable {
     protected final String typeDescription;
 
     protected double rarityMultiplier;
+    protected int modelIncrement;
 
     protected Map<String, Integer> baseExperience;
     protected Map<String, Integer> levelExperience;
 
-    public AttributeType(String typeName, String description)
-    {
+    public AttributeType(String typeName, String description) {
         this.typeName = typeName;
         this.typeDescription = description;
     }
@@ -62,8 +63,7 @@ public abstract class AttributeType implements Serializable {
      * @param glyph A glyph to add this attribute to.
      * @return The attribute generated
      */
-    public Attribute generate(Glyph glyph)
-    {
+    public Attribute generate(Glyph glyph) {
         Attribute attr = this.generate();
         glyph.addAttribute(attr);
         return attr;
@@ -77,8 +77,7 @@ public abstract class AttributeType implements Serializable {
      * @param line A lore line from an item to be parsed
      * @return Attribute if line was successfully parsed.
      */
-    public Attribute parse(String line)
-    {
+    public Attribute parse(String line) {
         String reduced = ChatColor.stripColor(line.toLowerCase().trim());
         if (reduced.startsWith(this.typeDescription.toLowerCase())) {
             return this.generate();
@@ -96,8 +95,7 @@ public abstract class AttributeType implements Serializable {
      * @return A type name string, this string should not be handled in a case
      * sensitive manner
      */
-    public String getName()
-    {
+    public String getName() {
         return this.typeName;
     }
 
@@ -109,13 +107,11 @@ public abstract class AttributeType implements Serializable {
      * @return A name descriptor, this should be returned all lowercase by
      * contract/
      */
-    public String getNameDescriptor()
-    {
+    public String getNameDescriptor() {
         return this.typeDescription;
     }
 
-    public String getDescriptionLoreLine()
-    {
+    public String getDescriptionLoreLine() {
         return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getNameDescriptor() + " - " + ChatColor.RESET;
     }
 
@@ -124,8 +120,7 @@ public abstract class AttributeType implements Serializable {
      *
      * @return The mapping of experience
      */
-    public Map<String, Integer> getBaseExperience()
-    {
+    public Map<String, Integer> getBaseExperience() {
         return this.baseExperience;
     }
     /**
@@ -133,8 +128,7 @@ public abstract class AttributeType implements Serializable {
      *
      * @return The mapping of experience
      */
-    public Map<String, Integer> getLevelExperience()
-    {
+    public Map<String, Integer> getLevelExperience() {
         return this.levelExperience;
     }
 
@@ -144,8 +138,7 @@ public abstract class AttributeType implements Serializable {
      *
      * @param multiplier The multiplier value.
      */
-    public void setRarityMultiplier(double multiplier)
-    {
+    public void setRarityMultiplier(double multiplier) {
         this.rarityMultiplier = multiplier;
     }
     /**
@@ -153,8 +146,15 @@ public abstract class AttributeType implements Serializable {
      *
      * @return an amount to mutliply by for rarity
      */
-    public double getRarityMultiplier()
-    {
+    public double getRarityMultiplier() {
         return this.rarityMultiplier;
+    }
+
+    public void setModelIncrement(int modelIncrement) {
+        this.modelIncrement = modelIncrement;
+    }
+
+    public int getModelIncrement() {
+        return this.modelIncrement;
     }
 }

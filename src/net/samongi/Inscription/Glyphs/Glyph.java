@@ -34,21 +34,25 @@ public class Glyph implements Serializable {
      * @param item Itemstack to parse
      * @return Glyph object, null if itemstack is not a glyph item
      */
-    public static Glyph getGlyph(ItemStack item)
-    {
-        if (item == null) return null; // If the passed object is null, it can't be
+    public static Glyph getGlyph(ItemStack item) {
+        if (item == null)
+            return null; // If the passed object is null, it can't be
         // a glyph
-        ItemMeta item_meta = item.getItemMeta();
-        if (item_meta == null) return null; // If the item doesn't have meta data,
+        ItemMeta itemMeta = item.getItemMeta();
+        if (itemMeta == null)
+            return null; // If the item doesn't have meta data,
         // it can't be a glyph
 
-        if (!item_meta.hasDisplayName()) return null; // If the item does not have a
+        if (!itemMeta.hasDisplayName())
+            return null; // If the item does not have a
         // display name, it can't be a
         // glyph
-        if (!item_meta.hasLore()) return null; // If the item does not have lore, it
+        if (!itemMeta.hasLore())
+            return null; // If the item does not have lore, it
         // can't be a glyph
-        List<String> lore = item_meta.getLore(); // Getting the lore
-        if (lore.size() < 2) return null; // Lore needs more than just one line
+        List<String> lore = itemMeta.getLore(); // Getting the lore
+        if (lore.size() < 2)
+            return null; // Lore needs more than just one line
 
         // Parsing the type line
         String type_line = ChatColor.stripColor(lore.get(0)).toLowerCase().replace("glyph of ", "").replace("lv. ", "");
@@ -67,22 +71,26 @@ public class Glyph implements Serializable {
         catch (NumberFormatException e) {
             return null;
         }
-        if (level < 0) return null;
+        if (level < 0)
+            return null;
 
         // Parsing the rarity
         GlyphRarity rarity = GlyphRarity.valueOf(rarity_string.toUpperCase());
-        if (rarity == null) return null; // No rarity no glyph
+        if (rarity == null)
+            return null; // No rarity no glyph
 
         // Parsing the element
         GlyphElement element = GlyphElement.valueOf(element_string.toUpperCase());
-        if (element == null) return null; // No element no glyph
+        if (element == null)
+            return null; // No element no glyph
 
         // Parsing all the Attributes (lore items 1 to n)
         List<Attribute> attributes = new ArrayList<>();
         for (int i = 1; i < lore.size(); i++) {
             AttributeManager a_manager = Inscription.getInstance().getAttributeManager();
             Attribute attribute = a_manager.parseLoreLine(lore.get(i));
-            if (attribute != null) attributes.add(attribute);
+            if (attribute != null)
+                attributes.add(attribute);
         }
 
         Map<String, Integer> experience_map = new HashMap<>();
@@ -90,7 +98,8 @@ public class Glyph implements Serializable {
         for (int i = 1; i < lore.size(); i++) {
             String line = ChatColor.stripColor(lore.get(i));
             String[] s_line = line.split(" ");
-            if (s_line.length < 3) continue;
+            if (s_line.length < 3)
+                continue;
             /* first token (the experience) */
             String token_first = s_line[0];
             /* Second to last token is the experience type */
@@ -102,7 +111,8 @@ public class Glyph implements Serializable {
             catch (NumberFormatException e) {
                 ;
             }
-            if (experience == 0) continue;
+            if (experience == 0)
+                continue;
             experience_map.put(token_last, experience);
         }
 
@@ -119,34 +129,38 @@ public class Glyph implements Serializable {
         return glyph;
     }
 
-    public static Glyph getGlyph(ConfigurationSection section)
-    {
+    public static Glyph getGlyph(ConfigurationSection section) {
         Glyph glyph = new Glyph();
 
         String rarityString = section.getString("rarity");
         GlyphRarity rarity = GlyphRarity.valueOf(rarityString);
-        if (rarity == null) return null;
+        if (rarity == null)
+            return null;
         glyph.setRarity(rarity);
 
         String elementString = section.getString("element");
         GlyphElement element = GlyphElement.valueOf(elementString);
-        if (element == null) return null;
+        if (element == null)
+            return null;
         glyph.setElement(element);
 
         int level = section.getInt("level", -1);
-        if (level < 0) return null;
+        if (level < 0)
+            return null;
         glyph.setLevel(level);
 
         ConfigurationSection experienceSection = section.getConfigurationSection("experience");
         Set<String> keys = experienceSection.getKeys(false);
         for (String k : keys) {
             int experience = experienceSection.getInt(k, -1);
-            if (experience < 0) continue;
+            if (experience < 0)
+                continue;
             glyph.setExperience(k, experience);
         }
 
         List<String> attributeList = section.getStringList("attributes");
-        if (attributeList == null) return null;
+        if (attributeList == null)
+            return null;
         AttributeManager attributeManager = Inscription.getInstance().getAttributeManager();
         for (String a : attributeList) {
             AttributeType attributeType = attributeManager.getAttributeType(a);
@@ -175,8 +189,7 @@ public class Glyph implements Serializable {
      *
      * @return The level of this glyph
      */
-    public int getLevel()
-    {
+    public int getLevel() {
         return this.level;
     }
     /**
@@ -184,8 +197,7 @@ public class Glyph implements Serializable {
      *
      * @param level The value to set the level of the glyph to
      */
-    public void setLevel(int level)
-    {
+    public void setLevel(int level) {
         this.level = level;
     }
     /**
@@ -193,15 +205,13 @@ public class Glyph implements Serializable {
      *
      * @param levels The amount of levels to add
      */
-    public void addLevel(int levels)
-    {
+    public void addLevel(int levels) {
         this.level += levels;
     }
     /**
      * Increments the level on this glyph by one
      */
-    public void addLevel()
-    {
+    public void addLevel() {
         this.level++;
     }
 
@@ -211,28 +221,28 @@ public class Glyph implements Serializable {
      *
      * @return A Map of experienc types mapped to amounts needed.
      */
-    public Map<String, Integer> getExperienceToLevel()
-    {
+    public Map<String, Integer> getExperienceToLevel() {
         // The mapping of experience to return
         Map<String, Integer> ret_exp = new HashMap<>();
         for (Attribute a : this.getAttributes()) {
             Map<String, Integer> a_exp = a.getExperience(); // experience for the
             // attribute
             for (String k : a_exp.keySet()) {
-                if (ret_exp.containsKey(k)) ret_exp.put(k, ret_exp.get(k) + a_exp.get(k));
-                else ret_exp.put(k, a_exp.get(k));
+                if (ret_exp.containsKey(k))
+                    ret_exp.put(k, ret_exp.get(k) + a_exp.get(k));
+                else
+                    ret_exp.put(k, a_exp.get(k));
             }
         }
         return ret_exp;
     }
-    public int getExperienceToLevel(String type)
-    {
+    public int getExperienceToLevel(String type) {
         Integer i = this.getExperienceToLevel().get(type);
-        if (i == null) return 0;
+        if (i == null)
+            return 0;
         return i;
     }
-    public Map<String, Integer> getExperience()
-    {
+    public Map<String, Integer> getExperience() {
         return this.experience;
     }
     /**
@@ -242,9 +252,9 @@ public class Glyph implements Serializable {
      * @param type The type of experience
      * @return The amount of experience stored on the glyph
      */
-    public int getExperience(String type)
-    {
-        if (!this.experience.containsKey(type)) return 0;
+    public int getExperience(String type) {
+        if (!this.experience.containsKey(type))
+            return 0;
         return this.experience.get(type);
     }
     /**
@@ -253,8 +263,7 @@ public class Glyph implements Serializable {
      *
      * @param experience The mapping of the experience
      */
-    public void setExperience(Map<String, Integer> experience)
-    {
+    public void setExperience(Map<String, Integer> experience) {
         this.experience = new HashMap<>(experience);
     }
     /**
@@ -263,8 +272,7 @@ public class Glyph implements Serializable {
      * @param type       The type of experience to set
      * @param experience The amount of experience to set to
      */
-    public void setExperience(String type, int experience)
-    {
+    public void setExperience(String type, int experience) {
         this.experience.put(type, experience);
     }
     /**
@@ -275,12 +283,12 @@ public class Glyph implements Serializable {
      *
      * @param experience The map of types and amounts of experience
      */
-    public void addExperience(Map<String, Integer> experience)
-    {
+    public void addExperience(Map<String, Integer> experience) {
         // Looping through all the experience values in the passed in map
         for (String s : experience.keySet()) {
             int current_experience = 0;
-            if (this.experience.containsKey(s)) current_experience = this.experience.get(s);
+            if (this.experience.containsKey(s))
+                current_experience = this.experience.get(s);
             this.experience.put(s, experience.get(s) + current_experience);
         }
     }
@@ -290,10 +298,10 @@ public class Glyph implements Serializable {
      * @param type       The string type of the experience
      * @param experience The amount of experience to add
      */
-    public void addExperience(String type, int experience)
-    {
+    public void addExperience(String type, int experience) {
         int current_experience = 0;
-        if (this.experience.containsKey(type)) current_experience = this.experience.get(type);
+        if (this.experience.containsKey(type))
+            current_experience = this.experience.get(type);
         this.experience.put(type, experience + current_experience);
     }
     /**
@@ -302,25 +310,24 @@ public class Glyph implements Serializable {
      * remember what types
      * of experience this glyph had previously had.
      */
-    public void resetExperience()
-    {
+    public void resetExperience() {
         this.experience = new HashMap<String, Integer>();
     }
 
-    public boolean isMaxLevel()
-    {
+    public boolean isMaxLevel() {
         return this.level >= MAX_LEVEL;
 
     }
-    public boolean canLevel()
-    {
+    public boolean canLevel() {
         if (this.isMaxLevel()) {
             return false;
         }
         Map<String, Integer> level_experience = this.getExperienceToLevel();
         for (String type : level_experience.keySet()) {
-            if (!this.experience.containsKey(type)) return false;
-            if (this.experience.get(type) < level_experience.get(type)) return false;
+            if (!this.experience.containsKey(type))
+                return false;
+            if (this.experience.get(type) < level_experience.get(type))
+                return false;
         }
         return true;
     }
@@ -332,8 +339,7 @@ public class Glyph implements Serializable {
      *
      * @return Returns true if the glyph was leveled.
      */
-    public boolean attemptLevelup()
-    {
+    public boolean attemptLevelup() {
         if (!this.canLevel()) {
             return false;
         }
@@ -351,14 +357,16 @@ public class Glyph implements Serializable {
      *
      * @return A map of the remaining experience needed for each experience type
      */
-    public Map<String, Integer> remainingExperience()
-    {
+    public Map<String, Integer> remainingExperience() {
         Map<String, Integer> remain_exp = new HashMap<>();
         Map<String, Integer> required_exp = this.getExperienceToLevel();
         for (String t : required_exp.keySet()) {
-            if (this.experience.containsKey(t)) remain_exp.put(t, required_exp.get(t) - this.experience.get(t));
-            else remain_exp.put(t, required_exp.get(t));
-            if (remain_exp.get(t) <= 0) remain_exp.remove(t);
+            if (this.experience.containsKey(t))
+                remain_exp.put(t, required_exp.get(t) - this.experience.get(t));
+            else
+                remain_exp.put(t, required_exp.get(t));
+            if (remain_exp.get(t) <= 0)
+                remain_exp.remove(t);
         }
         return remain_exp;
     }
@@ -368,12 +376,13 @@ public class Glyph implements Serializable {
      * @param type The type of experience
      * @return The amount of experience this glyph needs of that type to levelup
      */
-    public int remainingExperience(String type)
-    {
+    public int remainingExperience(String type) {
         Map<String, Integer> required_exp_map = this.getExperienceToLevel();
-        if (!required_exp_map.containsKey(type)) return -1;
+        if (!required_exp_map.containsKey(type))
+            return -1;
         int required_exp = required_exp_map.get(type);
-        if (!this.experience.containsKey(type)) return required_exp;
+        if (!this.experience.containsKey(type))
+            return required_exp;
         return required_exp - this.experience.get(type);
     }
 
@@ -382,8 +391,7 @@ public class Glyph implements Serializable {
      *
      * @param rarity The rarity of this glyph to set it to
      */
-    public void setRarity(GlyphRarity rarity)
-    {
+    public void setRarity(GlyphRarity rarity) {
         this.rarity = rarity;
     }
     /**
@@ -391,8 +399,7 @@ public class Glyph implements Serializable {
      *
      * @return The rarity of this glyph
      */
-    public GlyphRarity getRarity()
-    {
+    public GlyphRarity getRarity() {
         return this.rarity;
     }
 
@@ -401,8 +408,7 @@ public class Glyph implements Serializable {
      *
      * @param element The element to set
      */
-    public void setElement(GlyphElement element)
-    {
+    public void setElement(GlyphElement element) {
         this.element = element;
     }
     /**
@@ -410,8 +416,7 @@ public class Glyph implements Serializable {
      *
      * @return The element of this glyph
      */
-    public GlyphElement getElement()
-    {
+    public GlyphElement getElement() {
         return this.element;
     }
 
@@ -421,8 +426,7 @@ public class Glyph implements Serializable {
      *
      * @param attribute The attribute to add to this glyph
      */
-    public void addAttribute(Attribute attribute)
-    {
+    public void addAttribute(Attribute attribute) {
         attribute.setGlyph(this);
         this.attributes.add(attribute);
     }
@@ -432,9 +436,12 @@ public class Glyph implements Serializable {
      *
      * @return A list of attributes
      */
-    public List<Attribute> getAttributes()
-    {
+    public List<Attribute> getAttributes() {
         return this.attributes;
+    }
+
+    public int getCustomModelData() {
+        return this.element.getModelIncrement() + this.attributes.get(0).getType().getModelIncrement() + this.getRarity().getModelIncrement();
     }
 
     /**
@@ -445,26 +452,23 @@ public class Glyph implements Serializable {
      *
      * @return
      */
-    public ItemStack getItemStack()
-    {
+    public ItemStack getItemStack() {
         /* TODO Use configuration to specify the items for glyphs */
         ItemStack item = new ItemStack(Material.PAPER);
-        ItemMeta item_meta = item.getItemMeta();
+        ItemMeta itemMeta = item.getItemMeta();
 
         // Creating the item name
         String item_name = "" + rarity.getColor();
         for (Attribute a : attributes)
             item_name += a.getType().getNameDescriptor() + " ";
         item_name += "Glyph";
-        item_meta.setDisplayName(item_name);
+        itemMeta.setDisplayName(item_name);
 
         // Creating the lore
         List<String> lore = new ArrayList<>();
 
         // Creating the info line
-        String type_line = ChatColor.GRAY + "Lv. " + this.level + " "
-            + rarity.getColor() + rarity.getDisplay()
-            + ChatColor.GRAY + " Glyph of " + element.getColor() + element.getDisplay();
+        String type_line = ChatColor.GRAY + "Lv. " + this.level + " " + rarity.getColor() + rarity.getDisplay() + ChatColor.GRAY + " Glyph of " + element.getColor() + element.getDisplay();
         lore.add(type_line);
 
         // Adding all the attribute lines
@@ -475,19 +479,23 @@ public class Glyph implements Serializable {
         Map<String, Integer> exp_to_level = this.getExperienceToLevel();
         for (String type : exp_to_level.keySet()) {
             int exp_amount = 0;
-            if (this.experience.containsKey(type)) exp_amount = this.experience.get(type);
+            if (this.experience.containsKey(type))
+                exp_amount = this.experience.get(type);
             int req_amount = exp_to_level.get(type);
             String exp_line = "";
-            if (req_amount > exp_amount) exp_line += "" + ChatColor.GRAY + exp_amount;
-            else exp_line += "" + ChatColor.GREEN + exp_amount;
+            if (req_amount > exp_amount)
+                exp_line += "" + ChatColor.GRAY + exp_amount;
+            else
+                exp_line += "" + ChatColor.GREEN + exp_amount;
             exp_line += "" + ChatColor.DARK_GREEN + " / " + req_amount + " " + type + " Exp";
 
             // Adding the line to the lore
             lore.add(exp_line);
         }
 
-        item_meta.setLore(lore);
-        item.setItemMeta(item_meta);
+        itemMeta.setLore(lore);
+        itemMeta.setCustomModelData(getCustomModelData());
+        item.setItemMeta(itemMeta);
 
         return item;
     }
@@ -496,8 +504,7 @@ public class Glyph implements Serializable {
      * Debug method used to print the itemstack info of the glyph
      * Was using with JUnit tests
      */
-    public void printItemStack()
-    {
+    public void printItemStack() {
         String item_name = "" + rarity.getColor();
         for (Attribute a : attributes)
             item_name += a.getType().getNameDescriptor() + " ";
@@ -508,8 +515,7 @@ public class Glyph implements Serializable {
         List<String> lore = new ArrayList<>();
 
         // Creating the info line
-        String type_line = ChatColor.GREEN + "Lv. " + this.level + " " + rarity.getColor() + rarity.getDisplay()
-            + ChatColor.WHITE + " Glyph of " + element.getColor() + element.getDisplay();
+        String type_line = ChatColor.GREEN + "Lv. " + this.level + " " + rarity.getColor() + rarity.getDisplay() + ChatColor.WHITE + " Glyph of " + element.getColor() + element.getDisplay();
         lore.add(type_line);
 
         // Adding all the attribute lines
@@ -521,8 +527,7 @@ public class Glyph implements Serializable {
 
     }
 
-    public ConfigurationSection getAsConfigurationSection()
-    {
+    public ConfigurationSection getAsConfigurationSection() {
         ConfigurationSection section = new YamlConfiguration();
 
         /* Setting the rarity */

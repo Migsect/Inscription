@@ -457,9 +457,10 @@ public class LootManager implements Listener, ConfigurationParsing {
         itemMeta.setDisplayName("Undiscovered Glyph");
 
         List<String> itemLore = new ArrayList<String>();
-        itemLore.add(ChatColor.YELLOW + "Unknown " + ChatColor.BLUE + generator.getDisplayName() + ChatColor.YELLOW + " Glyph");
+        itemLore.add(ChatColor.MAGIC + "" + ChatColor.YELLOW + "Unknown " + ChatColor.BLUE + generator.getDisplayName() + ChatColor.YELLOW + " Glyph");
         itemLore.add(ChatColor.YELLOW + "Use to discover a random glyph.");
         itemMeta.setLore(itemLore);
+        itemMeta.setCustomModelData(generator.getConsumableModel());
 
         itemStack.setItemMeta(itemMeta);
         return itemStack;

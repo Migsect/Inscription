@@ -25,8 +25,7 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
     private static final long serialVersionUID = -6051996265080614309L;
     private static final String TYPE_IDENTIFIER = "EXPERIENCE_BONUS";
 
-    private ExperienceBonusAttributeType(String type_name, String description)
-    {
+    private ExperienceBonusAttributeType(String type_name, String description) {
 
         super(type_name, description);
     }
@@ -52,9 +51,7 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
                 double newValue = currentValue + multiplier;
 
                 data.set(newValue > 1 ? 1 : newValue);
-                Inscription.logger.finer(
-                    "  +C Added '" + multiplier + "' bonus " + currentValue + "->" + newValue
-                );
+                Inscription.logger.finer("  +C Added '" + multiplier + "' bonus " + currentValue + "->" + newValue);
 
                 playerData.setData(data);
                 Inscription.logger.finer("Finished caching for " + typeDescription);
@@ -75,48 +72,43 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
         private double m_globalExperienceBonus = 0.0;
 
         /* *** Setters *** */
-        public void set(double amount)
-        {
+        public void set(double amount) {
             this.m_globalExperienceBonus = amount;
         }
 
         /* *** Getters *** */
-        public double get()
-        {
+        public double get() {
             return this.m_globalExperienceBonus;
         }
 
-        @Override
-        public void clear()
-        {
+        @Override public void clear() {
             this.m_globalExperienceBonus = 0.0;
         }
 
-        @Override
-        public String getType()
-        {
+        @Override public String getType() {
             return TYPE_IDENTIFIER;
         }
 
-        @Override
-        public String getData()
-        {
+        @Override public String getData() {
             // TODO This returns the data as a string
             return "";
         }
     }
 
-    public static class Constructor implements AttributeTypeConstructor {
+    public static class Constructor extends AttributeTypeConstructor {
 
         @Override public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException {
             String type = section.getString("type");
-            if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER)) return null;
+            if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER))
+                return null;
 
             String name = section.getString("name");
-            if (name == null) return null;
+            if (name == null)
+                return null;
 
             String descriptor = section.getString("descriptor");
-            if (descriptor == null) return null;
+            if (descriptor == null)
+                return null;
 
             double minMultiplier = section.getDouble("min-multiplier");
             double maxMultiplier = section.getDouble("max-multiplier");
@@ -124,12 +116,16 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
                 Inscription.logger.warning(section.getName() + " : min multiplier is bigger than max chance");
                 return null;
             }
-            double rarityMultiplier = section.getDouble("rarity-multiplier");
 
             ExperienceBonusAttributeType attributeType = new ExperienceBonusAttributeType(name, descriptor);
             attributeType.setMin(minMultiplier);
             attributeType.setMax(maxMultiplier);
+
+            double rarityMultiplier = section.getDouble("rarity-multiplier", 1);
             attributeType.setRarityMultiplier(rarityMultiplier);
+
+            int modelIncrement = section.getInt("model", 0);
+            attributeType.setModelIncrement(modelIncrement);
 
             attributeType.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
             attributeType.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
@@ -139,9 +135,7 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
         @Override public Listener getListener() {
             return new Listener() {
 
-                @EventHandler
-                public void onExperienceChange(PlayerExpChangeEvent event)
-                {
+                @EventHandler public void onExperienceChange(PlayerExpChangeEvent event) {
                     Player player = event.getPlayer();
                     PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
                     CacheData cacheData = playerData.getData(ExperienceBonusAttributeType.TYPE_IDENTIFIER);
@@ -160,10 +154,7 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
                         multipliedExperience += 1;
                     }
                     event.setAmount((int) multipliedExperience);
-                    Inscription.logger.finest(""
-                        + "[PlayerExpChangeEvent] Extra Experience: " + experienceMultiplier + " " +
-                        experience + " -> " + multipliedExperience
-                    );
+                    Inscription.logger.finest("" + "[PlayerExpChangeEvent] Extra Experience: " + experienceMultiplier + " " + experience + " -> " + multipliedExperience);
                 }
             };
         }

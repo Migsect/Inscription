@@ -59,7 +59,7 @@ public class DamageAttributeType extends AttributeType {
         this.max_damage = max_damage;
     }
 
-    public static class Constructor implements AttributeTypeConstructor {
+    public static class Constructor extends AttributeTypeConstructor {
 
         @Override public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException {
             String type = section.getString("type");
@@ -87,10 +87,13 @@ public class DamageAttributeType extends AttributeType {
             String target_entities = section.getString("target-entities");
             String target_materials = section.getString("target-materials");
 
-            DamageAttributeType attribute_type = new DamageAttributeType(name, descriptor, min_damage, max_damage);
-            attribute_type.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
-            attribute_type.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
-            attribute_type.setRarityMultiplier(rarity_mult);
+            DamageAttributeType attributeType = new DamageAttributeType(name, descriptor, min_damage, max_damage);
+            attributeType.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
+            attributeType.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
+            attributeType.setRarityMultiplier(rarity_mult);
+
+            int modelIncrement = section.getInt("model", 0);
+            attributeType.setModelIncrement(modelIncrement);
 
             // Setting all the targeting if there is any
             if (target_entities != null) {
@@ -98,17 +101,17 @@ public class DamageAttributeType extends AttributeType {
                 if (e_class == null) {
                     throw new InvalidConfigurationException("Entitfy class was undefined:" + target_entities);
                 }
-                attribute_type.setTargetEntities(e_class);
+                attributeType.setTargetEntities(e_class);
             }
             if (target_materials != null) {
                 MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(target_materials);
-                attribute_type.setTargetMaterials(m_class);
+                attributeType.setTargetMaterials(m_class);
                 if (m_class == null) {
                     throw new InvalidConfigurationException("Material class was undefined:" + target_materials);
                 }
             }
 
-            return attribute_type;
+            return attributeType;
         }
 
         @Override public Listener getListener() {
