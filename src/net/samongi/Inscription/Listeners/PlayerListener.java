@@ -22,58 +22,46 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayerListener implements Listener {
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event)
-    {
-        Inscription.getInstance().getPlayerManager().onPlayerJoin(event);
+    @EventHandler public void onPlayerJoin(PlayerJoinEvent event) {
+
+        //Inscription.getInstance().getPlayerManager().onPlayerJoin(event);
     }
 
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event)
-    {
-        Inscription.getInstance().getPlayerManager().onPlayerQuit(event);
+    @EventHandler public void onPlayerQuit(PlayerQuitEvent event) {
+
+        //Inscription.getInstance().getPlayerManager().onPlayerQuit(event);
     }
 
-    @EventHandler
-    public void onCraftItem(CraftItemEvent event)
-    {
+    @EventHandler public void onCraftItem(CraftItemEvent event) {
         if (event.isCancelled()) {
             return;
         }
-        Inscription.getInstance().getExperienceManager().onCraftItem(event);
+        // Inscription.getInstance().getExperienceManager().onCraftItem(event);
     }
 
-    @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event)
-    {
+    @EventHandler public void onInventoryClose(InventoryCloseEvent event) {
+
         GlyphInventory.onInventoryClose(event);
     }
 
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent event)
-    {
+    @EventHandler public void onInventoryClick(InventoryClickEvent event) {
         if (event.isCancelled()) {
             return;
         }
         GlyphInventory.onInventoryClick(event);
     }
 
-    @EventHandler
-    public void onPlayerInteractEvent(PlayerInteractEvent event)
-    {
+    @EventHandler public void onPlayerInteractEvent(PlayerInteractEvent event) {
         onPlayerInteractEnchantingBlock(event);
-        Inscription.getInstance().getLootHandler().onPlayerInteractEvent(event);
+        //Inscription.getInstance().getLootManager().onPlayerInteractEvent(event);
     }
 
-    @EventHandler
-    public void onPlayerExperienceOverflowEvent(PlayerExperienceOverflowEvent event)
-    {
-        Inscription.getInstance().getLootHandler().onPlayerExperienceOverflowEvent(event);
+    @EventHandler public void onPlayerExperienceOverflowEvent(PlayerExperienceOverflowEvent event) {
+        //Inscription.getInstance().getLootManager().onPlayerExperienceOverflowEvent(event);
 
     }
 
-    private void onPlayerInteractEnchantingBlock(PlayerInteractEvent event)
-    {
+    private void onPlayerInteractEnchantingBlock(PlayerInteractEvent event) {
         if (event.useInteractedBlock() == Event.Result.DENY) {
             return;
         }
@@ -91,16 +79,12 @@ public class PlayerListener implements Listener {
         Material clickedMaterial = clickedBlock.getType();
         Material handMaterial = handItem.getType();
 
-        if ((clickedMaterial.equals(Material.ENCHANTING_TABLE) || clickedMaterial.equals(Material.LECTERN)) &&
-            handMaterial.equals(Material.PAPER))
-        {
+        if ((clickedMaterial.equals(Material.ENCHANTING_TABLE) || clickedMaterial.equals(Material.LECTERN)) && handMaterial.equals(Material.PAPER)) {
             PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
             GlyphInventory inventory = data.getGlyphInventory();
             BukkitRunnable task = new BukkitRunnable() {
 
-                @Override
-                public void run()
-                {
+                @Override public void run() {
                     player.openInventory(inventory.getInventory());
                 }
             };

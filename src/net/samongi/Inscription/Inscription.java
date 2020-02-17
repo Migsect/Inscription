@@ -11,6 +11,7 @@ import net.samongi.Inscription.Commands.CommandReload;
 import net.samongi.Inscription.Experience.ExperienceManager;
 import net.samongi.Inscription.Glyphs.Attributes.AttributeManager;
 import net.samongi.Inscription.Glyphs.Attributes.Types.*;
+import net.samongi.Inscription.Glyphs.Generator.GeneratorManager;
 import net.samongi.Inscription.Listeners.BlockListener;
 import net.samongi.Inscription.Listeners.EntityListener;
 import net.samongi.Inscription.Listeners.PlayerListener;
@@ -30,23 +31,27 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class Inscription extends JavaPlugin {
 
-    private static final String player_data_directory = "player-data";
-    private static final String type_class_directory = "type-classes";
-    private static final String attribute_directory = "attributes";
-    private static final String generators_directory = "generators";
+    //----------------------------------------------------------------------------------------------------------------//
 
-    private static final String experience_config_file = "experience.yml";
-    private static final String drops_config_file = "drops.yml";
+    private static final String s_attributeDirectory = "attributes";
+    private static final String s_experienceDirectory = "experience";
+    private static final String s_generatorsDirectory = "generators";
+    private static final String s_lootDirectory = "loot";
+    private static final String s_playerDataDirectory = "player-data";
+    private static final String s_typeClassDirectory = "type-classes";
+
+    @Deprecated private static final String experience_config_file = "experience.yml";
+    @Deprecated private static final String drops_config_file = "drops.yml";
+    private static final String trackerDataFile = "tracker.dat";
 
     private static Inscription instance;
-
-    public static Inscription getInstance()
-    {
+    public static Inscription getInstance() {
         return Inscription.instance;
     }
 
     public static BetterLogger logger;
 
+    //----------------------------------------------------------------------------------------------------------------//
     private CommandHandler m_commandHandler;
 
     private TypeClassManager m_typeClassManager = null;
@@ -54,64 +59,80 @@ public class Inscription extends JavaPlugin {
     private AttributeManager m_attributeManager = null;
     private LootManager m_lootManager = null;
     private PlayerManager m_playerManager = null;
+    private GeneratorManager m_generatorManager = null;
 
-    public Inscription()
-    {
+    //----------------------------------------------------------------------------------------------------------------//
+    public Inscription() {
         Inscription.instance = this;
         Inscription.logger = new BetterLogger(this);
     }
-
-    public void setupTypeClassManager()
-    {
-        this.m_typeClassManager = new TypeClassManager();
-        this.m_typeClassManager.registerEntityClass(EntityClass.getGlobal("GLOBAL"));
-        this.m_typeClassManager.registerEntityClass(EntityClass.getGlobalLiving("GLOBAL_LIVING"));
-        this.m_typeClassManager.registerMaterialClass(MaterialClass.getGlobal("GLOBAL"));
-        this.m_typeClassManager.parse(new File(this.getDataFolder(), type_class_directory));
+    //----------------------------------------------------------------------------------------------------------------//
+    public void setupLogger() {
+        Level logLevel = Level.parse(this.getConfig().getString("loggingLevel", Level.INFO.toString()).toUpperCase());
+        logger.setLevel(logLevel);
+        logger.info("Logger set to: " + logger.getLevel().toString());
     }
 
-    private void setupExperienceManager()
-    {
-        this.m_experienceManager = new ExperienceManager();
-        ConfigFile experience_config = new ConfigFile(new File(this.getDataFolder(), experience_config_file));
-        this.m_experienceManager.parse(experience_config);
-        this.m_experienceManager.loadTracker(new File(this.getDataFolder(), "tracker.dat"));
-        this.m_experienceManager.configureTracker(this.getConfig());
-    }
-
-    private void setupAttributeManager()
-    {
+    //----------------------------------------------------------------------------------------------------------------//
+    private void setupAttributeManager() {
         this.m_attributeManager = new AttributeManager();
         this.createAttributeConstructor();
-        this.m_attributeManager.parse(new File(this.getDataFolder(), attribute_directory));
+        this.m_attributeManager.parse(new File(this.getDataFolder(), s_attributeDirectory));
     }
 
-    private void setupLootManager()
-    {
+    private void setupExperienceManager() {
+        m_experienceManager = new ExperienceManager();
+        // ConfigFile experience_config = new ConfigFile();
+        m_experienceManager.parse(new File(this.getDataFolder(), s_experienceDirectory));
+        m_experienceManager.loadTracker(new File(this.getDataFolder(), trackerDataFile));
+        m_experienceManager.configureTracker(this.getConfig());
+
+        getServer().getPluginManager().registerEvents(m_experienceManager, this);
+    }
+
+    private void setupGeneratorManager() {
         if (m_typeClassManager == null || m_attributeManager == null) {
             logger.severe("LootManager was setup out of order!");
         }
-        this.m_lootManager = new LootManager();
-        this.m_lootManager.parseGenerators(new File(this.getDataFolder(), generators_directory));
-        this.m_lootManager.parseDrops(new File(this.getDataFolder(), drops_config_file));
-
-        boolean dropConsumables = this.getConfig().getBoolean("drop-consumables", false);
-        this.m_lootManager.setDropConsumables(dropConsumables);
+        this.m_generatorManager = new GeneratorManager();
+        this.m_generatorManager.parse(new File(this.getDataFolder(), Inscription.s_generatorsDirectory));
     }
 
-    private void setupPlayerManager()
-    {
-        File player_data_location = new File(this.getDataFolder(), player_data_directory);
-        this.m_playerManager = new PlayerManager(player_data_location);
+    private void setupLootManager() {
+        if (m_typeClassManager == null || m_attributeManager == null) {
+            logger.severe("LootManager was setup out of order!");
+        }
+        m_lootManager = new LootManager();
+        // m_lootManager.parseGenerators(new File(getDataFolder(), Inscription.s_generatorsDirectoryirectory));
+        m_lootManager.parse(new File(getDataFolder(), s_lootDirectory));
+
+        boolean dropConsumables = getConfig().getBoolean("drop-consumables", false);
+        m_lootManager.setDropConsumables(dropConsumables);
+
+        getServer().getPluginManager().registerEvents(m_lootManager, this);
+    }
+
+    private void setupPlayerManager() {
+        File playerDataLocation = new File(this.getDataFolder(), s_playerDataDirectory);
+        this.m_playerManager = new PlayerManager(playerDataLocation);
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             this.getPlayerManager().loadPlayer(player);
         }
+
+        getServer().getPluginManager().registerEvents(m_playerManager, this);
     }
 
-    @Override
-    public void onEnable()
-    {
+    public void setupTypeClassManager() {
+        this.m_typeClassManager = new TypeClassManager();
+        this.m_typeClassManager.registerEntityClass(EntityClass.getGlobal("GLOBAL"));
+        this.m_typeClassManager.registerEntityClass(EntityClass.getGlobalLiving("GLOBAL_LIVING"));
+        this.m_typeClassManager.registerMaterialClass(MaterialClass.getGlobal("GLOBAL"));
+        this.m_typeClassManager.parse(new File(this.getDataFolder(), s_typeClassDirectory));
+    }
+
+    //----------------------------------------------------------------------------------------------------------------//
+    @Override public void onEnable() {
         /* Configuration handling */
         File config_file = new File(this.getDataFolder(), "config.yml");
         if (!config_file.exists()) {
@@ -120,14 +141,12 @@ public class Inscription extends JavaPlugin {
             this.saveConfig();
         }
 
-        /* Setting up the log level */
-        Level logLevel = Level.parse(this.getConfig().getString("loggingLevel", Level.INFO.toString()).toUpperCase());
-        logger.setLevel(logLevel);
-        logger.info("Logger set to: " + logger.getLevel().toString());
+        setupLogger();
 
         setupTypeClassManager();
         setupExperienceManager();
         setupAttributeManager();
+        setupGeneratorManager();
         setupLootManager();  // Should always occur after attribute and type class manager
         setupPlayerManager();
 
@@ -136,16 +155,16 @@ public class Inscription extends JavaPlugin {
 
         // Loading all the player profiles again
     }
-    @Override
-    public void onDisable()
-    {
+
+    @Override public void onDisable() {
         for (Player p : Bukkit.getOnlinePlayers())
             this.getPlayerManager().unloadPlayer(p);
         this.getExperienceManager().saveTracker(new File(this.getDataFolder(), "tracker.dat"));
     }
 
-    private void createCommands()
-    {
+    //----------------------------------------------------------------------------------------------------------------//
+
+    private void createCommands() {
         this.m_commandHandler = new CommandHandler(this);
         this.m_commandHandler.registerCommand(new CommandHelp("inscription", this.m_commandHandler));
         this.m_commandHandler.registerCommand(new CommandExperience("inscription experience"));
@@ -153,16 +172,14 @@ public class Inscription extends JavaPlugin {
         this.m_commandHandler.registerCommand(new CommandReload("inscription reload"));
         this.m_commandHandler.registerCommand(new CommandGenerate("inscription generate"));
     }
-    private void createListeners()
-    {
+    private void createListeners() {
         PluginManager pm = this.getServer().getPluginManager();
         pm.registerEvents(new BlockListener(), this);
         pm.registerEvents(new EntityListener(), this);
         pm.registerEvents(new PlayerListener(), this);
     }
 
-    public void createAttributeConstructor()
-    {
+    public void createAttributeConstructor() {
         this.m_attributeManager.registerConstructor(new DamageAttributeType.Constructor());
         this.m_attributeManager.registerConstructor(new BlockBonusAttributeType.Constructor());
         this.m_attributeManager.registerConstructor(new DurabilityAttributeType.Constructor());
@@ -171,24 +188,23 @@ public class Inscription extends JavaPlugin {
         this.m_attributeManager.registerConstructor(new DamageReductionAttributeType.Constructor());
     }
 
-    public LootManager getLootHandler()
-    {
+    //----------------------------------------------------------------------------------------------------------------//
+    public LootManager getLootManager() {
         return this.m_lootManager;
     }
-    public PlayerManager getPlayerManager()
-    {
+    public GeneratorManager getGeneratorManager() {
+        return this.m_generatorManager;
+    }
+    public PlayerManager getPlayerManager() {
         return this.m_playerManager;
     }
-    public ExperienceManager getExperienceManager()
-    {
+    public ExperienceManager getExperienceManager() {
         return this.m_experienceManager;
     }
-    public AttributeManager getAttributeManager()
-    {
+    public AttributeManager getAttributeManager() {
         return this.m_attributeManager;
     }
-    public TypeClassManager getTypeClassManager()
-    {
+    public TypeClassManager getTypeClassManager() {
         return this.m_typeClassManager;
     }
 }

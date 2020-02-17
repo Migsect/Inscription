@@ -9,12 +9,13 @@ import java.util.Set;
 
 import net.samongi.Inscription.Inscription;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
+import net.samongi.SamongiLib.Configuration.ConfigurationParsing;
 import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.PluginManager;
 
-public class AttributeManager {
+public class AttributeManager implements ConfigurationParsing {
 
     private Map<String, AttributeType> attributes = new HashMap<>();
     private List<AttributeTypeConstructor> attribute_constructors = new ArrayList<>();
@@ -24,8 +25,7 @@ public class AttributeManager {
      *
      * @param attribute The attribute type to register
      */
-    public void register(AttributeType attribute)
-    {
+    public void register(AttributeType attribute) {
         // Adding the attribute to the mapping
         this.attributes.put(attribute.getName().toUpperCase().replace(" ", "_"), attribute);
 
@@ -38,8 +38,7 @@ public class AttributeManager {
      * @param s A string used to identify the attribute type
      * @return The attribute type if found, otherwise null
      */
-    public AttributeType getAttributeType(String s)
-    {
+    public AttributeType getAttributeType(String s) {
         return this.attributes.get(s.toUpperCase().replace(" ", "_"));
     }
 
@@ -51,54 +50,83 @@ public class AttributeManager {
      *
      * @param constructor
      */
-    public void registerConstructor(AttributeTypeConstructor constructor)
-    {
+    public void registerConstructor(AttributeTypeConstructor constructor) {
         this.attribute_constructors.add(constructor);
         // Also registering the listener that handles the attribute
-        PluginManager manager = Inscription.getInstance().getServer().getPluginManager();
-        manager.registerEvents(constructor.getListener(), Inscription.getInstance());
+        PluginManager pluginManager = Inscription.getInstance().getServer().getPluginManager();
+        pluginManager.registerEvents(constructor.getListener(), Inscription.getInstance());
     }
 
-    public Attribute parseLoreLine(String line)
-    {
-        for (String k : this.attributes.keySet()) {
-            AttributeType p = this.attributes.get(k);
-            Attribute result = p.parse(line);
-            if (result == null) continue;
+    public Attribute parseLoreLine(String line) {
+        for (String key : this.attributes.keySet()) {
+            AttributeType attributeType = this.attributes.get(key);
+            Attribute result = attributeType.parse(line);
+            if (result == null) {
+                continue;
+            }
             return result;
         }
         return null;
     }
 
+    @Override public boolean parseConfigFile(File file, ConfigFile config) {
+        Inscription.logger.info("Parsing Attribute Configurations in: '" + file.getAbsolutePath() + "'");
+        ConfigurationSection root = config.getConfig();// .getConfigurationSection("attributes");
+
+        Set<String> rootKeys = root.getKeys(false);
+        for (String key : rootKeys) {
+            if (!root.isConfigurationSection(key)) {
+                Inscription.logger.warning("'{0} is not a configuration section'");
+                continue;
+
+            }
+
+            AttributeType type = this.parseSection(root.getConfigurationSection(key));
+            if (type == null) {
+                Inscription.logger.warning(" - Null section found: '" + key + "'");
+                continue;
+            }
+
+            this.register(type);
+            Inscription.logger.info(" - Registered: '" + type.getName() + "'");
+        }
+
+        return true;
+    }
+
     /**
      * Parsing all the files for attributes
      *
-     * @param dir
+     * @param directory
      */
-    public void parse(File directory)
-    {
-        if (!directory.exists()) return; // TODO error message
-        if (!directory.isDirectory()) return; // TODO error message
-
-        Inscription.logger.fine("Parsing Attribute Configurations in: '" + directory.getAbsolutePath() + "'");
-
-        File[] files = directory.listFiles();
-        for (File f : files) {
-            Inscription.logger.fine("  Parsing: '" + f.getAbsolutePath() + "'");
-            ConfigFile config = new ConfigFile(f);
-            ConfigurationSection root = config.getConfig().getConfigurationSection("attributes");
-            if (root == null) continue;
-
-            Set<String> root_keys = root.getKeys(false);
-            for (String k : root_keys) {
-                Inscription.logger.fine("  - Parsing Section: '" + k + "'");
-                AttributeType type = this.parseSection(root.getConfigurationSection(k));
-                if (type == null) continue;
-                Inscription.logger.fine("Registering: '" + type.getName() + "'");
-                this.register(type);
-            }
-        }
-    }
+    //    public void parse(File directory) {
+    //        if (!directory.exists()) {
+    //            return; // TODO error message
+    //        }
+    //        if (!directory.isDirectory()) {
+    //            return; // TODO error message
+    //        }
+    //        Inscription.logger.fine("Parsing Attribute Configurations in: '" + directory.getAbsolutePath() + "'");
+    //
+    //        File[] files = directory.listFiles();
+    //        for (File f : files) {
+    //            Inscription.logger.fine("  Parsing: '" + f.getAbsolutePath() + "'");
+    //            ConfigFile config = new ConfigFile(f);
+    //            ConfigurationSection root = config.getConfig().getConfigurationSection("attributes");
+    //            if (root == null)
+    //                continue;
+    //
+    //            Set<String> root_keys = root.getKeys(false);
+    //            for (String k : root_keys) {
+    //                Inscription.logger.fine("  - Parsing Section: '" + k + "'");
+    //                AttributeType type = this.parseSection(root.getConfigurationSection(k));
+    //                if (type == null)
+    //                    continue;
+    //                Inscription.logger.fine("Registering: '" + type.getName() + "'");
+    //                this.register(type);
+    //            }
+    //        }
+    //    }
 
     /**
      * Will parse the section creating an attribute type based off the section.
@@ -106,19 +134,19 @@ public class AttributeManager {
      * @param section The section of a configuration to parse
      * @return An attribute Type or null if one could not be made.
      */
-    public AttributeType parseSection(ConfigurationSection section)
-    {
-        for (AttributeTypeConstructor c : attribute_constructors) {
+    public AttributeType parseSection(ConfigurationSection section) {
+        for (AttributeTypeConstructor constructor : attribute_constructors) {
             AttributeType type = null;
-
             try {
-                type = c.construct(section);
+                type = constructor.construct(section);
             }
-            catch (InvalidConfigurationException e) {
-                Inscription.logger.warning(e.getMessage());
+            catch (InvalidConfigurationException exception) {
+                Inscription.logger.warning(exception.getMessage());
             }
 
-            if (type == null) continue;
+            if (type == null) {
+                continue;
+            }
             return type;
         }
         Inscription.logger.fine("Section '" + section.getName() + "' returned null type from parsing.");

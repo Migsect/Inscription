@@ -6,6 +6,7 @@ import java.util.*;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
+import net.samongi.SamongiLib.Configuration.ConfigurationParsing;
 import net.samongi.SamongiLib.Items.Comparators.BlockDataAgeableComparator;
 import net.samongi.SamongiLib.Items.Comparators.BlockDataComparator;
 import net.samongi.SamongiLib.Items.Comparators.BlockDataGroupComparator;
@@ -19,10 +20,10 @@ import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.craftbukkit.libs.jline.internal.Nullable;
+import org.bukkit.entity.*;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
@@ -33,11 +34,19 @@ import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.material.MaterialData;
+import org.bukkit.metadata.MetadataValue;
+import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import javax.annotation.Nonnull;
 
-public class ExperienceManager {
+public class ExperienceManager implements ConfigurationParsing, Listener {
+
+    private static final String ENTITY_DAMAGE_SECTION_KEY = "entity-damage";
+    private static final String ENTITY_KILL_SECTION_KEY = "entity-kill";
+    private static final String MATERIAL_BREAK_SECTION_KEY = "material-break";
+    private static final String MATERIAL_CRAFT_SECTION_KEY = "material-craft";
+    private static final String MATERIAL_PLACE_SECTION_KEY = "material-place";
 
     // Experience mapping for entity related events
     private Map<EntityType, Map<String, Integer>> experiencePerKill = new HashMap<>();
@@ -48,10 +57,7 @@ public class ExperienceManager {
     //        new BlockDataAgeableComparator()
     //    });
     // Experience mapping for material related events
-    private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{
-        MaskedBlockData.Mask.MATERIAL,
-        MaskedBlockData.Mask.AGEABLE
-    };
+    private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
     private Map<MaskedBlockData, Map<String, Integer>> experiencePerBreak = new HashMap<>();
     private Map<MaskedBlockData, Map<String, Integer>> experiencePerPlace = new HashMap<>();
     private Map<Material, Map<String, Integer>> experiencePerCraft = new HashMap<>();
@@ -59,7 +65,7 @@ public class ExperienceManager {
     // Tracks blocks that wouldn't be valid for experience because they may have been used to cheat.
     private BlockTracker tracker;
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // ---------------------------------------------------------------------------------------------------------------//
     /**
      * Method that encompasses logic to be handled by the experience manager
      * when another entity damages another. Generally for player experience
@@ -67,18 +73,27 @@ public class ExperienceManager {
      *
      * @param event
      */
-    public void onEntityDamageEntity(EntityDamageByEntityEvent event)
-    {
+    @EventHandler public void onEntityDamageEntity(EntityDamageByEntityEvent event) {
         Entity damaged = event.getEntity();
         Entity damager = event.getDamager();
+
+        // If the damage is from the arrow, we'll promote the shooter to the damager.
+        if (damager instanceof Arrow) {
+            ProjectileSource shooter = ((Arrow) damager).getShooter();
+            if (!(shooter instanceof Entity)) {
+                return;
+            }
+            damager = (Entity) shooter;
+        }
+
+        // We need to see if the entity is a player or arrow (arrow might be players)
         if (!(damager instanceof Player)) {
             return;
         }
 
         PlayerData data = Inscription.getInstance().getPlayerManager().getData((Player) damager);
         if (data == null) {
-            Inscription.logger.severe("Player data return null on call for: " + damager.getName() + ":"
-                + damager.getUniqueId());
+            Inscription.logger.severe("Player data return null on call for: " + damager.getName() + ":" + damager.getUniqueId());
             return;
         }
 
@@ -86,15 +101,15 @@ public class ExperienceManager {
         double damageDealt = event.getFinalDamage();
 
         Map<String, Integer> experienceMapping = this.getExpPerDamage(damagedType);
-        if (experienceMapping == null) return;
+        if (experienceMapping == null)
+            return;
 
         for (String key : experienceMapping.keySet()) {
             int experience = (int) Math.ceil(experienceMapping.get(key) * damageDealt);
             data.getGlyphInventory().distributeExperience(key, experience);
         }
     }
-    public void onEntityDeath(EntityDeathEvent event)
-    {
+    @EventHandler public void onEntityDeath(EntityDeathEvent event) {
         LivingEntity killed = event.getEntity();
         EntityDamageEvent damageEvent = killed.getLastDamageCause();
         if (!(damageEvent instanceof EntityDamageByEntityEvent)) {
@@ -104,6 +119,16 @@ public class ExperienceManager {
 
         Entity damaged = entityDamageEvent.getEntity();
         Entity damager = entityDamageEvent.getDamager();
+
+        // If the damage is from the arrow, we'll promote the shooter to the damager.
+        if (damager instanceof Arrow) {
+            ProjectileSource shooter = ((Arrow) damager).getShooter();
+            if (!(shooter instanceof Entity)) {
+                return;
+            }
+            damager = (Entity) shooter;
+        }
+
         if (!(damager instanceof Player)) {
             return;
         }
@@ -126,9 +151,7 @@ public class ExperienceManager {
             data.getGlyphInventory().distributeExperience(key, experience);
         }
     }
-
-    public void onBlockBreak(BlockBreakEvent event)
-    {
+    @EventHandler public void onBlockBreak(BlockBreakEvent event) {
         Location location = event.getBlock().getLocation();
         Material material = event.getBlock().getType();
         if (this.tracker.isTracked(material) && this.tracker.isPlaced(location)) {
@@ -165,8 +188,7 @@ public class ExperienceManager {
             }
         }
     }
-    public void onBlockPlace(BlockPlaceEvent event)
-    {
+    @EventHandler public void onBlockPlace(BlockPlaceEvent event) {
         BlockData blockData = event.getBlock().getBlockData();
         Player player = event.getPlayer();
 
@@ -186,10 +208,9 @@ public class ExperienceManager {
             data.getGlyphInventory().distributeExperience(key, exp);
         }
     }
-
-    public void onCraftItem(CraftItemEvent event)
-    {
-        if (event.isCancelled()) return;
+    @EventHandler public void onCraftItem(CraftItemEvent event) {
+        if (event.isCancelled())
+            return;
 
         Recipe recipe = event.getRecipe(); // getting the recipe
         ItemStack result = recipe.getResult(); // getting the result of the craft event
@@ -219,9 +240,7 @@ public class ExperienceManager {
         if (event.isShiftClick()) {
             BukkitRunnable task = new BukkitRunnable() {
 
-                @Override
-                public void run()
-                {
+                @Override public void run() {
                     final ItemStack[] new_contents = player.getInventory().getContents();
 
                     // We are now going to count the number of items that the player has crafted.
@@ -266,8 +285,7 @@ public class ExperienceManager {
         } else {
             PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
             if (data == null) {
-                Inscription.logger.severe("Player data return null on call for: " + player.getName() + ":"
-                    + player.getUniqueId());
+                Inscription.logger.severe("Player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
                 return;
             }
 
@@ -277,54 +295,47 @@ public class ExperienceManager {
             }
         }
     }
-
-    public void onEnchantItem(EnchantItemEvent event)
-    {
+    @EventHandler public void onEnchantItem(EnchantItemEvent event) {
         // TODO
     }
-    public void onAnvilRepair()
-    {
-    } // TODO Anvil events are most likely an inventory interact event
+    //    @EventHandler public void onAnvilRepair() {
+    //    } // TODO Anvil events are most likely an inventory interact event
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-    public void setExpPerKill(EntityType type, String experienceType, int amount)
-    {
+    // ---------------------------------------------------------------------------------------------------------------//
+    public void setExpPerKill(EntityType type, String experienceType, int amount) {
         if (!this.experiencePerKill.containsKey(type)) {
             this.experiencePerKill.put(type, new HashMap<String, Integer>());
         }
         this.experiencePerKill.get(type).put(experienceType, amount);
     }
-    public Map<String, Integer> getExpPerKill(EntityType type)
-    {
+    public Map<String, Integer> getExpPerKill(EntityType type) {
         if (!this.experiencePerKill.containsKey(type)) {
             return new HashMap<>();
         }
         return this.experiencePerKill.get(type);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-    public void setExpPerDamage(EntityType type, String experienceType, int amount)
-    {
-        if (!this.experiencePerDamage.containsKey(type)) this.experiencePerDamage.put(type, new HashMap<String, Integer>());
+    // ---------------------------------------------------------------------------------------------------------------//
+    public void setExpPerDamage(EntityType type, String experienceType, int amount) {
+        if (!this.experiencePerDamage.containsKey(type))
+            this.experiencePerDamage.put(type, new HashMap<String, Integer>());
         this.experiencePerDamage.get(type).put(experienceType, amount);
     }
-    public Map<String, Integer> getExpPerDamage(EntityType type)
-    {
-        if (!this.experiencePerDamage.containsKey(type)) return new HashMap<>();
+    public Map<String, Integer> getExpPerDamage(EntityType type) {
+        if (!this.experiencePerDamage.containsKey(type))
+            return new HashMap<>();
         return this.experiencePerDamage.get(type);
     }
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // ---------------------------------------------------------------------------------------------------------------//
 
-    public void setExpPerBreak(BlockData data, String experienceType, int amount)
-    {
+    public void setExpPerBreak(BlockData data, String experienceType, int amount) {
         MaskedBlockData key = new MaskedBlockData(data, BLOCKDATA_MASKS);
         if (!this.experiencePerBreak.containsKey(key)) {
             this.experiencePerBreak.put(key, new HashMap<String, Integer>());
         }
         this.experiencePerBreak.get(key).put(experienceType, amount);
     }
-    public Map<String, Integer> getExpPerBreak(BlockData data)
-    {
+    public Map<String, Integer> getExpPerBreak(BlockData data) {
         MaskedBlockData key = new MaskedBlockData(data, BLOCKDATA_MASKS);
         if (!this.experiencePerBreak.containsKey(key)) {
             return new HashMap<>();
@@ -332,18 +343,16 @@ public class ExperienceManager {
         return this.experiencePerBreak.get(key);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // ---------------------------------------------------------------------------------------------------------------//
 
-    public void setExpPerPlace(BlockData data, String experienceType, int amount)
-    {
+    public void setExpPerPlace(BlockData data, String experienceType, int amount) {
         MaskedBlockData key = new MaskedBlockData(data, BLOCKDATA_MASKS);
         if (!this.experiencePerPlace.containsKey(key)) {
             this.experiencePerPlace.put(key, new HashMap<String, Integer>());
         }
         this.experiencePerPlace.get(key).put(experienceType, amount);
     }
-    public Map<String, Integer> getExpPerPlace(BlockData data)
-    {
+    public Map<String, Integer> getExpPerPlace(BlockData data) {
         MaskedBlockData key = new MaskedBlockData(data, BLOCKDATA_MASKS);
         if (!this.experiencePerPlace.containsKey(key)) {
             return new HashMap<>();
@@ -351,22 +360,21 @@ public class ExperienceManager {
         return this.experiencePerPlace.get(key);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // ---------------------------------------------------------------------------------------------------------------//
 
-    public void setExpPerCraft(Material data, String experienceType, int amount)
-    {
-        if (!this.experiencePerCraft.containsKey(data)) this.experiencePerCraft.put(data, new HashMap<String, Integer>());
+    public void setExpPerCraft(Material data, String experienceType, int amount) {
+        if (!this.experiencePerCraft.containsKey(data))
+            this.experiencePerCraft.put(data, new HashMap<String, Integer>());
         this.experiencePerCraft.get(data).put(experienceType, amount);
     }
-    public Map<String, Integer> getExpPerCraft(Material data)
-    {
-        if (!this.experiencePerCraft.containsKey(data)) return new HashMap<>();
+    public Map<String, Integer> getExpPerCraft(Material data) {
+        if (!this.experiencePerCraft.containsKey(data))
+            return new HashMap<>();
         return this.experiencePerCraft.get(data);
     }
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // ---------------------------------------------------------------------------------------------------------------//
 
-    public static BlockData parseBlockData(@Nonnull String parseable)
-    {
+    public static BlockData parseBlockData(@Nonnull String parseable) {
         try {
             Material materialType = Material.valueOf(parseable);
             return Bukkit.createBlockData(materialType);
@@ -384,8 +392,9 @@ public class ExperienceManager {
         Inscription.logger.warning("Could not find type for: " + parseable);
         return null;
     }
-    public static Material parseMaterialData(@Nonnull String parseable)
-    {
+
+    public static Material parseMaterialData(@Nonnull String parseable) {
+
         try {
             Material materialType = Material.valueOf(parseable);
             return materialType;
@@ -397,13 +406,21 @@ public class ExperienceManager {
         return null;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // ---------------------------------------------------------------------------------------------------------------//
 
-    public void parseEntityDamageReward(@Nonnull ConfigurationSection section) {
+    public boolean parseEntityDamageReward(@Nullable ConfigurationSection section) {
+        if (section == null) {
+            return false;
+        }
+
         Inscription.logger.fine("Parsing entity damage experience rewards...");
 
         Set<String> entity_damage_keys = section.getKeys(false);
         for (String key : entity_damage_keys) {
+            if (!section.isConfigurationSection(key)) {
+                Inscription.logger.warning(String.format("'%s is not a configuration section'", key));
+                continue;
+            }
 
             EntityType entityType;
             try {
@@ -433,14 +450,23 @@ public class ExperienceManager {
 
             Inscription.logger.fine("  Parsed: " + key + " registered: " + entityType.toString());
         }
+
+        return true;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-    public void parseEntityKillReward(@Nonnull ConfigurationSection section) {
+    public boolean parseEntityKillReward(@Nullable ConfigurationSection section) {
+        if (section == null) {
+            return false;
+        }
+
         Inscription.logger.fine("Parsing entity kill experience rewards...");
 
-        Set<String> entity_damage_keys = section.getKeys(false);
-        for (String key : entity_damage_keys) {
+        Set<String> entityDamageKeys = section.getKeys(false);
+        for (String key : entityDamageKeys) {
+            if (!section.isConfigurationSection(key)) {
+                Inscription.logger.warning(String.format("'%s is not a configuration section'", key));
+                continue;
+            }
 
             EntityType entityType;
             try {
@@ -470,15 +496,23 @@ public class ExperienceManager {
 
             Inscription.logger.fine("  Parsed: " + key + " registered: " + entityType.toString());
         }
+
+        return true;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-    public void parseMaterialBreakReward(@Nonnull ConfigurationSection section)
-    {
+    public boolean parseMaterialBreakReward(@Nullable ConfigurationSection section) {
+        if (section == null) {
+            return false;
+        }
+
         Inscription.logger.fine("Parsing material break experience rewards");
 
         Set<String> blockDataKeys = section.getKeys(false);
         for (String key : blockDataKeys) {
+            if (!section.isConfigurationSection(key)) {
+                Inscription.logger.warning(String.format("'%s is not a configuration section'", key));
+                continue;
+            }
             BlockData blockData = parseBlockData(key);
             if (blockData == null) {
                 Inscription.logger.warning("  " + key + " is not valid material data.");
@@ -498,15 +532,23 @@ public class ExperienceManager {
 
             Inscription.logger.fine("  Parsed: " + key + " registered: " + blockData.getAsString(true));
         }
+
+        return true;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-    public void parseMaterialCraft(@Nonnull ConfigurationSection section)
-    {
+    public boolean parseMaterialCraft(@Nullable ConfigurationSection section) {
+        if (section == null) {
+            return false;
+        }
+
         Inscription.logger.fine("Parsing material craft experience rewards");
 
         Set<String> blockDataKeys = section.getKeys(false);
         for (String key : blockDataKeys) {
+            if (!section.isConfigurationSection(key)) {
+                Inscription.logger.warning(String.format("'%s is not a configuration section'", key));
+                continue;
+            }
             Material materialData = parseMaterialData(key);
             if (materialData == null) {
                 Inscription.logger.warning("  " + key + " is not valid material data.");
@@ -526,15 +568,23 @@ public class ExperienceManager {
 
             Inscription.logger.fine("  Parsed: " + key + " registered: " + materialData.toString());
         }
+
+        return true;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-    public void parseMaterialPlace(@Nonnull ConfigurationSection section)
-    {
+    public boolean parseMaterialPlace(@Nullable ConfigurationSection section) {
+        if (section == null) {
+            return false;
+        }
+
         Inscription.logger.fine("Parsing material place experience rewards");
 
         Set<String> blockDataKeys = section.getKeys(false);
         for (String key : blockDataKeys) {
+            if (!section.isConfigurationSection(key)) {
+                Inscription.logger.warning(String.format("'%s is not a configuration section'", key));
+                continue;
+            }
             BlockData blockData = parseBlockData(key);
             if (blockData == null) {
                 Inscription.logger.warning("  " + key + " is not valid material data.");
@@ -554,60 +604,130 @@ public class ExperienceManager {
 
             Inscription.logger.fine("  Parsed: " + key + " registered: " + blockData.getAsString(true));
         }
+
+        return true;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // ---------------------------------------------------------------------------------------------------------------//
 
-    /**
-     * Parses a file with experience mappings.
-     *
-     * @param config A filling with experience mappings
-     */
-    public void parse(@Nonnull ConfigFile config) {
+    @Override public boolean parseConfigFile(@Nonnull File file, @Nonnull ConfigFile config) {
+        Inscription.logger.info("Parsing TypeClass Configurations in: '" + file.getAbsolutePath() + "'");
         FileConfiguration root = config.getConfig();
 
-        ConfigurationSection entityDamage = root.getConfigurationSection("entity-damage");
-        if (entityDamage != null) {
-            parseEntityDamageReward(entityDamage);
-        } else {
-            Inscription.logger.warning("'entity-damage' was not defined.");
+        boolean parsedSomething = false;
+        if (parseEntityDamageReward(root.getConfigurationSection(ENTITY_DAMAGE_SECTION_KEY))) {
+            Inscription.logger.info(String.format(" - Registered: '%s'", ENTITY_DAMAGE_SECTION_KEY));
+            parsedSomething = true;
+        }
+        if (parseEntityKillReward(root.getConfigurationSection(ENTITY_KILL_SECTION_KEY))) {
+            Inscription.logger.info(String.format(" - Registered: '%s'", ENTITY_KILL_SECTION_KEY));
+            parsedSomething = true;
+        }
+        if (parseMaterialBreakReward(root.getConfigurationSection(MATERIAL_BREAK_SECTION_KEY))) {
+            Inscription.logger.info(String.format(" - Registered: '%s'", MATERIAL_BREAK_SECTION_KEY));
+            parsedSomething = true;
+        }
+        if (parseMaterialCraft(root.getConfigurationSection(MATERIAL_CRAFT_SECTION_KEY))) {
+            Inscription.logger.info(String.format(" - Registered: '%s'", MATERIAL_CRAFT_SECTION_KEY));
+            parsedSomething = true;
+        }
+        if (parseMaterialPlace(root.getConfigurationSection(MATERIAL_PLACE_SECTION_KEY))) {
+            Inscription.logger.info(String.format(" - Registered: '%s'", MATERIAL_PLACE_SECTION_KEY));
+            parsedSomething = true;
         }
 
-        ConfigurationSection entityKill = root.getConfigurationSection("entity-kill");
-        if (entityKill != null) {
-            parseEntityKillReward(entityKill);
-        } else {
-            Inscription.logger.warning("'entity-kill' was not defined.");
+        if (!parsedSomething) {
+            Inscription.logger.warning(String.format("Didn't find anything to parse in '%s'", file.getAbsolutePath()));
         }
+        return parsedSomething;
 
-        ConfigurationSection materialBreak = root.getConfigurationSection("material-break");
-        if (materialBreak != null) {
-            parseMaterialBreakReward(materialBreak);
-        } else {
-            Inscription.logger.warning("'material-break' was not defined.");
-        }
+        //        ConfigurationSection entityDamage = root.getConfigurationSection("entity-damage");
+        //        if (entityDamage != null) {
+        //            parseEntityDamageReward(entityDamage);
+        //        } else {
+        //            Inscription.logger.warning("'entity-damage' was not defined.");
+        //        }
+        //
+        //        ConfigurationSection entityKill = root.getConfigurationSection("entity-kill");
+        //        if (entityKill != null) {
+        //            parseEntityKillReward(entityKill);
+        //        } else {
+        //            Inscription.logger.warning("'entity-kill' was not defined.");
+        //        }
+        //
+        //        ConfigurationSection materialBreak = root.getConfigurationSection("material-break");
+        //        if (materialBreak != null) {
+        //            parseMaterialBreakReward(materialBreak);
+        //        } else {
+        //            Inscription.logger.warning("'material-break' was not defined.");
+        //        }
+        //
+        //        ConfigurationSection materialCraft = root.getConfigurationSection("material-craft");
+        //        if (materialCraft != null) {
+        //            parseMaterialCraft(materialCraft);
+        //        } else {
+        //            Inscription.logger.warning("'material-craft' was not defined.");
+        //        }
+        //
+        //        ConfigurationSection materialPlace = root.getConfigurationSection("material-place");
+        //        if (materialPlace != null) {
+        //            parseMaterialPlace(materialPlace);
+        //        } else {
+        //            Inscription.logger.warning("'material-place' was not defined.");
+        //        }
 
-        ConfigurationSection materialCraft = root.getConfigurationSection("material-craft");
-        if (materialCraft != null) {
-            parseMaterialCraft(materialCraft);
-        } else {
-            Inscription.logger.warning("'material-craft' was not defined.");
-        }
-
-        ConfigurationSection materialPlace = root.getConfigurationSection("material-place");
-        if (materialPlace != null) {
-            parseMaterialPlace(materialPlace);
-        } else {
-            Inscription.logger.warning("'material-place' was not defined.");
-        }
     }
 
-    public BlockTracker getTracker()
-    {
+    //    /**
+    //     * Parses a file with experience mappings.
+    //     *
+    //     * @param config A filling with experience mappings
+    //     */
+    //    public void parse(@Nonnull ConfigFile config) {
+    //        FileConfiguration root = config.getConfig();
+    //
+    //        ConfigurationSection entityDamage = root.getConfigurationSection("entity-damage");
+    //        if (entityDamage != null) {
+    //            parseEntityDamageReward(entityDamage);
+    //        } else {
+    //            Inscription.logger.warning("'entity-damage' was not defined.");
+    //        }
+    //
+    //        ConfigurationSection entityKill = root.getConfigurationSection("entity-kill");
+    //        if (entityKill != null) {
+    //            parseEntityKillReward(entityKill);
+    //        } else {
+    //            Inscription.logger.warning("'entity-kill' was not defined.");
+    //        }
+    //
+    //        ConfigurationSection materialBreak = root.getConfigurationSection("material-break");
+    //        if (materialBreak != null) {
+    //            parseMaterialBreakReward(materialBreak);
+    //        } else {
+    //            Inscription.logger.warning("'material-break' was not defined.");
+    //        }
+    //
+    //        ConfigurationSection materialCraft = root.getConfigurationSection("material-craft");
+    //        if (materialCraft != null) {
+    //            parseMaterialCraft(materialCraft);
+    //        } else {
+    //            Inscription.logger.warning("'material-craft' was not defined.");
+    //        }
+    //
+    //        ConfigurationSection materialPlace = root.getConfigurationSection("material-place");
+    //        if (materialPlace != null) {
+    //            parseMaterialPlace(materialPlace);
+    //        } else {
+    //            Inscription.logger.warning("'material-place' was not defined.");
+    //        }
+    //    }
+
+    // ---------------------------------------------------------------------------------------------------------------//
+
+    public BlockTracker getTracker() {
         return this.tracker;
     }
-    public boolean hasTracker()
-    {
+    public boolean hasTracker() {
         return this.tracker != null;
     }
 
@@ -617,27 +737,26 @@ public class ExperienceManager {
      *
      * @param config The file configuration to use.
      */
-    public void configureTracker(FileConfiguration config)
-    {
+    public void configureTracker(FileConfiguration config) {
         List<String> tracked_s = config.getStringList("placement-tracking");
         Set<Material> tracked_m = new HashSet<>();
         for (String s : tracked_s) {
             Material m = Material.getMaterial(s);
-            if (m == null) continue;
+            if (m == null)
+                continue;
             tracked_m.add(m);
         }
-        if (this.tracker == null) this.tracker = new BlockTracker();
+        if (this.tracker == null)
+            this.tracker = new BlockTracker();
         this.tracker.clearTracked();
         for (Material m : tracked_m)
             this.tracker.addTracked(m);
         this.tracker.cleanPlaced();
     }
-    public void saveTracker(File file)
-    {
+    public void saveTracker(File file) {
         BlockTracker.save(this.tracker, file);
     }
-    public void loadTracker(File file)
-    {
+    public void loadTracker(File file) {
         this.tracker = BlockTracker.load(file);
     }
 }
