@@ -1,6 +1,7 @@
 package net.samongi.Inscription.Listeners;
 
 import net.samongi.Inscription.Experience.PlayerExperienceOverflowEvent;
+import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.GlyphInventory;
 import net.samongi.Inscription.Player.PlayerData;
@@ -14,10 +15,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayerListener implements Listener {
@@ -93,4 +97,35 @@ public class PlayerListener implements Listener {
         }
     }
 
+    @EventHandler private void onInventoryOpen(InventoryOpenEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
+
+        Inventory inventory = event.getInventory();
+        ItemStack[] items = inventory.getContents();
+        for (ItemStack item : items) {
+            if (item == null) {
+                continue;
+            }
+
+            // We want to make sure that we check things simply before we do costly parsing.
+            if (item.getType() != Material.PAPER) {
+                continue;
+            }
+            ItemMeta itemMeta = item.getItemMeta();
+            if (itemMeta.getLore() == null || itemMeta.getLore().size() <= 0) {
+                continue;
+            }
+
+            Glyph glyph = Glyph.getGlyph(item);
+            if (glyph == null) {
+                continue;
+            }
+
+            int modelData = glyph.getCustomModelData();
+            itemMeta.setCustomModelData(modelData);
+            item.setItemMeta(itemMeta);
+        }
+    }
 }

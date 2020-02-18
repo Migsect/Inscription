@@ -35,18 +35,20 @@ public class Glyph implements Serializable {
      * @return Glyph object, null if itemstack is not a glyph item
      */
     public static Glyph getGlyph(ItemStack item) {
-        if (item == null)
-            return null; // If the passed object is null, it can't be
-        // a glyph
+        // If the passed object is null, it can't be a glyph
+        if (item == null) {
+            return null;
+        }
         ItemMeta itemMeta = item.getItemMeta();
-        if (itemMeta == null)
-            return null; // If the item doesn't have meta data,
-        // it can't be a glyph
 
+        // If the item doesn't have meta data, it can't be a glyph
+        if (itemMeta == null) {
+            return null;
+        }
+
+        // If the item does not have a display name, it can't be a glyph
         if (!itemMeta.hasDisplayName())
-            return null; // If the item does not have a
-        // display name, it can't be a
-        // glyph
+            return null;
         if (!itemMeta.hasLore())
             return null; // If the item does not have lore, it
         // can't be a glyph

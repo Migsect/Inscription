@@ -4,11 +4,11 @@ import org.bukkit.ChatColor;
 
 public enum GlyphRarity {
 
-    COMMON("Common", ChatColor.WHITE, 0, 0),
-    MAGICAL("Magical", ChatColor.GREEN, 1, 0),
-    RARE("Rare", ChatColor.BLUE, 2, 0),
-    MYTHIC("Mythic", ChatColor.GOLD, 3, 0),
-    LEGENDARY("Legendary", ChatColor.RED, 4, 0);
+    COMMON("Common", ChatColor.WHITE, 0, 100),
+    MAGICAL("Magical", ChatColor.GREEN, 1, 600),
+    RARE("Rare", ChatColor.BLUE, 2, 1000),
+    MYTHIC("Mythic", ChatColor.GOLD, 3, 400),
+    LEGENDARY("Legendary", ChatColor.RED, 4, 300);
 
     private final String m_display;
     private final ChatColor m_color;
