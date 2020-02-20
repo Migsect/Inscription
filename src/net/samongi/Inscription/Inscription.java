@@ -1,6 +1,8 @@
 package net.samongi.Inscription;
 
 import java.io.File;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 
 import net.samongi.Inscription.Commands.CommandExperience;
@@ -24,8 +26,11 @@ import net.samongi.SamongiLib.CommandHandling.CommandHandler;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 import net.samongi.SamongiLib.Logger.BetterLogger;
 
+import net.samongi.SamongiLib.Recipes.RecipeGraph;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Recipe;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 

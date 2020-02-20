@@ -14,6 +14,7 @@ import net.samongi.SamongiLib.Items.Comparators.BlockDataMaterialComparator;
 import net.samongi.SamongiLib.Items.ItemUtil;
 
 import net.samongi.SamongiLib.Items.MaskedBlockData;
+import net.samongi.SamongiLib.Recipes.RecipeGraph;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -46,6 +47,7 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     private static final String ENTITY_KILL_SECTION_KEY = "entity-kill";
     private static final String MATERIAL_BREAK_SECTION_KEY = "material-break";
     private static final String MATERIAL_CRAFT_SECTION_KEY = "material-craft";
+    private static final String MATERIAL_INGREDIENT_SECTION_KEY = "material-ingredient";
     private static final String MATERIAL_PLACE_SECTION_KEY = "material-place";
 
     // Experience mapping for entity related events
@@ -61,11 +63,35 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     private Map<MaskedBlockData, Map<String, Integer>> experiencePerBreak = new HashMap<>();
     private Map<MaskedBlockData, Map<String, Integer>> experiencePerPlace = new HashMap<>();
     private Map<Material, Map<String, Integer>> experiencePerCraft = new HashMap<>();
+    private Map<Material, ExperienceReward> m_experiencePerIngredient = new HashMap<>();
+
+    private Set<Material> m_recipeCycles = new HashSet<>();
 
     // Tracks blocks that wouldn't be valid for experience because they may have been used to cheat.
     private BlockTracker tracker;
 
     // ---------------------------------------------------------------------------------------------------------------//
+    public ExperienceManager() {
+        calculateRecipeCycles();
+    }
+
+    private void calculateRecipeCycles() {
+        Inscription.logger.fine("Calculating Recipe Cycles");
+        RecipeGraph graph = new RecipeGraph();
+        Iterator<Recipe> recipeIterator = Bukkit.recipeIterator();
+        while (recipeIterator.hasNext()) {
+            Recipe recipe = recipeIterator.next();
+            graph.addRecipe(recipe);
+        }
+
+        List<Material> cycles = graph.getCycles();
+        for (Material material : cycles) {
+            Inscription.logger.fine(" - " + material);
+        }
+        m_recipeCycles.addAll(cycles);
+
+    }
+
     private void handleExperience(@Nonnull Map<String, Integer> experienceMapping, @Nullable Player player) {
 
         PlayerData data = Inscription.getInstance().getPlayerManager().getData((Player) player);
@@ -204,6 +230,19 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
         Inscription.logger.fine("onCraftItem: Item Crafted Type: " + result.getType());
         Material resultMaterial = recipe.getResult().getType();
 
+        // Calculating the ingredients for material-ingredient experience.
+        ItemStack[] craftingMatrix = event.getInventory().getMatrix();
+        List<Material> ingredients = new ArrayList<>();
+        // We aren't going to reward experience if the result is not cycling result.
+        if (!m_recipeCycles.contains(resultMaterial)) {
+            for (ItemStack ingredientItem : craftingMatrix) {
+                if (ingredientItem == null) {
+                    continue;
+                }
+                ingredients.add(ingredientItem.getType());
+            }
+        }
+
         // Grabbing the experience mapping that is the reward if there is none then we will just stop the event handling now.
         Map<String, Integer> experienceMapping = Inscription.getInstance().getExperienceManager().getExpPerCraft(resultMaterial);
         if (experienceMapping == null) {
@@ -259,14 +298,25 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                         return;
                     }
                     for (int iter = 0; iter < totalCrafts; iter++) {
-
                         handleExperience(experienceMapping, player);
+                    }
+                    for (Material ingredient : ingredients) {
+                        ExperienceReward reward = getExpPerIngredient(ingredient);
+                        if (reward != null) {
+                            reward.reward(player, totalCrafts);
+                        }
                     }
                 }
             };
             task.runTask(Inscription.getInstance()); // Running the task
         } else {
             handleExperience(experienceMapping, player);
+            for (Material ingredient : ingredients) {
+                ExperienceReward reward = getExpPerIngredient(ingredient);
+                if (reward != null) {
+                    reward.reward(player);
+                }
+            }
         }
     }
     @EventHandler public void onEnchantItem(EnchantItemEvent event) {
@@ -345,6 +395,14 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
         if (!this.experiencePerCraft.containsKey(data))
             return new HashMap<>();
         return this.experiencePerCraft.get(data);
+    }
+    // ---------------------------------------------------------------------------------------------------------------//
+
+    public void setExpPerIngredient(Material material, ExperienceReward reward) {
+        m_experiencePerIngredient.put(material, reward);
+    }
+    public ExperienceReward getExpPerIngredient(Material material) {
+        return m_experiencePerIngredient.get(material);
     }
     // ---------------------------------------------------------------------------------------------------------------//
 
@@ -546,6 +604,40 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
         return true;
     }
 
+    public boolean parseMaterialIngredient(@Nullable ConfigurationSection section) {
+        if (section == null) {
+            return false;
+        }
+
+        Inscription.logger.fine("Parsing material ingredient experience rewards");
+
+        Set<String> blockDataKeys = section.getKeys(false);
+        for (String key : blockDataKeys) {
+            if (!section.isConfigurationSection(key)) {
+                Inscription.logger.warning(String.format("'%s is not a configuration section'", key));
+                continue;
+            }
+            Material material = parseMaterialData(key);
+            if (material == null) {
+                Inscription.logger.warning("  " + key + " is not valid material data.");
+                continue;
+            }
+
+            ConfigurationSection experienceRewardSection = section.getConfigurationSection(key);
+            if (experienceRewardSection == null) {
+                Inscription.logger.warning("  " + key + "'s configuration section is null.");
+                continue;
+            }
+
+            ExperienceReward reward = ExperienceReward.parse(experienceRewardSection);
+            setExpPerIngredient(material, reward);
+
+            Inscription.logger.fine("  Parsed: " + key + " registered: " + material.toString());
+        }
+
+        return true;
+    }
+
     public boolean parseMaterialPlace(@Nullable ConfigurationSection section) {
         if (section == null) {
             return false;
@@ -605,6 +697,10 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
             Inscription.logger.info(String.format(" - Registered: '%s'", MATERIAL_CRAFT_SECTION_KEY));
             parsedSomething = true;
         }
+        if (parseMaterialIngredient(root.getConfigurationSection(MATERIAL_INGREDIENT_SECTION_KEY))) {
+            Inscription.logger.info(String.format(" - Registered: '%s'", MATERIAL_INGREDIENT_SECTION_KEY));
+            parsedSomething = true;
+        }
         if (parseMaterialPlace(root.getConfigurationSection(MATERIAL_PLACE_SECTION_KEY))) {
             Inscription.logger.info(String.format(" - Registered: '%s'", MATERIAL_PLACE_SECTION_KEY));
             parsedSomething = true;
@@ -615,86 +711,7 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
         }
         return parsedSomething;
 
-        //        ConfigurationSection entityDamage = root.getConfigurationSection("entity-damage");
-        //        if (entityDamage != null) {
-        //            parseEntityDamageReward(entityDamage);
-        //        } else {
-        //            Inscription.logger.warning("'entity-damage' was not defined.");
-        //        }
-        //
-        //        ConfigurationSection entityKill = root.getConfigurationSection("entity-kill");
-        //        if (entityKill != null) {
-        //            parseEntityKillReward(entityKill);
-        //        } else {
-        //            Inscription.logger.warning("'entity-kill' was not defined.");
-        //        }
-        //
-        //        ConfigurationSection materialBreak = root.getConfigurationSection("material-break");
-        //        if (materialBreak != null) {
-        //            parseMaterialBreakReward(materialBreak);
-        //        } else {
-        //            Inscription.logger.warning("'material-break' was not defined.");
-        //        }
-        //
-        //        ConfigurationSection materialCraft = root.getConfigurationSection("material-craft");
-        //        if (materialCraft != null) {
-        //            parseMaterialCraft(materialCraft);
-        //        } else {
-        //            Inscription.logger.warning("'material-craft' was not defined.");
-        //        }
-        //
-        //        ConfigurationSection materialPlace = root.getConfigurationSection("material-place");
-        //        if (materialPlace != null) {
-        //            parseMaterialPlace(materialPlace);
-        //        } else {
-        //            Inscription.logger.warning("'material-place' was not defined.");
-        //        }
-
     }
-
-    //    /**
-    //     * Parses a file with experience mappings.
-    //     *
-    //     * @param config A filling with experience mappings
-    //     */
-    //    public void parse(@Nonnull ConfigFile config) {
-    //        FileConfiguration root = config.getConfig();
-    //
-    //        ConfigurationSection entityDamage = root.getConfigurationSection("entity-damage");
-    //        if (entityDamage != null) {
-    //            parseEntityDamageReward(entityDamage);
-    //        } else {
-    //            Inscription.logger.warning("'entity-damage' was not defined.");
-    //        }
-    //
-    //        ConfigurationSection entityKill = root.getConfigurationSection("entity-kill");
-    //        if (entityKill != null) {
-    //            parseEntityKillReward(entityKill);
-    //        } else {
-    //            Inscription.logger.warning("'entity-kill' was not defined.");
-    //        }
-    //
-    //        ConfigurationSection materialBreak = root.getConfigurationSection("material-break");
-    //        if (materialBreak != null) {
-    //            parseMaterialBreakReward(materialBreak);
-    //        } else {
-    //            Inscription.logger.warning("'material-break' was not defined.");
-    //        }
-    //
-    //        ConfigurationSection materialCraft = root.getConfigurationSection("material-craft");
-    //        if (materialCraft != null) {
-    //            parseMaterialCraft(materialCraft);
-    //        } else {
-    //            Inscription.logger.warning("'material-craft' was not defined.");
-    //        }
-    //
-    //        ConfigurationSection materialPlace = root.getConfigurationSection("material-place");
-    //        if (materialPlace != null) {
-    //            parseMaterialPlace(materialPlace);
-    //        } else {
-    //            Inscription.logger.warning("'material-place' was not defined.");
-    //        }
-    //    }
 
     // ---------------------------------------------------------------------------------------------------------------//
 
