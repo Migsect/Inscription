@@ -13,6 +13,7 @@ import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 public class PlayerData implements Serializable {
 
@@ -35,15 +36,13 @@ public class PlayerData implements Serializable {
      *
      * @param player_UUID The player to make data for.
      */
-    public PlayerData(UUID player_UUID)
-    {
+    public PlayerData(UUID player_UUID) {
         this.player_UUID = player_UUID;
         this.player_name = Bukkit.getPlayer(player_UUID).getName();
         this.glyphs = new GlyphInventory(player_UUID);
     }
 
-    public PlayerData(ConfigFile file) throws InvalidConfigurationException
-    {
+    public PlayerData(ConfigFile file) throws InvalidConfigurationException {
         ConfigurationSection section = file.getConfig();
 
         /* Grabbing the UUID */
@@ -56,6 +55,11 @@ public class PlayerData implements Serializable {
         }
         catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("UUID is not a valid UUID.");
+        }
+
+        ConfigurationSection storedExperienceSection = section.getConfigurationSection("stored_experience");
+        if (storedExperienceSection != null) {
+            deserializeExperienceSection(storedExperienceSection);
         }
 
         /* Grabbing the player's name */
@@ -71,8 +75,7 @@ public class PlayerData implements Serializable {
      *
      * @return UUID of the player
      */
-    public UUID getPlayerUUID()
-    {
+    public UUID getPlayerUUID() {
         return this.player_UUID;
     }
 
@@ -82,8 +85,7 @@ public class PlayerData implements Serializable {
      *
      * @param name The name to set
      */
-    public void setPlayerName(String name)
-    {
+    public void setPlayerName(String name) {
         this.player_name = name;
     }
 
@@ -92,8 +94,7 @@ public class PlayerData implements Serializable {
      *
      * @return Player name of this data's player
      */
-    public String getPlayerName()
-    {
+    public String getPlayerName() {
         return this.player_name;
     }
 
@@ -105,14 +106,13 @@ public class PlayerData implements Serializable {
      *
      * @return
      */
-    public GlyphInventory getGlyphInventory()
-    {
+    public GlyphInventory getGlyphInventory() {
         return this.glyphs;
     }
 
-    private Map<String, CacheData> getCachedData()
-    {
-        if (this.cached_data == null) this.cached_data = new HashMap<>();
+    private Map<String, CacheData> getCachedData() {
+        if (this.cached_data == null)
+            this.cached_data = new HashMap<>();
         return this.cached_data;
     }
 
@@ -122,8 +122,7 @@ public class PlayerData implements Serializable {
      * the data
      * species and as such is different from resetting the cached data
      */
-    public void clearCachedData()
-    {
+    public void clearCachedData() {
         for (CacheData d : this.getCachedData().values())
             d.clear();
     }
@@ -132,44 +131,36 @@ public class PlayerData implements Serializable {
      * Will completely clear all the cached data that is saved and will
      * remove any entries entirely. (Resets the hashmap of data to be empty)
      */
-    public void resetCachedData()
-    {
+    public void resetCachedData() {
         this.cached_data = new HashMap<>();
     }
 
-    public void setData(CacheData data)
-    {
+    public void setData(CacheData data) {
         this.getCachedData().put(data.getType().toUpperCase(), data);
     }
 
-    public CacheData getData(String type)
-    {
+    public CacheData getData(String type) {
         return this.getCachedData().get(type.toUpperCase());
     }
 
-    public boolean hasData(String type)
-    {
+    public boolean hasData(String type) {
         return this.getCachedData().containsKey(type.toUpperCase());
     }
 
-    public void setExperience(String type, int amount)
-    {
+    public void setExperience(String type, int amount) {
         this.m_experience.put(type, amount);
     }
 
-    public void addExperience(String type, int amount)
-    {
+    public void addExperience(String type, int amount) {
         this.m_experience.put(type, this.m_experience.getOrDefault(type, 0) + amount);
     }
 
-    public int getExperience(String type)
-    {
+    public int getExperience(String type) {
 
         return this.m_experience.get(type);
     }
 
-    public Map<String, Integer> getExperience()
-    {
+    public Map<String, Integer> getExperience() {
         return this.m_experience;
     }
 
@@ -181,8 +172,7 @@ public class PlayerData implements Serializable {
      * @param dir The directory location to load the file from.
      * @return A player data file, null if it could not load
      */
-    public static PlayerData load(File dir, UUID player_UUID)
-    {
+    public static PlayerData load(File dir, UUID player_UUID) {
         File file = new File(dir, player_UUID.toString() + ".yml");
         if (!file.exists() || file.isDirectory()) {
             Inscription.logger.fine("Data not found or is directory for file: " + file.getAbsolutePath());
@@ -209,9 +199,9 @@ public class PlayerData implements Serializable {
      * @param dir  The directory to save to
      * @return False if the save failed.
      */
-    public static boolean save(PlayerData data, File dir)
-    {
-        if (!dir.isDirectory()) return false;
+    public static boolean save(PlayerData data, File dir) {
+        if (!dir.isDirectory())
+            return false;
         File file = new File(dir, data.getPlayerUUID().toString() + ".yml");
 
         try {
@@ -230,9 +220,27 @@ public class PlayerData implements Serializable {
         ConfigurationSection section = configFile.getConfig();
         section.set("uuid", data.player_UUID.toString());
         section.set("glyphs", data.glyphs.getAsConfigurationSection());
+        section.set("stored_experience", data.serializeExperienceSection());
 
         configFile.saveConfig();
 
         return true;
+    }
+
+    public ConfigurationSection serializeExperienceSection() {
+        ConfigurationSection section = new YamlConfiguration();
+        for (String key : m_experience.keySet()) {
+            Integer value = m_experience.get(key);
+            section.set(key, value);
+        }
+        return section;
+    }
+
+    public void deserializeExperienceSection(ConfigurationSection section) {
+
+        for (String key : section.getKeys(false)) {
+            int value = section.getInt(key);
+            m_experience.put(key, value);
+        }
     }
 }

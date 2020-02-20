@@ -66,6 +66,31 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     private BlockTracker tracker;
 
     // ---------------------------------------------------------------------------------------------------------------//
+    private void handleExperience(@Nonnull Map<String, Integer> experienceMapping, @Nullable Player player) {
+
+        PlayerData data = Inscription.getInstance().getPlayerManager().getData((Player) player);
+        if (data == null) {
+            Inscription.logger.severe("Player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
+            return;
+        }
+
+        for (String experienceType : experienceMapping.keySet()) {
+            int experienceAmount = experienceMapping.get(experienceType);
+            boolean experienceDistributed = data.getGlyphInventory().distributeExperience(experienceType, experienceAmount);
+
+            // If the experience wasn't actually distributed, we need to trigger an event that the experience overflowed
+            // back to the character profile.
+            if (!experienceDistributed) {
+                PlayerExperienceOverflowEvent overflowEvent = new PlayerExperienceOverflowEvent(player, experienceType, experienceAmount);
+                Bukkit.getPluginManager().callEvent(overflowEvent);
+
+                // The amount may have been changed during the event calls.
+                data.addExperience(experienceType, overflowEvent.getAmount());
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------//
     /**
      * Method that encompasses logic to be handled by the experience manager
      * when another entity damages another. Generally for player experience
@@ -91,23 +116,20 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
             return;
         }
 
-        PlayerData data = Inscription.getInstance().getPlayerManager().getData((Player) damager);
-        if (data == null) {
-            Inscription.logger.severe("Player data return null on call for: " + damager.getName() + ":" + damager.getUniqueId());
-            return;
-        }
-
         EntityType damagedType = damaged.getType(); // Getting the type of the damage entity.
         double damageDealt = event.getFinalDamage();
 
-        Map<String, Integer> experienceMapping = this.getExpPerDamage(damagedType);
-        if (experienceMapping == null)
+        Map<String, Integer> experienceMapping = new HashMap<>(this.getExpPerDamage(damagedType));
+        if (experienceMapping == null) {
             return;
-
-        for (String key : experienceMapping.keySet()) {
-            int experience = (int) Math.ceil(experienceMapping.get(key) * damageDealt);
-            data.getGlyphInventory().distributeExperience(key, experience);
         }
+        // Updating the experience to be multiplied.
+        for (String key : experienceMapping.keySet()) {
+            int experience = (int) (experienceMapping.get(key) * damageDealt);
+            experienceMapping.put(key, experience);
+        }
+
+        handleExperience(experienceMapping, (Player) damager);
     }
     @EventHandler public void onEntityDeath(EntityDeathEvent event) {
         LivingEntity killed = event.getEntity();
@@ -133,12 +155,6 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
             return;
         }
 
-        PlayerData data = Inscription.getInstance().getPlayerManager().getData((Player) damager);
-        if (data == null) {
-            Inscription.logger.severe("Player data return null on call for: " + damager.getName() + ":" + damager.getUniqueId());
-            return;
-        }
-
         EntityType damaged_t = damaged.getType();
 
         Map<String, Integer> experienceMapping = this.getExpPerKill(damaged_t);
@@ -146,10 +162,7 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
             return;
         }
 
-        for (String key : experienceMapping.keySet()) {
-            int experience = experienceMapping.get(key);
-            data.getGlyphInventory().distributeExperience(key, experience);
-        }
+        handleExperience(experienceMapping, (Player) damager);
     }
     @EventHandler public void onBlockBreak(BlockBreakEvent event) {
         Location location = event.getBlock().getLocation();
@@ -162,51 +175,24 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
         BlockData blockData = event.getBlock().getBlockData();
         Player player = event.getPlayer();
 
-        PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
-        if (data == null) {
-            Inscription.logger.severe("Player Data return null on call for: " + player.getName() + ":" + player.getUniqueId());
-            return;
-        }
         Map<String, Integer> experienceMapping = this.getExpPerBreak(blockData);
         if (experienceMapping == null) {
             Inscription.logger.finest("Found not experience for " + blockData.getAsString(true));
             return;
         }
 
-        for (String experienceType : experienceMapping.keySet()) {
-            int experienceAmount = experienceMapping.get(experienceType);
-            boolean experienceDistributed = data.getGlyphInventory().distributeExperience(experienceType, experienceAmount);
-
-            // If the experience wasn't actually distributed, we need to trigger an event that the experience overflowed
-            // back to the character profile.
-            if (!experienceDistributed) {
-                PlayerExperienceOverflowEvent overflowEvent = new PlayerExperienceOverflowEvent(player, experienceType, experienceAmount);
-                Bukkit.getPluginManager().callEvent(overflowEvent);
-
-                // The amount may have been changed during the event calls.
-                data.addExperience(experienceType, overflowEvent.getAmount());
-            }
-        }
+        handleExperience(experienceMapping, player);
     }
     @EventHandler public void onBlockPlace(BlockPlaceEvent event) {
         BlockData blockData = event.getBlock().getBlockData();
         Player player = event.getPlayer();
-
-        PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
-        if (data == null) {
-            Inscription.logger.severe("Player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
-            return;
-        }
 
         Map<String, Integer> experienceMapping = this.getExpPerPlace(blockData);
         if (experienceMapping == null) {
             return;
         }
 
-        for (String key : experienceMapping.keySet()) {
-            int exp = experienceMapping.get(key);
-            data.getGlyphInventory().distributeExperience(key, exp);
-        }
+        handleExperience(experienceMapping, player);
     }
     @EventHandler public void onCraftItem(CraftItemEvent event) {
         if (event.isCancelled())
@@ -219,8 +205,8 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
         Material resultMaterial = recipe.getResult().getType();
 
         // Grabbing the experience mapping that is the reward if there is none then we will just stop the event handling now.
-        Map<String, Integer> experienceMap = Inscription.getInstance().getExperienceManager().getExpPerCraft(resultMaterial);
-        if (experienceMap == null) {
+        Map<String, Integer> experienceMapping = Inscription.getInstance().getExperienceManager().getExpPerCraft(resultMaterial);
+        if (experienceMapping == null) {
             return;
         }
 
@@ -272,27 +258,15 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                         Inscription.logger.fine("ERROR: player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
                         return;
                     }
+                    for (int iter = 0; iter < totalCrafts; iter++) {
 
-                    for (String s : experienceMap.keySet()) {
-                        int exp = experienceMap.get(s);
-                        for (int i = 0; i < totalCrafts; i++) {
-                            data.getGlyphInventory().distributeExperience(s, exp);
-                        }
+                        handleExperience(experienceMapping, player);
                     }
                 }
             };
             task.runTask(Inscription.getInstance()); // Running the task
         } else {
-            PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
-            if (data == null) {
-                Inscription.logger.severe("Player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
-                return;
-            }
-
-            for (String key : experienceMap.keySet()) {
-                int experience = experienceMap.get(key);
-                data.getGlyphInventory().distributeExperience(key, experience);
-            }
+            handleExperience(experienceMapping, player);
         }
     }
     @EventHandler public void onEnchantItem(EnchantItemEvent event) {

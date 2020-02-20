@@ -443,6 +443,9 @@ public class Glyph implements Serializable {
     }
 
     public int getCustomModelData() {
+        if (this.attributes.size() <= 0) {
+            return 0;
+        }
         return this.element.getModelIncrement() + this.attributes.get(0).getType().getModelIncrement() + this.getRarity().getModelIncrement();
     }
 
