@@ -7,11 +7,6 @@ import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 import net.samongi.SamongiLib.Configuration.ConfigurationParsing;
-import net.samongi.SamongiLib.Items.Comparators.BlockDataAgeableComparator;
-import net.samongi.SamongiLib.Items.Comparators.BlockDataComparator;
-import net.samongi.SamongiLib.Items.Comparators.BlockDataGroupComparator;
-import net.samongi.SamongiLib.Items.Comparators.BlockDataMaterialComparator;
-import net.samongi.SamongiLib.Items.ItemUtil;
 
 import net.samongi.SamongiLib.Items.MaskedBlockData;
 import net.samongi.SamongiLib.Recipes.RecipeGraph;
@@ -34,8 +29,6 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
-import org.bukkit.material.MaterialData;
-import org.bukkit.metadata.MetadataValue;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -51,8 +44,8 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     private static final String MATERIAL_PLACE_SECTION_KEY = "material-place";
 
     // Experience mapping for entity related events
-    private Map<EntityType, Map<String, Integer>> experiencePerKill = new HashMap<>();
-    private Map<EntityType, Map<String, Integer>> experiencePerDamage = new HashMap<>();
+    private Map<EntityType, ExperienceReward> m_experiencePerKill = new HashMap<>();
+    private Map<EntityType, ExperienceReward> m_experiencePerDamage = new HashMap<>();
 
     //    BlockDataComparator m_comparator = new BlockDataGroupComparator(new BlockDataComparator[]{
     //        new BlockDataMaterialComparator(),
@@ -60,9 +53,9 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     //    });
     // Experience mapping for material related events
     private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
-    private Map<MaskedBlockData, Map<String, Integer>> experiencePerBreak = new HashMap<>();
-    private Map<MaskedBlockData, Map<String, Integer>> experiencePerPlace = new HashMap<>();
-    private Map<Material, Map<String, Integer>> experiencePerCraft = new HashMap<>();
+    private Map<MaskedBlockData, ExperienceReward> m_experiencePerBreak = new HashMap<>();
+    private Map<MaskedBlockData, ExperienceReward> m_experiencePerPlace = new HashMap<>();
+    private Map<Material, ExperienceReward> m_experiencePerCraft = new HashMap<>();
     private Map<Material, ExperienceReward> m_experiencePerIngredient = new HashMap<>();
 
     private Set<Material> m_recipeCycles = new HashSet<>();
@@ -145,18 +138,18 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
         EntityType damagedType = damaged.getType(); // Getting the type of the damage entity.
         double damageDealt = event.getFinalDamage();
 
-        Map<String, Integer> experienceMapping = new HashMap<>(this.getExpPerDamage(damagedType));
-        if (experienceMapping == null) {
+        ExperienceReward reward = this.getExpPerDamage(damagedType);
+        if (reward == null) {
             return;
         }
-        // Updating the experience to be multiplied.
-        for (String key : experienceMapping.keySet()) {
-            int experience = (int) (experienceMapping.get(key) * damageDealt);
-            experienceMapping.put(key, experience);
-        }
 
-        handleExperience(experienceMapping, (Player) damager);
+        if (reward.doDistributeArea()) {
+            reward.reward(damaged.getLocation(), damageDealt);
+        } else if (damager instanceof Player) {
+            reward.reward((Player) damager, damageDealt);
+        }
     }
+
     @EventHandler public void onEntityDeath(EntityDeathEvent event) {
         LivingEntity killed = event.getEntity();
         EntityDamageEvent damageEvent = killed.getLastDamageCause();
@@ -177,19 +170,20 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
             damager = (Entity) shooter;
         }
 
-        if (!(damager instanceof Player)) {
+        EntityType damagedType = damaged.getType();
+        ExperienceReward reward = this.getExpPerKill(damagedType);
+        if (reward == null) {
             return;
         }
 
-        EntityType damaged_t = damaged.getType();
-
-        Map<String, Integer> experienceMapping = this.getExpPerKill(damaged_t);
-        if (experienceMapping == null) {
-            return;
+        if (reward.doDistributeArea()) {
+            reward.reward(damaged.getLocation());
+        } else if (damager instanceof Player) {
+            reward.reward((Player) damager);
         }
 
-        handleExperience(experienceMapping, (Player) damager);
     }
+
     @EventHandler public void onBlockBreak(BlockBreakEvent event) {
         Location location = event.getBlock().getLocation();
         Material material = event.getBlock().getType();
@@ -201,25 +195,26 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
         BlockData blockData = event.getBlock().getBlockData();
         Player player = event.getPlayer();
 
-        Map<String, Integer> experienceMapping = this.getExpPerBreak(blockData);
-        if (experienceMapping == null) {
-            Inscription.logger.finest("Found not experience for " + blockData.getAsString(true));
+        ExperienceReward reward = this.getExpPerBreak(blockData);
+        if (reward == null) {
             return;
         }
 
-        handleExperience(experienceMapping, player);
+        reward.reward(player);
     }
+
     @EventHandler public void onBlockPlace(BlockPlaceEvent event) {
         BlockData blockData = event.getBlock().getBlockData();
         Player player = event.getPlayer();
 
-        Map<String, Integer> experienceMapping = this.getExpPerPlace(blockData);
-        if (experienceMapping == null) {
+        ExperienceReward reward = this.getExpPerPlace(blockData);
+        if (reward == null) {
             return;
         }
 
-        handleExperience(experienceMapping, player);
+        reward.reward(player);
     }
+
     @EventHandler public void onCraftItem(CraftItemEvent event) {
         if (event.isCancelled())
             return;
@@ -244,8 +239,8 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
         }
 
         // Grabbing the experience mapping that is the reward if there is none then we will just stop the event handling now.
-        Map<String, Integer> experienceMapping = Inscription.getInstance().getExperienceManager().getExpPerCraft(resultMaterial);
-        if (experienceMapping == null) {
+        ExperienceReward craftReward = Inscription.getInstance().getExperienceManager().getExpPerCraft(resultMaterial);
+        if (craftReward == null) {
             return;
         }
 
@@ -297,9 +292,7 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                         Inscription.logger.fine("ERROR: player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
                         return;
                     }
-                    for (int iter = 0; iter < totalCrafts; iter++) {
-                        handleExperience(experienceMapping, player);
-                    }
+                    craftReward.reward(player, totalCrafts);
                     for (Material ingredient : ingredients) {
                         ExperienceReward reward = getExpPerIngredient(ingredient);
                         if (reward != null) {
@@ -310,7 +303,7 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
             };
             task.runTask(Inscription.getInstance()); // Running the task
         } else {
-            handleExperience(experienceMapping, player);
+            craftReward.reward(player);
             for (Material ingredient : ingredients) {
                 ExperienceReward reward = getExpPerIngredient(ingredient);
                 if (reward != null) {
@@ -326,75 +319,49 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     //    } // TODO Anvil events are most likely an inventory interact event
 
     // ---------------------------------------------------------------------------------------------------------------//
-    public void setExpPerKill(EntityType type, String experienceType, int amount) {
-        if (!this.experiencePerKill.containsKey(type)) {
-            this.experiencePerKill.put(type, new HashMap<String, Integer>());
-        }
-        this.experiencePerKill.get(type).put(experienceType, amount);
+    public void setExpPerKill(EntityType entityType, ExperienceReward reward) {
+        m_experiencePerKill.put(entityType, reward);
     }
-    public Map<String, Integer> getExpPerKill(EntityType type) {
-        if (!this.experiencePerKill.containsKey(type)) {
-            return new HashMap<>();
-        }
-        return this.experiencePerKill.get(type);
+    public ExperienceReward getExpPerKill(EntityType entityType) {
+        return this.m_experiencePerKill.get(entityType);
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
-    public void setExpPerDamage(EntityType type, String experienceType, int amount) {
-        if (!this.experiencePerDamage.containsKey(type))
-            this.experiencePerDamage.put(type, new HashMap<String, Integer>());
-        this.experiencePerDamage.get(type).put(experienceType, amount);
+    public void setExpPerDamage(EntityType entityType, ExperienceReward reward) {
+        m_experiencePerDamage.put(entityType, reward);
     }
-    public Map<String, Integer> getExpPerDamage(EntityType type) {
-        if (!this.experiencePerDamage.containsKey(type))
-            return new HashMap<>();
-        return this.experiencePerDamage.get(type);
+    public ExperienceReward getExpPerDamage(EntityType entityType) {
+        return this.m_experiencePerDamage.get(entityType);
     }
     // ---------------------------------------------------------------------------------------------------------------//
 
-    public void setExpPerBreak(BlockData data, String experienceType, int amount) {
-        MaskedBlockData key = new MaskedBlockData(data, BLOCKDATA_MASKS);
-        if (!this.experiencePerBreak.containsKey(key)) {
-            this.experiencePerBreak.put(key, new HashMap<String, Integer>());
-        }
-        this.experiencePerBreak.get(key).put(experienceType, amount);
+    public void setExpPerBreak(BlockData blockData, ExperienceReward reward) {
+        MaskedBlockData key = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
+        m_experiencePerBreak.put(key, reward);
     }
-    public Map<String, Integer> getExpPerBreak(BlockData data) {
-        MaskedBlockData key = new MaskedBlockData(data, BLOCKDATA_MASKS);
-        if (!this.experiencePerBreak.containsKey(key)) {
-            return new HashMap<>();
-        }
-        return this.experiencePerBreak.get(key);
+    public ExperienceReward getExpPerBreak(BlockData blockData) {
+        MaskedBlockData key = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
+        return m_experiencePerBreak.get(key);
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
 
-    public void setExpPerPlace(BlockData data, String experienceType, int amount) {
-        MaskedBlockData key = new MaskedBlockData(data, BLOCKDATA_MASKS);
-        if (!this.experiencePerPlace.containsKey(key)) {
-            this.experiencePerPlace.put(key, new HashMap<String, Integer>());
-        }
-        this.experiencePerPlace.get(key).put(experienceType, amount);
+    public void setExpPerPlace(BlockData blockData, ExperienceReward reward) {
+        MaskedBlockData key = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
+        m_experiencePerPlace.put(key, reward);
     }
-    public Map<String, Integer> getExpPerPlace(BlockData data) {
-        MaskedBlockData key = new MaskedBlockData(data, BLOCKDATA_MASKS);
-        if (!this.experiencePerPlace.containsKey(key)) {
-            return new HashMap<>();
-        }
-        return this.experiencePerPlace.get(key);
+    public ExperienceReward getExpPerPlace(BlockData blockData) {
+        MaskedBlockData key = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
+        return m_experiencePerPlace.get(key);
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
 
-    public void setExpPerCraft(Material data, String experienceType, int amount) {
-        if (!this.experiencePerCraft.containsKey(data))
-            this.experiencePerCraft.put(data, new HashMap<String, Integer>());
-        this.experiencePerCraft.get(data).put(experienceType, amount);
+    public void setExpPerCraft(Material material, ExperienceReward reward) {
+        m_experiencePerCraft.put(material, reward);
     }
-    public Map<String, Integer> getExpPerCraft(Material data) {
-        if (!this.experiencePerCraft.containsKey(data))
-            return new HashMap<>();
-        return this.experiencePerCraft.get(data);
+    public ExperienceReward getExpPerCraft(Material material) {
+        return this.m_experiencePerCraft.get(material);
     }
     // ---------------------------------------------------------------------------------------------------------------//
 
@@ -469,16 +436,14 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                 continue;
             }
 
-            ConfigurationSection keySection = section.getConfigurationSection(key);
-            if (keySection == null) {
+            ConfigurationSection experienceRewardSection = section.getConfigurationSection(key);
+            if (experienceRewardSection == null) {
                 Inscription.logger.warning("  " + key + "'s configuration section is null.");
                 continue;
             }
 
-            Set<String> keySectionKeys = keySection.getKeys(false);
-            for (String experience : keySectionKeys) {
-                this.setExpPerDamage(entityType, experience, keySection.getInt(experience));
-            }
+            ExperienceReward reward = ExperienceReward.parse(experienceRewardSection);
+            setExpPerDamage(entityType, reward);
 
             Inscription.logger.fine("  Parsed: " + key + " registered: " + entityType.toString());
         }
@@ -515,16 +480,14 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                 continue;
             }
 
-            ConfigurationSection key_section = section.getConfigurationSection(key);
-            if (key_section == null) {
+            ConfigurationSection experienceRewardSection = section.getConfigurationSection(key);
+            if (experienceRewardSection == null) {
                 Inscription.logger.warning("  " + key + "'s configuration section is null.");
                 continue;
             }
 
-            Set<String> experienceTypeKeys = key_section.getKeys(false);
-            for (String exp : experienceTypeKeys) {
-                this.setExpPerKill(entityType, exp, key_section.getInt(exp));
-            }
+            ExperienceReward reward = ExperienceReward.parse(experienceRewardSection);
+            setExpPerKill(entityType, reward);
 
             Inscription.logger.fine("  Parsed: " + key + " registered: " + entityType.toString());
         }
@@ -551,16 +514,14 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                 continue;
             }
 
-            ConfigurationSection experienceTypeSection = section.getConfigurationSection(key);
-            if (experienceTypeSection == null) {
+            ConfigurationSection experienceRewardSection = section.getConfigurationSection(key);
+            if (experienceRewardSection == null) {
                 Inscription.logger.warning("  " + key + "'s configuration section is null.");
                 continue;
             }
 
-            Set<String> experienceTypeSectionKeys = experienceTypeSection.getKeys(false);
-            for (String experience : experienceTypeSectionKeys) {
-                this.setExpPerBreak(blockData, experience, experienceTypeSection.getInt(experience));
-            }
+            ExperienceReward reward = ExperienceReward.parse(experienceRewardSection);
+            setExpPerBreak(blockData, reward);
 
             Inscription.logger.fine("  Parsed: " + key + " registered: " + blockData.getAsString(true));
         }
@@ -581,24 +542,22 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                 Inscription.logger.warning(String.format("'%s is not a configuration section'", key));
                 continue;
             }
-            Material materialData = parseMaterialData(key);
-            if (materialData == null) {
+            Material material = parseMaterialData(key);
+            if (material == null) {
                 Inscription.logger.warning("  " + key + " is not valid material data.");
                 continue;
             }
 
-            ConfigurationSection experienceTypeSection = section.getConfigurationSection(key);
-            if (experienceTypeSection == null) {
+            ConfigurationSection experienceRewardSection = section.getConfigurationSection(key);
+            if (experienceRewardSection == null) {
                 Inscription.logger.warning("  " + key + "'s configuration section is null.");
                 continue;
             }
 
-            Set<String> experienceTypeSectionKeys = experienceTypeSection.getKeys(false);
-            for (String experience : experienceTypeSectionKeys) {
-                this.setExpPerCraft(materialData, experience, experienceTypeSection.getInt(experience));
-            }
+            ExperienceReward reward = ExperienceReward.parse(experienceRewardSection);
+            setExpPerCraft(material, reward);
 
-            Inscription.logger.fine("  Parsed: " + key + " registered: " + materialData.toString());
+            Inscription.logger.fine("  Parsed: " + key + " registered: " + material.toString());
         }
 
         return true;
@@ -663,10 +622,8 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                 continue;
             }
 
-            Set<String> experienceTypeSectionKeys = experienceTypeSection.getKeys(false);
-            for (String experience : experienceTypeSectionKeys) {
-                this.setExpPerPlace(blockData, experience, experienceTypeSection.getInt(experience));
-            }
+            ExperienceReward reward = ExperienceReward.parse(experienceTypeSection);
+            setExpPerPlace(blockData, reward);
 
             Inscription.logger.fine("  Parsed: " + key + " registered: " + blockData.getAsString(true));
         }

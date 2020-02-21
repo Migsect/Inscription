@@ -37,7 +37,7 @@ public class ExperienceReward {
             experienceTypeSection = section;
         } else {
             reward.m_distributeRadius = section.getInt("distribute-radius", 0);
-            reward.m_splitDistribution = section.getBoolean("distribute-radius", false);
+            reward.m_splitDistribution = section.getBoolean("split-distribution", false);
         }
 
         Set<String> experienceTypeSectionKeys = experienceTypeSection.getKeys(false);
@@ -66,7 +66,7 @@ public class ExperienceReward {
     }
 
     public boolean doDistributeArea() {
-        return m_distributeRadius >= 0;
+        return m_distributeRadius > 0;
     }
 
     public boolean doSplitDistribution() {
