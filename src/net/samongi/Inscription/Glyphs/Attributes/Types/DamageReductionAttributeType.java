@@ -268,7 +268,7 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                     }
 
                     double totalMultiplier = (1 - baseReduction) * (1 - armorReduction) * (1 - damageTypeReduction) * (1 - armorDamageTypeReduction);
-                    double reducedDamage = Math.min(0, damageDone * totalMultiplier);
+                    double reducedDamage = Math.max(0, damageDone * totalMultiplier);
                     event.setDamage(reducedDamage);
 
                     Inscription.logger.finest("" + "[EntityDamageEvent] DamageReduction " + (1 - totalMultiplier) + " " + damageDone + " -> " + reducedDamage);

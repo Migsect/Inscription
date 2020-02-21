@@ -164,8 +164,12 @@ public class Glyph implements Serializable {
         if (attributeList == null)
             return null;
         AttributeManager attributeManager = Inscription.getInstance().getAttributeManager();
-        for (String a : attributeList) {
-            AttributeType attributeType = attributeManager.getAttributeType(a);
+        for (String attribute : attributeList) {
+            AttributeType attributeType = attributeManager.getAttributeType(attribute);
+            if (attributeType == null) {
+                Inscription.logger.severe("AttributeType not found: ", attribute);
+                continue;
+            }
             glyph.addAttribute(attributeType.generate());
         }
 

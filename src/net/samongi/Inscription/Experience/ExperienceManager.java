@@ -240,9 +240,6 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
 
         // Grabbing the experience mapping that is the reward if there is none then we will just stop the event handling now.
         ExperienceReward craftReward = Inscription.getInstance().getExperienceManager().getExpPerCraft(resultMaterial);
-        if (craftReward == null) {
-            return;
-        }
 
         // Note that this result will not be the total number of items that were crafted.
         Player player = (Player) event.getWhoClicked();
@@ -292,7 +289,9 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                         Inscription.logger.fine("ERROR: player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
                         return;
                     }
-                    craftReward.reward(player, totalCrafts);
+                    if (craftReward != null) {
+                        craftReward.reward(player, totalCrafts);
+                    }
                     for (Material ingredient : ingredients) {
                         ExperienceReward reward = getExpPerIngredient(ingredient);
                         if (reward != null) {
@@ -303,7 +302,9 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
             };
             task.runTask(Inscription.getInstance()); // Running the task
         } else {
-            craftReward.reward(player);
+            if (craftReward != null) {
+                craftReward.reward(player);
+            }
             for (Material ingredient : ingredients) {
                 ExperienceReward reward = getExpPerIngredient(ingredient);
                 if (reward != null) {
