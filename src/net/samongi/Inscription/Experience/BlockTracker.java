@@ -16,6 +16,10 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
@@ -28,13 +32,13 @@ import javax.annotation.Nonnull;
 /**
  * Keeps tabs on blocks that have been placed.
  */
-public class BlockTracker implements Serializable {
+public class BlockTracker implements Serializable, Listener {
 
     private static final long serialVersionUID = -2972844610158182014L;
 
     //------------------------------------------------------------------------------------------------//
     private Set<Location> m_placedLocations = new HashSet<>(); //  A list of locations to track
-    private Set<Material> m_trackedMaterials = new HashSet<>(); // A set of materials to track
+    private transient Set<Material> m_trackedMaterials = new HashSet<>(); // A set of materials to track
 
     //------------------------------------------------------------------------------------------------//
     public boolean isPlaced(@Nonnull Block block) {
@@ -45,8 +49,7 @@ public class BlockTracker implements Serializable {
     }
 
     //------------------------------------------------------------------------------------------------//
-    public void addPlaced(@Nonnull Block block)
-    {
+    public void addPlaced(@Nonnull Block block) {
         this.addPlaced(block.getLocation());
     }
     public void addPlaced(@Nonnull Location location) {
@@ -73,12 +76,12 @@ public class BlockTracker implements Serializable {
      * Will cleanup all placed locations, making sure they still contain a material that is being tracked.
      * This will obviously remove any locations that have materials that are no longer being tracked.
      */
-    public void cleanPlaced()
-    {
+    public void cleanPlaced() {
         Set<Location> to_remove = new HashSet<>();
         for (Location location : this.m_placedLocations) {
             Material m = location.getBlock().getType();
-            if (!this.m_trackedMaterials.contains(m)) to_remove.add(location);
+            if (!this.m_trackedMaterials.contains(m))
+                to_remove.add(location);
         }
         this.m_placedLocations.removeAll(to_remove);
     }
@@ -98,8 +101,7 @@ public class BlockTracker implements Serializable {
     }
 
     //------------------------------------------------------------------------------------------------//
-    public void onBlockBreak(BlockBreakEvent event)
-    {
+    @EventHandler(priority = EventPriority.HIGH) public void onBlockBreak(BlockBreakEvent event) {
         if (event.isCancelled()) {
             return;
         }
@@ -111,10 +113,9 @@ public class BlockTracker implements Serializable {
         }
         this.removePlaced(location);
     }
-    public void onBlockPlace(BlockPlaceEvent event)
-    {
+    @EventHandler public void onBlockPlace(BlockPlaceEvent event) {
         if (event.isCancelled()) {
-
+            return;
         }
         Location location = event.getBlock().getLocation();
         Material material = event.getBlock().getType();
@@ -126,8 +127,7 @@ public class BlockTracker implements Serializable {
     }
 
     //------------------------------------------------------------------------------------------------//
-    public void onBlockPistonExtend(BlockPistonExtendEvent event)
-    {
+    @EventHandler public void onBlockPistonExtend(BlockPistonExtendEvent event) {
         if (event.isCancelled()) {
             return;
         }
@@ -145,12 +145,8 @@ public class BlockTracker implements Serializable {
             int deltaX = direction.getModX();
             int deltaY = direction.getModY();
             int deltaZ = direction.getModZ();
-            Location deltaLocation = new Location(
-                location.getWorld(),
-                location.getBlockX() + deltaX,
-                location.getBlockY() + deltaY,
-                location.getBlockZ() + deltaZ
-            );
+            Location deltaLocation = new Location(location.getWorld(), location.getBlockX() + deltaX,
+                location.getBlockY() + deltaY, location.getBlockZ() + deltaZ);
 
             // Now to remove the old location and add the new location
             this.removePlaced(location);
@@ -158,8 +154,7 @@ public class BlockTracker implements Serializable {
         }
 
     }
-    public void onBlockPistonRetract(BlockPistonRetractEvent event)
-    {
+    @EventHandler public void onBlockPistonRetract(BlockPistonRetractEvent event) {
         if (event.isCancelled()) {
             return;
         }
@@ -177,12 +172,8 @@ public class BlockTracker implements Serializable {
             int deltaX = direction.getModX();
             int deltaY = direction.getModY();
             int deltaZ = direction.getModZ();
-            Location deltaLocation = new Location(
-                location.getWorld(),
-                location.getBlockX() + deltaX,
-                location.getBlockY() + deltaY,
-                location.getBlockZ() + deltaZ
-            );
+            Location deltaLocation = new Location(location.getWorld(), location.getBlockX() + deltaX,
+                location.getBlockY() + deltaY, location.getBlockZ() + deltaZ);
 
             // Now to remove the old location and add the new location
             this.removePlaced(location);
@@ -190,9 +181,27 @@ public class BlockTracker implements Serializable {
         }
     }
     //------------------------------------------------------------------------------------------------//
+    public void configureTracker(FileConfiguration config) {
+        List<String> trackedMaterialStrings = config.getStringList("placement-tracking");
+        Set<Material> trackedMaterials = new HashSet<>();
+        for (String s : trackedMaterialStrings) {
+            Material m = Material.getMaterial(s);
+            if (m == null) {
+                continue;
+            }
+            trackedMaterials.add(m);
+        }
 
-    public static BlockTracker load(File file)
-    {
+        clearTracked();
+        for (Material material : trackedMaterials) {
+            Inscription.logger.fine("Tracking: '" + material + "'");
+            addTracked(material);
+        }
+        cleanPlaced();
+    }
+    //------------------------------------------------------------------------------------------------//
+
+    public static BlockTracker load(File file) {
         if (!file.exists() || file.isDirectory()) {
             return null;
         }
@@ -216,10 +225,10 @@ public class BlockTracker implements Serializable {
 
         return readObject;
     }
-    public static boolean save(BlockTracker tracker, File file)
-    {
+    public static boolean save(BlockTracker tracker, File file) {
         try {
-            if (!file.exists()) file.createNewFile();
+            if (!file.exists())
+                file.createNewFile();
             FileOutputStream fileOut = new FileOutputStream(file);
             ObjectOutputStream objectOut = new ObjectOutputStream(fileOut);
 

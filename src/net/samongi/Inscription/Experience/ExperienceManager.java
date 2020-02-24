@@ -52,16 +52,14 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     //        new BlockDataAgeableComparator()
     //    });
     // Experience mapping for material related events
-    private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
+    private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{
+        MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
     private Map<MaskedBlockData, ExperienceReward> m_experiencePerBreak = new HashMap<>();
     private Map<MaskedBlockData, ExperienceReward> m_experiencePerPlace = new HashMap<>();
     private Map<Material, ExperienceReward> m_experiencePerCraft = new HashMap<>();
     private Map<Material, ExperienceReward> m_experiencePerIngredient = new HashMap<>();
 
     private Set<Material> m_recipeCycles = new HashSet<>();
-
-    // Tracks blocks that wouldn't be valid for experience because they may have been used to cheat.
-    private BlockTracker tracker;
 
     // ---------------------------------------------------------------------------------------------------------------//
     public ExperienceManager() {
@@ -89,18 +87,21 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
 
         PlayerData data = Inscription.getInstance().getPlayerManager().getData((Player) player);
         if (data == null) {
-            Inscription.logger.severe("Player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
+            Inscription.logger
+                .severe("Player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
             return;
         }
 
         for (String experienceType : experienceMapping.keySet()) {
             int experienceAmount = experienceMapping.get(experienceType);
-            boolean experienceDistributed = data.getGlyphInventory().distributeExperience(experienceType, experienceAmount);
+            boolean experienceDistributed = data.getGlyphInventory()
+                .distributeExperience(experienceType, experienceAmount);
 
             // If the experience wasn't actually distributed, we need to trigger an event that the experience overflowed
             // back to the character profile.
             if (!experienceDistributed) {
-                PlayerExperienceOverflowEvent overflowEvent = new PlayerExperienceOverflowEvent(player, experienceType, experienceAmount);
+                PlayerExperienceOverflowEvent overflowEvent = new PlayerExperienceOverflowEvent(player, experienceType,
+                    experienceAmount);
                 Bukkit.getPluginManager().callEvent(overflowEvent);
 
                 // The amount may have been changed during the event calls.
@@ -187,7 +188,9 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     @EventHandler public void onBlockBreak(BlockBreakEvent event) {
         Location location = event.getBlock().getLocation();
         Material material = event.getBlock().getType();
-        if (this.tracker.isTracked(material) && this.tracker.isPlaced(location)) {
+
+        BlockTracker tracker = Inscription.getInstance().getBlockTracker();
+        if (tracker.isTracked(material) && tracker.isPlaced(location)) {
             // This block break cannot trigger experience.
             return;
         }
@@ -282,11 +285,15 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                     }
                     // The total times the item was crafted
                     int totalCrafts = itemsCrafted / result.getAmount();
-                    Inscription.logger.fine("  items crafted: " + itemsCrafted + " result amount: " + result.getAmount() + " total crafts: " + totalCrafts);
+                    Inscription.logger.fine(
+                        "  items crafted: " + itemsCrafted + " result amount: " + result.getAmount() + " total crafts: "
+                            + totalCrafts);
 
                     PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
                     if (data == null) {
-                        Inscription.logger.fine("ERROR: player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
+                        Inscription.logger.fine(
+                            "ERROR: player data return null on call for: " + player.getName() + ":" + player
+                                .getUniqueId());
                         return;
                     }
                     if (craftReward != null) {
@@ -633,7 +640,6 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
-
     @Override public boolean parseConfigFile(@Nonnull File file, @Nonnull ConfigFile config) {
         Inscription.logger.info("Parsing TypeClass Configurations in: '" + file.getAbsolutePath() + "'");
         FileConfiguration root = config.getConfig();
@@ -672,40 +678,4 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
-
-    public BlockTracker getTracker() {
-        return this.tracker;
-    }
-    public boolean hasTracker() {
-        return this.tracker != null;
-    }
-
-    /**
-     * Will configure the block tracker in the ExperienceManager using the
-     * provided fileconfiguration
-     *
-     * @param config The file configuration to use.
-     */
-    public void configureTracker(FileConfiguration config) {
-        List<String> tracked_s = config.getStringList("placement-tracking");
-        Set<Material> tracked_m = new HashSet<>();
-        for (String s : tracked_s) {
-            Material m = Material.getMaterial(s);
-            if (m == null)
-                continue;
-            tracked_m.add(m);
-        }
-        if (this.tracker == null)
-            this.tracker = new BlockTracker();
-        this.tracker.clearTracked();
-        for (Material m : tracked_m)
-            this.tracker.addTracked(m);
-        this.tracker.cleanPlaced();
-    }
-    public void saveTracker(File file) {
-        BlockTracker.save(this.tracker, file);
-    }
-    public void loadTracker(File file) {
-        this.tracker = BlockTracker.load(file);
-    }
 }

@@ -8,10 +8,12 @@ import java.util.Map;
 import java.util.Set;
 
 import net.md_5.bungee.api.ChatColor;
+import net.samongi.Inscription.Glyphs.Types.GlyphElement;
+import net.samongi.Inscription.Glyphs.Types.GlyphRarity;
 import net.samongi.Inscription.Inscription;
-import net.samongi.Inscription.Glyphs.Attributes.Attribute;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeManager;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
+import net.samongi.Inscription.Attributes.Attribute;
+import net.samongi.Inscription.Attributes.AttributeManager;
+import net.samongi.Inscription.Attributes.AttributeType;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -41,61 +43,68 @@ public class Glyph implements Serializable {
         }
         ItemMeta itemMeta = item.getItemMeta();
 
-        // If the item doesn't have meta data, it can't be a glyph
-        if (itemMeta == null) {
+        // If the item does not have a display name, it can't be a glyph
+        if (itemMeta == null || !itemMeta.hasDisplayName() || !itemMeta.hasLore()) {
             return null;
         }
 
-        // If the item does not have a display name, it can't be a glyph
-        if (!itemMeta.hasDisplayName())
-            return null;
-        if (!itemMeta.hasLore())
-            return null; // If the item does not have lore, it
         // can't be a glyph
         List<String> lore = itemMeta.getLore(); // Getting the lore
-        if (lore.size() < 2)
-            return null; // Lore needs more than just one line
+        if (lore.size() < 2) {
+            return null;
+        }
 
         // Parsing the type line
-        String type_line = ChatColor.stripColor(lore.get(0)).toLowerCase().replace("glyph of ", "").replace("lv. ", "");
-        /* Splitting the lore into tokens */
-        String[] split_type_line = type_line.split(" ");
         // Example string: Lv. 20 Rare /Glyph of/ Time
-        String level_string = split_type_line[0];
-        String rarity_string = split_type_line[1];
-        String element_string = split_type_line[2];
+        String type_line = ChatColor.stripColor(lore.get(0)).replace("Glyph of ", "").replace("Lv. ", "");
+        String[] splitTypeLine = type_line.split(" ");
+        if (splitTypeLine.length != 3) {
+
+            return null;
+        }
+
+        String levelString = splitTypeLine[0];
+        String rarityString = splitTypeLine[1];
+        String elementString = splitTypeLine[2];
 
         // Parsing the level
         int level = -1;
         try {
-            level = Integer.parseInt(level_string);
+            level = Integer.parseInt(levelString);
         }
         catch (NumberFormatException e) {
+            Inscription.logger.warning("[GLYPH PARSE] '" + level + "' is not a valid glyph level.");
             return null;
         }
-        if (level < 0)
+
+        if (level < 0) {
+            Inscription.logger.warning("[GLYPH PARSE] '" + level + "' is not a valid glyph level.");
             return null;
+        }
 
-        // Parsing the rarity
-        GlyphRarity rarity = GlyphRarity.valueOf(rarity_string.toUpperCase());
-        if (rarity == null)
-            return null; // No rarity no glyph
+        GlyphRarity rarity = Inscription.getInstance().getGlyphTypesManager().getRarityByDisplay(rarityString);
+        if (rarity == null) {
+            Inscription.logger.warning("[GLYPH PARSE] '" + rarityString + "' is not a valid glyph rarity.");
+            return null;
+        }
 
-        // Parsing the element
-        GlyphElement element = GlyphElement.valueOf(element_string.toUpperCase());
-        if (element == null)
-            return null; // No element no glyph
+        GlyphElement element = Inscription.getInstance().getGlyphTypesManager().getElementByDisplay(elementString);
+        if (element == null) {
+            Inscription.logger.warning("[GLYPH PARSE] '" + elementString + "' is not a valid glyph element.");
+            return null;
+        }
 
         // Parsing all the Attributes (lore items 1 to n)
         List<Attribute> attributes = new ArrayList<>();
         for (int i = 1; i < lore.size(); i++) {
             AttributeManager a_manager = Inscription.getInstance().getAttributeManager();
             Attribute attribute = a_manager.parseLoreLine(lore.get(i));
-            if (attribute != null)
+            if (attribute != null) {
                 attributes.add(attribute);
+            }
         }
 
-        Map<String, Integer> experience_map = new HashMap<>();
+        Map<String, Integer> experienceMap = new HashMap<>();
         /* Parsing the experience the glyph has stored on it if it has any */
         for (int i = 1; i < lore.size(); i++) {
             String line = ChatColor.stripColor(lore.get(i));
@@ -113,9 +122,10 @@ public class Glyph implements Serializable {
             catch (NumberFormatException e) {
                 ;
             }
-            if (experience == 0)
+            if (experience == 0) {
                 continue;
-            experience_map.put(token_last, experience);
+            }
+            experienceMap.put(token_last, experience);
         }
 
         // Creating the glyph
@@ -126,7 +136,7 @@ public class Glyph implements Serializable {
         for (Attribute a : attributes) {
             glyph.addAttribute(a);
         }
-        glyph.setExperience(experience_map);
+        glyph.setExperience(experienceMap);
 
         return glyph;
     }
@@ -135,13 +145,13 @@ public class Glyph implements Serializable {
         Glyph glyph = new Glyph();
 
         String rarityString = section.getString("rarity");
-        GlyphRarity rarity = GlyphRarity.valueOf(rarityString);
+        GlyphRarity rarity = Inscription.getInstance().getGlyphTypesManager().getRarity(rarityString);
         if (rarity == null)
             return null;
         glyph.setRarity(rarity);
 
         String elementString = section.getString("element");
-        GlyphElement element = GlyphElement.valueOf(elementString);
+        GlyphElement element = Inscription.getInstance().getGlyphTypesManager().getElement(elementString);
         if (element == null)
             return null;
         glyph.setElement(element);
@@ -178,7 +188,9 @@ public class Glyph implements Serializable {
 
     // <--- Start Class Members --->
 
+    //private GlyphRarity_OLD rarity = null;
     private GlyphRarity rarity = null;
+    //private GlyphElement_OLD element = null;
     private GlyphElement element = null;
 
     // Attributes of the glyph
@@ -450,7 +462,8 @@ public class Glyph implements Serializable {
         if (this.attributes.size() <= 0) {
             return 0;
         }
-        return this.element.getModelIncrement() + this.attributes.get(0).getType().getModelIncrement() + this.getRarity().getModelIncrement();
+        return this.getElement().getModelIncrement() + this.attributes.get(0).getType().getModelIncrement() + this
+            .getRarity().getModelIncrement();
     }
 
     /**
@@ -477,7 +490,9 @@ public class Glyph implements Serializable {
         List<String> lore = new ArrayList<>();
 
         // Creating the info line
-        String type_line = ChatColor.GRAY + "Lv. " + this.level + " " + rarity.getColor() + rarity.getDisplay() + ChatColor.GRAY + " Glyph of " + element.getColor() + element.getDisplay();
+        String type_line =
+            ChatColor.GRAY + "Lv. " + this.level + " " + rarity.getColor() + rarity.getDisplay() + ChatColor.GRAY
+                + " Glyph of " + element.getColor() + element.getDisplay();
         lore.add(type_line);
 
         // Adding all the attribute lines
@@ -524,7 +539,9 @@ public class Glyph implements Serializable {
         List<String> lore = new ArrayList<>();
 
         // Creating the info line
-        String type_line = ChatColor.GREEN + "Lv. " + this.level + " " + rarity.getColor() + rarity.getDisplay() + ChatColor.WHITE + " Glyph of " + element.getColor() + element.getDisplay();
+        String type_line =
+            ChatColor.GREEN + "Lv. " + this.level + " " + rarity.getColor() + rarity.getDisplay() + ChatColor.WHITE
+                + " Glyph of " + element.getColor() + element.getDisplay();
         lore.add(type_line);
 
         // Adding all the attribute lines
@@ -540,9 +557,9 @@ public class Glyph implements Serializable {
         ConfigurationSection section = new YamlConfiguration();
 
         /* Setting the rarity */
-        section.set("rarity", this.rarity.toString());
+        section.set("rarity", this.rarity.getType());
         /* Setting the element */
-        section.set("element", this.element.toString());
+        section.set("element", this.element.getType());
         /* Setting the level */
         section.set("level", this.level);
 

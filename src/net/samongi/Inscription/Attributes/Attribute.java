@@ -1,4 +1,4 @@
-package net.samongi.Inscription.Glyphs.Attributes;
+package net.samongi.Inscription.Attributes;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -15,8 +15,7 @@ public abstract class Attribute implements Serializable {
     private Glyph glyph_container;
     private AttributeType type;
 
-    public Attribute(AttributeType type)
-    {
+    public Attribute(AttributeType type) {
         this.type = type;
     }
 
@@ -73,17 +72,22 @@ public abstract class Attribute implements Serializable {
      *
      * @return A Mapping of experience type to the amount of experience.
      */
-    public Map<String, Integer> getExperience()
-    {
-        if (this.getType().getBaseExperience() == null) return new HashMap<String, Integer>();
+    public Map<String, Integer> getExperience() {
+        if (this.getType().getBaseExperience() == null)
+            return new HashMap<String, Integer>();
         Map<String, Integer> experience_map = new HashMap<>(this.getType().getBaseExperience());
         int glyph_level = this.getGlyph().getLevel();
         int ratity_level = this.getGlyph().getRarity().getRank();
         double rarity_multiplier = this.getType().getRarityMultiplier();
 
         for (String s : this.getType().getLevelExperience().keySet()) {
-            if (!experience_map.containsKey(s)) experience_map.put(s, (int) (this.getType().getLevelExperience().get(s) * glyph_level * (1 + rarity_multiplier * ratity_level)));
-            else experience_map.put(s, (int) (experience_map.get(s) + this.getType().getLevelExperience().get(s) * glyph_level * (1 + rarity_multiplier * ratity_level)));
+            if (!experience_map.containsKey(s))
+                experience_map.put(s, (int) (this.getType().getLevelExperience().get(s) * glyph_level * (1
+                    + rarity_multiplier * ratity_level)));
+            else
+                experience_map.put(s,
+                    (int) (experience_map.get(s) + this.getType().getLevelExperience().get(s) * glyph_level * (1
+                        + rarity_multiplier * ratity_level)));
         }
         return experience_map;
     }

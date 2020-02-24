@@ -1,10 +1,8 @@
-package net.samongi.Inscription.Glyphs.Generator;
+package net.samongi.Inscription.Loot.Generator;
 
-import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
 import net.samongi.Inscription.Inscription;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 import net.samongi.SamongiLib.Configuration.ConfigurationParsing;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import javax.annotation.Nonnull;

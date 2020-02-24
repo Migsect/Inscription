@@ -2,7 +2,7 @@ package net.samongi.Inscription.Glyphs;
 
 import net.md_5.bungee.api.ChatColor;
 
-public enum GlyphElement {
+@Deprecated public enum GlyphElement_OLD {
 
     FIRE("Fire", ChatColor.RED, 2),
     WATER("Water", ChatColor.AQUA, 7),
@@ -17,7 +17,7 @@ public enum GlyphElement {
     private final ChatColor m_color;
     private final int m_modelIncrement;
 
-    GlyphElement(String display, ChatColor color, int modelIncrement) {
+    GlyphElement_OLD(String display, ChatColor color, int modelIncrement) {
         this.m_display = display;
         this.m_color = color;
         this.m_modelIncrement = modelIncrement;

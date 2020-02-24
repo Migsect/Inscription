@@ -3,7 +3,7 @@ package net.samongi.Inscription.Commands;
 import java.util.List;
 
 import net.samongi.Inscription.Inscription;
-import net.samongi.Inscription.Glyphs.Generator.GlyphGenerator;
+import net.samongi.Inscription.Loot.Generator.GlyphGenerator;
 import net.samongi.SamongiLib.CommandHandling.ArgumentType;
 import net.samongi.SamongiLib.CommandHandling.BaseCommand;
 import net.samongi.SamongiLib.CommandHandling.SenderType;

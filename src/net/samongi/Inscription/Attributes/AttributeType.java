@@ -1,4 +1,4 @@
-package net.samongi.Inscription.Glyphs.Attributes;
+package net.samongi.Inscription.Attributes;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -9,6 +9,8 @@ import net.md_5.bungee.api.ChatColor;
 import net.samongi.Inscription.Glyphs.Glyph;
 
 import org.bukkit.configuration.ConfigurationSection;
+
+import javax.annotation.Nonnull;
 
 public abstract class AttributeType implements Serializable {
 
@@ -34,18 +36,27 @@ public abstract class AttributeType implements Serializable {
         return map;
     }
 
-    protected final String typeName;
-    protected final String typeDescription;
+    protected final String m_typeName;
+    protected final String m_typeDescription;
 
-    protected double rarityMultiplier;
-    protected int modelIncrement;
+    protected double m_rarityMultiplier;
+    protected int m_modelIncrement;
 
-    protected Map<String, Integer> baseExperience;
-    protected Map<String, Integer> levelExperience;
+    protected Map<String, Integer> m_baseExperience;
+    protected Map<String, Integer> m_levelExperience;
 
-    public AttributeType(String typeName, String description) {
-        this.typeName = typeName;
-        this.typeDescription = description;
+    public AttributeType(@Nonnull String typeName, String description) {
+        m_typeName = typeName;
+        m_typeDescription = description;
+    }
+
+    public AttributeType(GeneralAttributeParser parser) {
+        m_typeName = parser.getName();
+        m_typeDescription = parser.getDescriptor();
+        m_rarityMultiplier = parser.getRarityMultiplier();
+        m_modelIncrement = parser.getModelIncrement();
+        m_baseExperience = parser.getBaseExperience();
+        m_levelExperience = parser.getLevelExperience();
     }
 
     /**
@@ -79,7 +90,7 @@ public abstract class AttributeType implements Serializable {
      */
     public Attribute parse(String line) {
         String reduced = ChatColor.stripColor(line.toLowerCase().trim());
-        if (reduced.startsWith(this.typeDescription.toLowerCase())) {
+        if (reduced.startsWith(this.m_typeDescription.toLowerCase())) {
             return this.generate();
         } else {
             return null;
@@ -96,7 +107,7 @@ public abstract class AttributeType implements Serializable {
      * sensitive manner
      */
     public String getName() {
-        return this.typeName;
+        return this.m_typeName;
     }
 
     /**
@@ -108,7 +119,7 @@ public abstract class AttributeType implements Serializable {
      * contract/
      */
     public String getNameDescriptor() {
-        return this.typeDescription;
+        return this.m_typeDescription;
     }
 
     public String getDescriptionLoreLine() {
@@ -121,7 +132,7 @@ public abstract class AttributeType implements Serializable {
      * @return The mapping of experience
      */
     public Map<String, Integer> getBaseExperience() {
-        return this.baseExperience;
+        return this.m_baseExperience;
     }
     /**
      * Gets the per level experience required for this attribute type
@@ -129,7 +140,7 @@ public abstract class AttributeType implements Serializable {
      * @return The mapping of experience
      */
     public Map<String, Integer> getLevelExperience() {
-        return this.levelExperience;
+        return this.m_levelExperience;
     }
 
     /**
@@ -139,7 +150,7 @@ public abstract class AttributeType implements Serializable {
      * @param multiplier The multiplier value.
      */
     public void setRarityMultiplier(double multiplier) {
-        this.rarityMultiplier = multiplier;
+        this.m_rarityMultiplier = multiplier;
     }
     /**
      * Returns the rarity multiplier ratio that the attribute type uses.
@@ -147,14 +158,14 @@ public abstract class AttributeType implements Serializable {
      * @return an amount to mutliply by for rarity
      */
     public double getRarityMultiplier() {
-        return this.rarityMultiplier;
+        return this.m_rarityMultiplier;
     }
 
-    public void setModelIncrement(int modelIncrement) {
-        this.modelIncrement = modelIncrement;
+    public void setModelIncrement(int m_modelIncrement) {
+        this.m_modelIncrement = m_modelIncrement;
     }
 
     public int getModelIncrement() {
-        return this.modelIncrement;
+        return this.m_modelIncrement;
     }
 }

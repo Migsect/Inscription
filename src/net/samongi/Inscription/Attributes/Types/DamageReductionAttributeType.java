@@ -1,10 +1,11 @@
-package net.samongi.Inscription.Glyphs.Attributes.Types;
+package net.samongi.Inscription.Attributes.Types;
 
 import net.md_5.bungee.api.ChatColor;
-import net.samongi.Inscription.Glyphs.Attributes.Attribute;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeTypeConstructor;
-import net.samongi.Inscription.Glyphs.Attributes.Base.MultiplierAttributeType;
+import net.samongi.Inscription.Attributes.Attribute;
+import net.samongi.Inscription.Attributes.AttributeType;
+import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
+import net.samongi.Inscription.Attributes.Base.MultiplierAttributeType;
+import net.samongi.Inscription.Attributes.GeneralAttributeParser;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
@@ -18,35 +19,28 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 public class DamageReductionAttributeType extends MultiplierAttributeType {
 
-    private static final long serialVersionUID = 4295276441414911104L;
     private static final String TYPE_IDENTIFIER = "DAMAGE_REDUCTION";
 
     //----------------------------------------------------------------------------------------------------------------//
-
     private MaterialClass m_armorMaterials = MaterialClass.getGlobal("any items");
     private DamageClass m_damageTypes = DamageClass.getGlobal("any damage");
 
     //----------------------------------------------------------------------------------------------------------------//
-    protected DamageReductionAttributeType(String typeName, String description) {
-        super(typeName, description);
+    protected DamageReductionAttributeType(GeneralAttributeParser parser) {
+        super(parser);
     }
-
     //----------------------------------------------------------------------------------------------------------------//
 
     @Override public Attribute generate() {
         return new Attribute(this) {
-
-            private static final long serialVersionUID = -1151134999201153827L;
 
             @Override public void cache(PlayerData playerData) {
                 CacheData cachedData = playerData.getData(DamageReductionAttributeType.TYPE_IDENTIFIER);
@@ -57,7 +51,7 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                     return;
                 }
 
-                Inscription.logger.finer("Caching attribute for " + typeDescription);
+                Inscription.logger.finer("Caching attribute for " + m_typeDescription);
                 Inscription.logger.finer("  'm_armorMaterials' is global?: " + m_armorMaterials.isGlobal());
                 Inscription.logger.finer("  'm_damageTypes' is global?: " + m_damageTypes.isGlobal());
 
@@ -76,7 +70,9 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                         double newValue = currentValue + (1 - currentValue) * multiplier;
                         data.setArmor(armorMaterial, newValue);
 
-                        Inscription.logger.finer("  +C Added '" + multiplier + "' bonus to '" + armorMaterial.toString() + "' " + currentValue + "->" + newValue);
+                        Inscription.logger.finer(
+                            "  +C Added '" + multiplier + "' bonus to '" + armorMaterial.toString() + "' "
+                                + currentValue + "->" + newValue);
                     }
                 } else if (m_armorMaterials.isGlobal()) {
                     for (EntityDamageEvent.DamageCause damageType : m_damageTypes.getDamageTypes()) {
@@ -84,7 +80,9 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                         double newValue = currentValue + (1 - currentValue) * multiplier;
                         data.setDamageType(damageType, newValue);
 
-                        Inscription.logger.finer("  +C Added '" + multiplier + "' bonus to '" + damageType.toString() + "' " + currentValue + "->" + newValue);
+                        Inscription.logger.finer(
+                            "  +C Added '" + multiplier + "' bonus to '" + damageType.toString() + "' " + currentValue
+                                + "->" + newValue);
                     }
                 } else {
                     for (Material armorMaterial : m_armorMaterials.getMaterials()) {
@@ -93,13 +91,15 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                             double newValue = currentValue + (1 - currentValue) * multiplier;
                             data.setArmorDamageType(armorMaterial, damageType, newValue);
 
-                            Inscription.logger.finer("  +C Added '" + multiplier + "' bonus to '" + armorMaterial.toString() + "', ''" + damageType.toString() + "' " + currentValue + "->" + newValue);
+                            Inscription.logger.finer(
+                                "  +C Added '" + multiplier + "' bonus to '" + armorMaterial.toString() + "', ''"
+                                    + damageType.toString() + "' " + currentValue + "->" + newValue);
                         }
                     }
                 }
 
                 playerData.setData(data); // setting the data again.
-                Inscription.logger.finer("Finished caching for " + typeDescription);
+                Inscription.logger.finer("Finished caching for " + m_typeDescription);
             }
 
             @Override public String getLoreLine() {
@@ -108,7 +108,8 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                 String damageClass = m_damageTypes.getName();
 
                 String infoLine =
-                    ChatColor.BLUE + "-" + multiplierString + "%" + ChatColor.YELLOW + " " + ChatColor.BLUE + damageClass + ChatColor.YELLOW + " damage while wearing " + ChatColor.BLUE + armorClass;
+                    ChatColor.BLUE + "-" + multiplierString + "%" + ChatColor.YELLOW + " " + ChatColor.BLUE
+                        + damageClass + ChatColor.YELLOW + " damage while wearing " + ChatColor.BLUE + armorClass;
                 return this.getType().getDescriptionLoreLine() + infoLine;
             }
         };
@@ -141,11 +142,13 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
         public double getDamageType(EntityDamageEvent.DamageCause damageType) {
             return this.m_damageReduction.getOrDefault(damageType, 0.0);
         }
-        public void setArmorDamageType(Material armorMaterial, EntityDamageEvent.DamageCause damageType, double amount) {
+        public void setArmorDamageType(Material armorMaterial, EntityDamageEvent.DamageCause damageType,
+            double amount) {
             if (!this.m_armorDamageReduction.containsKey(armorMaterial)) {
                 this.m_armorDamageReduction.put(armorMaterial, new HashMap<>());
             }
-            HashMap<EntityDamageEvent.DamageCause, Double> damageReduction = this.m_armorDamageReduction.get(armorMaterial);
+            HashMap<EntityDamageEvent.DamageCause, Double> damageReduction = this.m_armorDamageReduction
+                .get(armorMaterial);
             damageReduction.put(damageType, amount);
         }
         public double getArmorDamageType(Material armorMaterial, EntityDamageEvent.DamageCause damageType) {
@@ -175,18 +178,16 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
     //----------------------------------------------------------------------------------------------------------------//
     public static class Constructor extends AttributeTypeConstructor {
 
-        @Override public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException {
-            String type = section.getString("type");
-            if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER))
+        @Override public AttributeType construct(ConfigurationSection section) {
+            GeneralAttributeParser parser = new GeneralAttributeParser(section, TYPE_IDENTIFIER);
+            if (!parser.checkType()) {
                 return null;
+            }
+            if (!parser.loadInfo()) {
+                return null;
+            }
 
-            String name = section.getString("name");
-            if (name == null)
-                return null;
-
-            String descriptor = section.getString("descriptor");
-            if (descriptor == null)
-                return null;
+            DamageReductionAttributeType attributeType = new DamageReductionAttributeType(parser);
 
             double minReduction = section.getDouble("min-reduction");
             double maxReduction = section.getDouble("max-reduction");
@@ -194,33 +195,30 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                 Inscription.logger.warning(section.getName() + " : min reduction is bigger than max chance");
                 return null;
             }
-            double rarityMultiplier = section.getDouble("rarity-multiplier");
 
-            String targetDamageTypes = section.getString("target-damage");
-            String targetArmor = section.getString("target-materials");
-
-            DamageReductionAttributeType attributeType = new DamageReductionAttributeType(name, descriptor);
             attributeType.setMin(minReduction);
             attributeType.setMax(maxReduction);
-            attributeType.setRarityMultiplier(rarityMultiplier);
 
-            int modelIncrement = section.getInt("model", 0);
-            attributeType.setModelIncrement(modelIncrement);
-
-            attributeType.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
-            attributeType.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
-
+            String targetArmor = section.getString("target-materials");
             if (targetArmor != null) {
-                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetArmor);
+                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager()
+                    .getMaterialClass(targetArmor);
                 if (materialClass == null) {
-                    throw new InvalidConfigurationException("Material class was undefined:" + targetArmor);
+                    Inscription.logger
+                        .warning("[DamageReductionAttributeType] '" + targetArmor + "' is not a valid material class.");
+                    return null;
                 }
                 attributeType.m_armorMaterials = materialClass;
             }
+
+            String targetDamageTypes = section.getString("target-damage");
             if (targetDamageTypes != null) {
-                DamageClass damageTypeClass = Inscription.getInstance().getTypeClassManager().getDamageClass(targetDamageTypes);
+                DamageClass damageTypeClass = Inscription.getInstance().getTypeClassManager()
+                    .getDamageClass(targetDamageTypes);
                 if (damageTypeClass == null) {
-                    throw new InvalidConfigurationException("Damage class was undefined:" + targetDamageTypes);
+                    Inscription.logger.warning(
+                        "[DamageReductionAttributeType] '" + targetDamageTypes + "' is not a valid damage class.");
+                    return null;
                 }
                 attributeType.m_damageTypes = damageTypeClass;
             }
@@ -267,11 +265,14 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                         armorDamageTypeReduction += data.getArmorDamageType(armorMaterial, damageCause) * 0.25;
                     }
 
-                    double totalMultiplier = (1 - baseReduction) * (1 - armorReduction) * (1 - damageTypeReduction) * (1 - armorDamageTypeReduction);
+                    double totalMultiplier = (1 - baseReduction) * (1 - armorReduction) * (1 - damageTypeReduction) * (1
+                        - armorDamageTypeReduction);
                     double reducedDamage = Math.max(0, damageDone * totalMultiplier);
                     event.setDamage(reducedDamage);
 
-                    Inscription.logger.finest("" + "[EntityDamageEvent] DamageReduction " + (1 - totalMultiplier) + " " + damageDone + " -> " + reducedDamage);
+                    Inscription.logger.finest(
+                        "" + "[EntityDamageEvent] DamageReduction " + (1 - totalMultiplier) + " " + damageDone + " -> "
+                            + reducedDamage);
                 }
             };
         }

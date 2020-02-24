@@ -2,7 +2,7 @@ package net.samongi.Inscription.Glyphs;
 
 import org.bukkit.ChatColor;
 
-public enum GlyphRarity {
+@Deprecated public enum GlyphRarity_OLD {
 
     COMMON("Common", ChatColor.WHITE, 0, 100),
     MAGICAL("Magical", ChatColor.GREEN, 1, 600),
@@ -15,7 +15,7 @@ public enum GlyphRarity {
     private final int m_rank;
     private final int m_modelIncrement;
 
-    GlyphRarity(String display, ChatColor color, int rank, int modelIncrement) {
+    GlyphRarity_OLD(String display, ChatColor color, int rank, int modelIncrement) {
         m_display = display;
         m_color = color;
         m_rank = rank;

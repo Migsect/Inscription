@@ -9,10 +9,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import net.samongi.Inscription.Experience.BlockTracker;
 import net.samongi.Inscription.Experience.PlayerExperienceOverflowEvent;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Glyph;
-import net.samongi.Inscription.Glyphs.Generator.GlyphGenerator;
+import net.samongi.Inscription.Loot.Generator.GlyphGenerator;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 
@@ -103,7 +104,9 @@ public class LootManager implements Listener, ConfigurationParsing {
 
         this.m_entityDropChances.put(type, chance);
         this.m_entityGenerators.put(type, generator);
-        Inscription.logger.fine("Registered drop for entity '" + type.toString() + "' with generator '" + generator.getTypeName() + "' with chance " + chance);
+        Inscription.logger.fine(
+            "Registered drop for entity '" + type.toString() + "' with generator '" + generator.getTypeName()
+                + "' with chance " + chance);
     }
 
     /**
@@ -116,14 +119,17 @@ public class LootManager implements Listener, ConfigurationParsing {
     public void registerGeneratorToMaterial(Material type, GlyphGenerator generator, double chance) {
         this.m_blockDropChances.put(type, chance);
         this.m_blockGenerators.put(type, generator);
-        Inscription.logger.fine("Registered drop for material '" + type.toString() + "' with generator '" + generator.getTypeName() + "' with chance " + chance);
+        Inscription.logger.fine(
+            "Registered drop for material '" + type.toString() + "' with generator '" + generator.getTypeName()
+                + "' with chance " + chance);
 
     }
 
     public void addGeneratorToExperienceOverflow(Map<String, Integer> experienceMap, GlyphGenerator generator) {
         this.m_experienceOverflowThresholds.add(experienceMap);
         this.m_experienceOverflowGenerators.add(generator);
-        Inscription.logger.fine(String.format("Registered experience overflow with generator '%s'", generator.getTypeName()));
+        Inscription.logger
+            .fine(String.format("Registered experience overflow with generator '%s'", generator.getTypeName()));
     }
     // ---------------------------------------------------------------------------------------------------------------//
 
@@ -175,7 +181,8 @@ public class LootManager implements Listener, ConfigurationParsing {
                 continue;
             }
 
-            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager().getGeneratorByType(generatorString);
+            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager()
+                .getGeneratorByType(generatorString);
             if (generator == null) {
                 Inscription.logger.warning(String.format("'%s' is not a valid generator type.", generatorString));
                 continue;
@@ -213,10 +220,12 @@ public class LootManager implements Listener, ConfigurationParsing {
             String generatorString = materialSection.getString("generator");
             if (generatorString == null) {
 
-                Inscription.logger.warning(String.format("Section '%s' does not define a generator type.", materialKey));
+                Inscription.logger
+                    .warning(String.format("Section '%s' does not define a generator type.", materialKey));
                 continue;
             }
-            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager().getGeneratorByType(generatorString);
+            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager()
+                .getGeneratorByType(generatorString);
             if (generator == null) {
                 Inscription.logger.warning(String.format("'%s' is not a valid generator type.", generatorString));
                 continue;
@@ -244,11 +253,13 @@ public class LootManager implements Listener, ConfigurationParsing {
 
             String generatorString = experienceSection.getString("generator");
             if (generatorString == null) {
-                Inscription.logger.warning(String.format("Section '%s' does not define a generator type.", experienceSectionKey));
+                Inscription.logger
+                    .warning(String.format("Section '%s' does not define a generator type.", experienceSectionKey));
                 continue;
             }
 
-            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager().getGeneratorByType(generatorString);
+            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager()
+                .getGeneratorByType(generatorString);
             if (generator == null) {
                 Inscription.logger.warning(String.format("'%s' is not a valid generator type.", generatorString));
                 continue;
@@ -344,7 +355,8 @@ public class LootManager implements Listener, ConfigurationParsing {
 
         Location location = event.getPlayer().getLocation();
         Material type = event.getBlock().getType();
-        if (Inscription.getInstance().getExperienceManager().getTracker().isTracked(type) && Inscription.getInstance().getExperienceManager().getTracker().isPlaced(location)) {
+        BlockTracker tracker = Inscription.getInstance().getBlockTracker();
+        if (tracker.isTracked(type) && tracker.isPlaced(location)) {
             return;
         }
 
@@ -457,7 +469,8 @@ public class LootManager implements Listener, ConfigurationParsing {
         itemMeta.setDisplayName("Undiscovered Glyph");
 
         List<String> itemLore = new ArrayList<String>();
-        itemLore.add(ChatColor.MAGIC + "" + ChatColor.YELLOW + "Unknown " + ChatColor.BLUE + generator.getDisplayName() + ChatColor.YELLOW + " Glyph");
+        itemLore.add(ChatColor.MAGIC + "" + ChatColor.YELLOW + "Unknown " + ChatColor.BLUE + generator.getDisplayName()
+            + ChatColor.YELLOW + " Glyph");
         itemLore.add(ChatColor.YELLOW + "Use to discover a random glyph.");
         itemMeta.setLore(itemLore);
         itemMeta.setCustomModelData(generator.getConsumableModel());

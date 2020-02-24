@@ -1,18 +1,18 @@
-package net.samongi.Inscription.Glyphs.Attributes.Types;
+package net.samongi.Inscription.Attributes.Types;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import net.samongi.Inscription.Attributes.GeneralAttributeParser;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Glyph;
-import net.samongi.Inscription.Glyphs.Attributes.Attribute;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeTypeConstructor;
+import net.samongi.Inscription.Attributes.Attribute;
+import net.samongi.Inscription.Attributes.AttributeType;
+import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClasses.EntityClass;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
-import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -29,85 +29,66 @@ import org.bukkit.projectiles.ProjectileSource;
 
 public class DamageAttributeType extends AttributeType {
 
-    private static final long serialVersionUID = -8367848352344774887L;
+    //----------------------------------------------------------------------------------------------------------------//
     private static final String TYPE_IDENTIFIER = "DAMAGE";
 
-    /* The entity class that this DamageAttributeType will target */
-    private EntityClass target_entities;
-    /* The material class that this DamageAttributeType will apply to */
-    private MaterialClass target_materials;
+    //----------------------------------------------------------------------------------------------------------------//
+    private EntityClass m_targetEntities;
+    private MaterialClass m_targetMaterials;
 
-    /* The minimum and maximum damage multiplier */
-    private double min_damage;
-    private double max_damage;
+    private double m_minDamage;
+    private double n_maxDamage;
 
-    /**
-     * Consturctor for a DamageAttributeType
-     *
-     * @param type_name   The name of the type (display)
-     * @param description An item name descriptor
-     * @param min_damage  The min damage this damage attribute can have
-     * @param max_damage  The max damage this damage attribute can have
-     */
-    private DamageAttributeType(String type_name, String description, double min_damage, double max_damage) {
-        super(type_name, description);
-
-        this.target_entities = EntityClass.getGlobalLiving("all creatures");
-        this.target_materials = MaterialClass.getGlobal("any items");
-
-        this.min_damage = min_damage;
-        this.max_damage = max_damage;
+    //----------------------------------------------------------------------------------------------------------------//
+    protected DamageAttributeType(GeneralAttributeParser parser) {
+        super(parser);
     }
+
+    //----------------------------------------------------------------------------------------------------------------//
 
     public static class Constructor extends AttributeTypeConstructor {
 
-        @Override public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException {
-            String type = section.getString("type");
-            if (type == null)
+        @Override public AttributeType construct(ConfigurationSection section) {
+            GeneralAttributeParser parser = new GeneralAttributeParser(section, TYPE_IDENTIFIER);
+            if (!parser.checkType()) {
                 return null;
-            if (!type.toUpperCase().equals("DAMAGE"))
+            }
+            if (!parser.loadInfo()) {
                 return null;
+            }
 
-            String name = section.getString("name");
-            if (name == null)
-                return null;
+            DamageAttributeType attributeType = new DamageAttributeType(parser);
 
-            String descriptor = section.getString("descriptor");
-            if (descriptor == null)
-                return null;
-
-            double min_damage = section.getDouble("min-damage");
-            double max_damage = section.getDouble("max-damage");
-            if (min_damage > max_damage) {
+            double minDamage = section.getDouble("min-damage");
+            double maxDamage = section.getDouble("max-damage");
+            if (minDamage > maxDamage) {
                 Inscription.logger.warning(section.getName() + " : min damage is bigger than max damage");
                 return null;
             }
-            double rarity_mult = section.getDouble("rarity-multiplier");
 
-            String target_entities = section.getString("target-entities");
-            String target_materials = section.getString("target-materials");
+            attributeType.n_maxDamage = maxDamage;
+            attributeType.m_minDamage = minDamage;
 
-            DamageAttributeType attributeType = new DamageAttributeType(name, descriptor, min_damage, max_damage);
-            attributeType.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
-            attributeType.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
-            attributeType.setRarityMultiplier(rarity_mult);
-
-            int modelIncrement = section.getInt("model", 0);
-            attributeType.setModelIncrement(modelIncrement);
-
-            // Setting all the targeting if there is any
-            if (target_entities != null) {
-                EntityClass e_class = Inscription.getInstance().getTypeClassManager().getEntityClass(target_entities);
+            String targetEntities = section.getString("target-entities");
+            if (targetEntities != null) {
+                EntityClass e_class = Inscription.getInstance().getTypeClassManager().getEntityClass(targetEntities);
                 if (e_class == null) {
-                    throw new InvalidConfigurationException("Entitfy class was undefined:" + target_entities);
+                    Inscription.logger
+                        .warning("[DamageAttributeType] '" + targetEntities + "' is not a valid material class.");
+                    return null;
                 }
                 attributeType.setTargetEntities(e_class);
             }
-            if (target_materials != null) {
-                MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(target_materials);
+
+            String targetMaterial = section.getString("target-materials");
+            if (targetMaterial != null) {
+                MaterialClass m_class = Inscription.getInstance().getTypeClassManager()
+                    .getMaterialClass(targetMaterial);
                 attributeType.setTargetMaterials(m_class);
                 if (m_class == null) {
-                    throw new InvalidConfigurationException("Material class was undefined:" + target_materials);
+                    Inscription.logger
+                        .warning("[DamageAttributeType] '" + targetMaterial + "' is not a valid material class.");
+                    return null;
                 }
             }
 
@@ -177,50 +158,53 @@ public class DamageAttributeType extends AttributeType {
                 if (!(cached_data instanceof DamageAttributeType.Data))
                     return;
 
-                Inscription.logger.fine("  Caching attribute for " + typeDescription);
-                Inscription.logger.fine("    'target_entities' is global?: " + target_entities.isGlobal());
-                Inscription.logger.fine("    'target_materials' is global?: " + target_materials.isGlobal());
+                Inscription.logger.fine("  Caching attribute for " + m_typeDescription);
+                Inscription.logger.fine("    'target_entities' is global?: " + m_targetEntities.isGlobal());
+                Inscription.logger.fine("    'target_materials' is global?: " + m_targetMaterials.isGlobal());
 
                 DamageAttributeType.Data damageData = (DamageAttributeType.Data) cached_data;
                 double damage = getDamage(this.getGlyph()); // getting the damage for
                 // the attribute
-                if (target_entities.isGlobal() && target_materials.isGlobal()) {
+                if (m_targetEntities.isGlobal() && m_targetMaterials.isGlobal()) {
                     double d = damageData.get();
-                    Inscription.logger.fine("C- Added '" + damage + "' damage");
+                    Inscription.logger.fine("  +C Added '" + damage + "' damage");
                     damageData.set(d + damage);
-                } else if (target_entities.isGlobal()) {
-                    for (Material m : target_materials.getMaterials()) {
+                } else if (m_targetEntities.isGlobal()) {
+                    for (Material m : m_targetMaterials.getMaterials()) {
                         double d = damageData.get(m);
-                        Inscription.logger.fine("C- Added '" + damage + "' damage to '" + m.toString() + "'");
+                        Inscription.logger.fine("  +C Added '" + damage + "' damage to '" + m.toString() + "'");
                         damageData.set(m, d + damage);
                     }
-                } else if (target_materials.isGlobal()) {
-                    for (EntityType e : target_entities.getEntities()) {
+                } else if (m_targetMaterials.isGlobal()) {
+                    for (EntityType e : m_targetEntities.getEntities()) {
                         double d = damageData.get(e);
-                        Inscription.logger.fine("C- Added '" + damage + "' damage to '" + e.toString() + "'");
+                        Inscription.logger.fine("  +C Added '" + damage + "' damage to '" + e.toString() + "'");
                         damageData.set(e, d + damage);
                     }
                 } else {
-                    for (EntityType e : target_entities.getEntities())
-                        for (Material m : target_materials.getMaterials()) {
+                    for (EntityType e : m_targetEntities.getEntities())
+                        for (Material m : m_targetMaterials.getMaterials()) {
                             double d = damageData.get(e, m);
-                            Inscription.logger.fine("C- Added '" + damage + "' damage to '" + e.toString() + "|" + m.toString() + "'");
+                            Inscription.logger.fine(
+                                "  +C Added '" + damage + "' damage to '" + e.toString() + "|" + m.toString() + "'");
                             damageData.set(e, m, d + damage);
                         }
                 }
-                Inscription.logger.fine("  Finished caching for " + typeDescription);
+                Inscription.logger.fine("  Finished caching for " + m_typeDescription);
                 data.setData(damageData); // setting the data again.
             }
 
             @Override public String getLoreLine() {
                 String damage_str = getDamageString(this.getGlyph());
-                String item_class = target_materials.getName();
-                String entity_class = target_entities.getName();
+                String item_class = m_targetMaterials.getName();
+                String entity_class = m_targetEntities.getName();
 
                 String info_line =
-                    ChatColor.BLUE + "+" + damage_str + "%" + ChatColor.YELLOW + " damage to " + ChatColor.BLUE + entity_class + ChatColor.YELLOW + " using " + ChatColor.BLUE + item_class;
+                    ChatColor.BLUE + "+" + damage_str + "%" + ChatColor.YELLOW + " damage to " + ChatColor.BLUE
+                        + entity_class + ChatColor.YELLOW + " using " + ChatColor.BLUE + item_class;
 
-                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - " + ChatColor.RESET + info_line;
+                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - "
+                    + ChatColor.RESET + info_line;
             }
         };
     }
@@ -302,8 +286,8 @@ public class DamageAttributeType extends AttributeType {
         int glyph_level = glyph.getLevel();
         int rarity_level = glyph.getRarity().getRank();
 
-        double rarity_multiplier = 1 + rarityMultiplier * rarity_level;
-        double base_damage = min_damage + (max_damage - min_damage) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
+        double rarity_multiplier = 1 + m_rarityMultiplier * rarity_level;
+        double base_damage = m_minDamage + (n_maxDamage - m_minDamage) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
         return rarity_multiplier * base_damage;
     }
     /**
@@ -317,10 +301,10 @@ public class DamageAttributeType extends AttributeType {
     }
 
     public void setTargetEntities(EntityClass e_class) {
-        this.target_entities = e_class;
+        this.m_targetEntities = e_class;
     }
     public void setTargetMaterials(MaterialClass m_class) {
-        this.target_materials = m_class;
+        this.m_targetMaterials = m_class;
     }
 
 }

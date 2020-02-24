@@ -1,15 +1,17 @@
-package net.samongi.Inscription.Glyphs.Attributes.Types;
+package net.samongi.Inscription.Attributes.Types;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Random;
 
 import net.md_5.bungee.api.ChatColor;
+import net.samongi.Inscription.Attributes.GeneralAttributeParser;
+import net.samongi.Inscription.Experience.BlockTracker;
 import net.samongi.Inscription.Inscription;
-import net.samongi.Inscription.Glyphs.Attributes.Attribute;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeTypeConstructor;
-import net.samongi.Inscription.Glyphs.Attributes.Base.ChanceAttributeType;
+import net.samongi.Inscription.Attributes.Attribute;
+import net.samongi.Inscription.Attributes.AttributeType;
+import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
+import net.samongi.Inscription.Attributes.Base.ChanceAttributeType;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
@@ -26,6 +28,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 public class BlockBonusAttributeType extends ChanceAttributeType {
 
@@ -40,14 +43,14 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
     /* The tools that the bonus occurs with */
     private MaterialClass m_toolMaterials = MaterialClass.getGlobal("any items");
 
-    private BlockBonusAttributeType(String typeName, String description) {
-        super(typeName, description);
+    //----------------------------------------------------------------------------------------------------------------//
+    protected BlockBonusAttributeType(GeneralAttributeParser parser) {
+        super(parser);
     }
 
+    //----------------------------------------------------------------------------------------------------------------//
     @Override public Attribute generate() {
         return new Attribute(this) {
-
-            private static final long serialVersionUID = -1151134999201153827L;
 
             @Override public void cache(PlayerData data) {
                 CacheData cached_data = data.getData(BlockBonusAttributeType.TYPE_IDENTIFIER);
@@ -58,7 +61,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
                     return;
                 }
 
-                Inscription.logger.finer("  Caching attribute for " + typeDescription);
+                Inscription.logger.finer("  Caching attribute for " + m_typeDescription);
                 Inscription.logger.finer("    'block_materials' is global?: " + m_blockMaterials.isGlobal());
                 Inscription.logger.finer("    'tool_materials' is global?: " + m_toolMaterials.isGlobal());
 
@@ -68,20 +71,22 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
                     double c = bonusData.get();
                     bonusData.set(c + chance);
 
-                    Inscription.logger.finer("C- Added '" + chance + "' bonus");
+                    Inscription.logger.finer("  +C Added '" + chance + "' bonus");
                 } else if (m_blockMaterials.isGlobal()) {
                     for (Material toolMaterial : m_toolMaterials.getMaterials()) {
                         double c = bonusData.getTool(toolMaterial);
                         bonusData.setTool(toolMaterial, c + chance);
 
-                        Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + toolMaterial.toString() + "'");
+                        Inscription.logger
+                            .finer("  +C Added '" + chance + "' bonus to '" + toolMaterial.toString() + "'");
                     }
                 } else if (m_toolMaterials.isGlobal()) {
                     for (BlockData blockData : m_blockMaterials.getBlockData()) {
                         double c = bonusData.getBlock(blockData);
                         bonusData.setBlock(blockData, c + chance);
 
-                        Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + blockData.toString() + "'");
+                        Inscription.logger
+                            .finer("  +C Added '" + chance + "' bonus to '" + blockData.getAsString(true) + "'");
                     }
                 } else {
                     for (Material toolMaterial : m_toolMaterials.getMaterials())
@@ -89,10 +94,12 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
                             double c = bonusData.getToolBlock(toolMaterial, blockData);
                             bonusData.setToolBlock(toolMaterial, blockData, c + chance);
 
-                            Inscription.logger.finer("C- Added '" + chance + "' bonus to '" + toolMaterial.toString() + "|" + blockData.toString() + "'");
+                            Inscription.logger.finer(
+                                "  +C Added '" + chance + "' bonus to '" + toolMaterial.toString() + "|" + blockData
+                                    .getAsString(true) + "'");
                         }
                 }
-                Inscription.logger.finer("  Finished caching for " + typeDescription);
+                Inscription.logger.finer("  Finished caching for " + m_typeDescription);
                 data.setData(bonusData); // setting the data again.
             }
 
@@ -102,16 +109,18 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
                 String block_class = m_blockMaterials.getName();
 
                 String info_line =
-                    ChatColor.BLUE + "+" + chance_str + "%" + ChatColor.YELLOW + " chance for extra drop on " + ChatColor.BLUE + block_class + ChatColor.YELLOW + " using " + ChatColor.BLUE
-                        + tool_class;
-                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - " + ChatColor.RESET + info_line;
+                    ChatColor.BLUE + "+" + chance_str + "%" + ChatColor.YELLOW + " chance for extra drop on "
+                        + ChatColor.BLUE + block_class + ChatColor.YELLOW + " using " + ChatColor.BLUE + tool_class;
+                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - "
+                    + ChatColor.RESET + info_line;
             }
         };
     }
 
     public static class Data implements CacheData {
 
-        private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
+        private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{
+            MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
 
         /* Data members of the data */
         private double global = 0.0;
@@ -157,7 +166,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
             HashMap<MaskedBlockData, Double> block_bonus = this.tool_block_bonus.get(tool);
 
             MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
-            return block_bonus.getOrDefault(blockData, 0.0);
+            return block_bonus.getOrDefault(maskedBlockData, 0.0);
         }
 
         @Override public void clear() {
@@ -178,21 +187,17 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
 
     public static class Constructor extends AttributeTypeConstructor {
 
-        @Override public AttributeType construct(ConfigurationSection section) throws InvalidConfigurationException {
-            String type = section.getString("type");
-            if (type == null || !type.toUpperCase().equals(TYPE_IDENTIFIER)) {
+        @Override public AttributeType construct(ConfigurationSection section) {
+
+            GeneralAttributeParser parser = new GeneralAttributeParser(section, TYPE_IDENTIFIER);
+            if (!parser.checkType()) {
+                return null;
+            }
+            if (!parser.loadInfo()) {
                 return null;
             }
 
-            String name = section.getString("name");
-            if (name == null) {
-                return null;
-            }
-
-            String descriptor = section.getString("descriptor");
-            if (descriptor == null) {
-                return null;
-            }
+            BlockBonusAttributeType attributeType = new BlockBonusAttributeType(parser);
 
             double minChance = section.getDouble("min-chance");
             double maxChance = section.getDouble("max-chance");
@@ -200,34 +205,29 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
                 Inscription.logger.warning(section.getName() + " : min chance is bigger than max chance");
                 return null;
             }
-            double rarityMultiplier = section.getDouble("rarity-multiplier");
 
-            String target_blocks = section.getString("target-blocks");
-            String target_materials = section.getString("target-materials");
-
-            BlockBonusAttributeType attributeType = new BlockBonusAttributeType(name, descriptor);
             attributeType.setMin(minChance);
             attributeType.setMax(maxChance);
-            attributeType.setRarityMultiplier(rarityMultiplier);
 
-            int modelIncrement = section.getInt("model", 0);
-            attributeType.setModelIncrement(modelIncrement);
-
-            attributeType.baseExperience = AttributeType.getIntMap(section.getConfigurationSection("base-experience"));
-            attributeType.levelExperience = AttributeType.getIntMap(section.getConfigurationSection("level-experience"));
-
-            // Setting all the targeting if there is any
-            if (target_materials != null) {
-                MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(target_materials);
+            String targetMaterials = section.getString("target-materials");
+            if (targetMaterials != null) {
+                MaterialClass m_class = Inscription.getInstance().getTypeClassManager()
+                    .getMaterialClass(targetMaterials);
                 if (m_class == null) {
-                    throw new InvalidConfigurationException("Material class was undefined: " + target_materials);
+                    Inscription.logger
+                        .warning("[BlockBonusAttributeType] '" + targetMaterials + "' is not a valid material class.");
+                    return null;
                 }
                 attributeType.m_toolMaterials = m_class;
             }
-            if (target_blocks != null) {
-                MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(target_blocks);
+            String targetBlocks = section.getString("target-blocks");
+
+            if (targetBlocks != null) {
+                MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetBlocks);
                 if (m_class == null) {
-                    throw new InvalidConfigurationException("Material class was undefined:" + target_blocks);
+                    Inscription.logger
+                        .warning("[BlockBonusAttributeType] '" + targetBlocks + "' is not a valid material class.");
+                    return null;
                 }
                 attributeType.m_blockMaterials = m_class;
             }
@@ -247,20 +247,27 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
 
                     Block block = event.getBlock();
                     ItemStack tool = player.getInventory().getItemInMainHand();
-                    if (tool == null)
+                    if (tool == null) {
                         tool = new ItemStack(Material.AIR);
+                    }
+
+                    BlockTracker tracker = Inscription.getInstance().getBlockTracker();
+                    if (tracker.isTracked(block.getType()) && tracker.isPlaced(block)) {
+                        return;
+                    }
 
                     BlockData blockData = block.getBlockData();
-                    Material tool_material = tool.getType();
+                    Material toolMaterial = tool.getType();
 
                     Collection<ItemStack> dropables = block.getDrops(tool);
 
                     double block_bonus = bonus_data.get();
-                    block_bonus += bonus_data.getTool(tool_material);
+                    block_bonus += bonus_data.getTool(toolMaterial);
                     block_bonus += bonus_data.getBlock(blockData);
-                    block_bonus += bonus_data.getToolBlock(tool_material, blockData);
+                    block_bonus += bonus_data.getToolBlock(toolMaterial, blockData);
 
-                    Inscription.logger.finest("[Break Event] Bonus Chance: " + block_bonus);
+                    Inscription.logger
+                        .finest("[Break Event] '" + blockData.getAsString(true) + "' Bonus Chance: " + block_bonus);
 
                     Location loc = block.getLocation();
 

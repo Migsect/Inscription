@@ -1,4 +1,4 @@
-package net.samongi.Inscription.Glyphs.Generator;
+package net.samongi.Inscription.Loot.Generator;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -7,19 +7,16 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import net.samongi.Inscription.Glyphs.*;
+import net.samongi.Inscription.Glyphs.Types.GlyphElement;
+import net.samongi.Inscription.Glyphs.Types.GlyphRarity;
 import net.samongi.Inscription.Inscription;
-import net.samongi.Inscription.Glyphs.Glyph;
-import net.samongi.Inscription.Glyphs.GlyphElement;
-import net.samongi.Inscription.Glyphs.GlyphRarity;
-import net.samongi.Inscription.Glyphs.Attributes.Attribute;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeManager;
-import net.samongi.Inscription.Glyphs.Attributes.AttributeType;
+import net.samongi.Inscription.Attributes.Attribute;
+import net.samongi.Inscription.Attributes.AttributeManager;
+import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 
-import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 public class GlyphGenerator {
 
@@ -108,9 +105,11 @@ public class GlyphGenerator {
     public void setMinLevel(int level) {
         this.m_minLevel = level;
     }
+
     public void setMaxLevel(int level) {
         this.m_maxLevel = level;
     }
+
     public void addAttributeCount(int count, int weight) {
         if (weight <= 0) {
             Inscription.logger.fine("AttrbiuteCount '" + count + "' attempted to be registered with weight " + weight);
@@ -120,7 +119,8 @@ public class GlyphGenerator {
     }
     public void addAttributeType(AttributeType type, int weight) {
         if (weight <= 0) {
-            Inscription.logger.fine("AttributeType '" + type.getName() + "' attempted to be registered with weight " + weight);
+            Inscription.logger
+                .fine("AttributeType '" + type.getName() + "' attempted to be registered with weight " + weight);
             return;
         }
         this.m_attributeWeights.put(type, weight);
@@ -140,6 +140,7 @@ public class GlyphGenerator {
         this.m_elementWeight.put(element, weight);
     }
 
+    // ---------------------------------------------------------------------------------------------------------------//
     public static List<GlyphGenerator> parse(File file) {
         ConfigFile config = new ConfigFile(file);
 
@@ -182,14 +183,16 @@ public class GlyphGenerator {
         ConfigurationSection elements = section.getConfigurationSection("elements");
         Set<String> elementKeys = elements.getKeys(false);
         for (String elementKey : elementKeys) {
-            GlyphElement glyphElement = GlyphElement.valueOf(elementKey);
-            if (glyphElement == null)
-                continue; // TODO error message
+            GlyphElement glyphElement = Inscription.getInstance().getGlyphTypesManager().getElement(elementKey);
+            if (glyphElement == null) {
+                Inscription.logger.warning("'" + elementKey + "' is not a valid glyph element.");
+                continue;
+            }
 
             int weight = elements.getInt(elementKey);
             generator.addElement(glyphElement, weight);
 
-            Inscription.logger.fine("  Found glyphElement to be: '" + glyphElement + "'");
+            Inscription.logger.fine("  Found glyphElement to be: '" + glyphElement.getType() + "'");
             Inscription.logger.fine("  Found weight to be: '" + weight + "'");
         }
 
@@ -197,14 +200,16 @@ public class GlyphGenerator {
         ConfigurationSection rarities = section.getConfigurationSection("rarities");
         Set<String> rarityKeys = rarities.getKeys(false);
         for (String rarityKey : rarityKeys) {
-            GlyphRarity r = GlyphRarity.valueOf(rarityKey);
-            if (r == null)
-                continue; // TODO error message
+            GlyphRarity rarity = Inscription.getInstance().getGlyphTypesManager().getRarity(rarityKey);
+            if (rarity == null) {
+                Inscription.logger.warning("'" + rarityKey + "' is not a valid glyph rarity.");
+                continue;
+            }
 
             int weight = rarities.getInt(rarityKey);
-            generator.addRarity(r, weight);
+            generator.addRarity(rarity, weight);
 
-            Inscription.logger.fine("  Found r to be: '" + r + "'");
+            Inscription.logger.fine("  Found r to be: '" + rarity.getType() + "'");
             Inscription.logger.fine("  Found weight to be: '" + weight + "'");
         }
 
