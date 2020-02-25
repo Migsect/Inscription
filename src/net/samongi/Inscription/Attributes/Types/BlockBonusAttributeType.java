@@ -104,13 +104,13 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
             }
 
             @Override public String getLoreLine() {
-                String chance_str = getChanceString(this.getGlyph());
+                String chanceString = getDisplayString(this.getGlyph(), "+", "%");
                 String tool_class = m_toolMaterials.getName();
                 String block_class = m_blockMaterials.getName();
 
                 String info_line =
-                    ChatColor.BLUE + "+" + chance_str + "%" + ChatColor.YELLOW + " chance for extra drop on "
-                        + ChatColor.BLUE + block_class + ChatColor.YELLOW + " using " + ChatColor.BLUE + tool_class;
+                    chanceString + ChatColor.YELLOW + " chance for extra drop on " + ChatColor.BLUE + block_class
+                        + ChatColor.YELLOW + " using " + ChatColor.BLUE + tool_class;
                 return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - "
                     + ChatColor.RESET + info_line;
             }

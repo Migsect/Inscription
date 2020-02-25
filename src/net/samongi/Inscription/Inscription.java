@@ -26,6 +26,7 @@ import net.samongi.SamongiLib.CommandHandling.CommandHandler;
 import net.samongi.SamongiLib.Logger.BetterLogger;
 
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -42,7 +43,7 @@ public class Inscription extends JavaPlugin {
     private static final String TYPE_CLASS_DIRECTORY = "type-classes";
     private static final String GLYPH_TYPES_DIRECTORY = "glyph-types";
 
-    private static final String trackerDataFile = "tracker.dat";
+    private static final String TRACKER_DATA_FOLDER = "block-tracker";
 
     //----------------------------------------------------------------------------------------------------------------//
     private static Inscription instance;
@@ -59,7 +60,7 @@ public class Inscription extends JavaPlugin {
 
     //----------------------------------------------------------------------------------------------------------------//
     private CommandHandler m_commandHandler;
-    private BlockTracker m_tracker;
+    private BlockTracker m_blockTracker;
 
     private TypeClassManager m_typeClassManager = null;
     private ExperienceManager m_experienceManager = null;
@@ -156,27 +157,17 @@ public class Inscription extends JavaPlugin {
 
         createListeners();
         createCommands();
-
-        // Loading all the player profiles again
     }
 
     @Override public void onDisable() {
         for (Player p : Bukkit.getOnlinePlayers()) {
             getPlayerManager().unloadPlayer(p);
         }
-        BlockTracker.save(m_tracker, new File(this.getDataFolder(), trackerDataFile));
+        tearDownBlockTracker();
     }
 
     //----------------------------------------------------------------------------------------------------------------//
-    private void setupBlockTracker() {
-        m_tracker = BlockTracker.load(new File(this.getDataFolder(), trackerDataFile));
-        if (m_tracker == null) {
-            logger.info("Found no tracker file...");
-            m_tracker = new BlockTracker();
-        }
-        m_tracker.configureTracker(getConfig());
-        getServer().getPluginManager().registerEvents(m_tracker, this);
-    }
+
     private void readConfig() {
 
         Level logLevel = Level.parse(this.getConfig().getString("loggingLevel", Level.INFO.toString()).toUpperCase());
@@ -185,7 +176,19 @@ public class Inscription extends JavaPlugin {
 
         s_maxLevel = getConfig().getInt("max-glyph-level", 100);
     }
-    public void saveTracker(File file) {
+
+    private void setupBlockTracker() {
+        m_blockTracker = new BlockTracker(new File(TRACKER_DATA_FOLDER));
+        m_blockTracker.configureTracker(this.getConfig());
+        for (World world : Bukkit.getWorlds()) {
+            m_blockTracker.loadWorldChunks(world);
+        }
+
+        PluginManager pluginManager = getServer().getPluginManager();
+        pluginManager.registerEvents(m_blockTracker, this);
+    }
+    private void tearDownBlockTracker() {
+        m_blockTracker.saveAllChunkRegions();
     }
 
     private void createCommands() {
@@ -198,10 +201,10 @@ public class Inscription extends JavaPlugin {
     }
 
     private void createListeners() {
-        PluginManager pm = getServer().getPluginManager();
-        pm.registerEvents(new BlockListener(), this);
-        pm.registerEvents(new EntityListener(), this);
-        pm.registerEvents(new PlayerListener(), this);
+        PluginManager pluginManager = getServer().getPluginManager();
+        pluginManager.registerEvents(new BlockListener(), this);
+        pluginManager.registerEvents(new EntityListener(), this);
+        pluginManager.registerEvents(new PlayerListener(), this);
     }
 
     public void createAttributeConstructor() {
@@ -215,7 +218,7 @@ public class Inscription extends JavaPlugin {
 
     //----------------------------------------------------------------------------------------------------------------//
     public BlockTracker getBlockTracker() {
-        return m_tracker;
+        return m_blockTracker;
     }
     public LootManager getLootManager() {
         return m_lootManager;

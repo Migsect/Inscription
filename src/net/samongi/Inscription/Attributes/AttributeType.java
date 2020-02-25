@@ -24,13 +24,15 @@ public abstract class AttributeType implements Serializable {
      */
     public static Map<String, Integer> getIntMap(ConfigurationSection section) {
         Map<String, Integer> map = new HashMap<>();
-        if (section == null)
+        if (section == null) {
             return map;
+        }
         Set<String> base_key = section.getKeys(false);
         for (String k : base_key) {
             int amount = section.getInt(k);
-            if (amount == 0)
+            if (amount == 0) {
                 continue;
+            }
             map.put(k, amount);
         }
         return map;
@@ -152,6 +154,7 @@ public abstract class AttributeType implements Serializable {
     public void setRarityMultiplier(double multiplier) {
         this.m_rarityMultiplier = multiplier;
     }
+
     /**
      * Returns the rarity multiplier ratio that the attribute type uses.
      *
@@ -159,6 +162,10 @@ public abstract class AttributeType implements Serializable {
      */
     public double getRarityMultiplier() {
         return this.m_rarityMultiplier;
+    }
+
+    public double calculateRarityMultiplier(Glyph glyph) {
+        return 1 + getRarityMultiplier() * glyph.getRarity().getRank();
     }
 
     public void setModelIncrement(int m_modelIncrement) {

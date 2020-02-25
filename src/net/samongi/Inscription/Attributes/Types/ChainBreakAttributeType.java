@@ -80,13 +80,25 @@ public class ChainBreakAttributeType extends AttributeType {
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + this.m_rarityMultiplier * rarity_level;
-        double baseAmount =
-            this.minBlocks + (this.maxBlocks - this.minBlocks) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
+        double baseAmount = this.minBlocks + (this.maxBlocks - this.minBlocks) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
         return (int) Math.floor(rarity_multiplier * baseAmount);
     }
 
     public String getAmountString(Glyph glyph) {
         return String.format("%d", this.getAmount(glyph));
+    }
+    public String getMinAmountString(Glyph glyph) {
+        return String.format("%d", (int) (this.getMin() * calculateRarityMultiplier(glyph)));
+    }
+    public String getMaxAmountString(Glyph glyph) {
+        return String.format("%d", (int) (this.getMax() * calculateRarityMultiplier(glyph)));
+    }
+    public String getDisplayString(Glyph glyph, String prefix, String suffix) {
+        String chanceString = prefix + getAmountString(glyph) + suffix;
+        String minChanceString = prefix + getMinAmountString(glyph) + suffix;
+        String maxChanceString = prefix + getMaxAmountString(glyph) + suffix;
+
+        return org.bukkit.ChatColor.BLUE + chanceString + org.bukkit.ChatColor.DARK_GRAY + "[" + minChanceString + "," + maxChanceString + "]";
     }
 
     @Override public Attribute generate() {
@@ -94,10 +106,12 @@ public class ChainBreakAttributeType extends AttributeType {
 
             @Override public void cache(PlayerData data) {
                 CacheData cached_data = data.getData(TYPE_IDENTIFIER);
-                if (cached_data == null)
+                if (cached_data == null) {
                     cached_data = new Data();
-                if (!(cached_data instanceof Data))
+                }
+                if (!(cached_data instanceof Data)) {
                     return;
+                }
 
                 Inscription.logger.finer("  Caching attribute for " + m_typeDescription);
                 Inscription.logger.finer("    'blockMaterials' is global?: " + blockMaterials.isGlobal());
@@ -122,8 +136,7 @@ public class ChainBreakAttributeType extends AttributeType {
                         int a = bonusData.getBlock(blockData);
                         bonusData.setBlock(blockData, a + amount);
 
-                        Inscription.logger
-                            .finer("  +C Added '" + amount + "' bonus to '" + blockData.getAsString(true) + "'");
+                        Inscription.logger.finer("  +C Added '" + amount + "' bonus to '" + blockData.getAsString(true) + "'");
                     }
                 } else {
                     for (Material type : toolMaterials.getMaterials())
@@ -131,9 +144,7 @@ public class ChainBreakAttributeType extends AttributeType {
                             int a = bonusData.getToolBlock(type, blockData);
                             bonusData.setToolBlock(type, blockData, a + amount);
 
-                            Inscription.logger.finer(
-                                "  +C Added '" + amount + "' bonus to '" + type.toString() + "|" + blockData
-                                    .getAsString(true) + "'");
+                            Inscription.logger.finer("  +C Added '" + amount + "' bonus to '" + type.toString() + "|" + blockData.getAsString(true) + "'");
                         }
                 }
                 Inscription.logger.finer("  Finished caching for " + m_typeDescription);
@@ -142,15 +153,14 @@ public class ChainBreakAttributeType extends AttributeType {
             }
 
             @Override public String getLoreLine() {
-                String amount = getAmountString(this.getGlyph());
+                String amountString = ((ChainBreakAttributeType) this.getType()).getDisplayString(this.getGlyph(), "+", "");
                 String toolClass = toolMaterials.getName();
                 String blockClass = blockMaterials.getName();
 
                 String infoLine =
-                    ChatColor.BLUE + "+" + amount + ChatColor.YELLOW + " chain breaking for " + ChatColor.BLUE
-                        + blockClass + ChatColor.YELLOW + " using " + ChatColor.BLUE + toolClass;
-                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - "
-                    + ChatColor.RESET + infoLine;
+                    amountString + ChatColor.YELLOW + " chain breaking for " + ChatColor.BLUE + blockClass + ChatColor.YELLOW + " using " + ChatColor.BLUE
+                        + toolClass;
+                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - " + ChatColor.RESET + infoLine;
             }
 
         };
@@ -158,8 +168,7 @@ public class ChainBreakAttributeType extends AttributeType {
 
     public static class Data implements CacheData {
 
-        private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{
-            MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
+        private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
 
         /* Data members of the data */
         private int global = 0;
@@ -255,11 +264,9 @@ public class ChainBreakAttributeType extends AttributeType {
 
             String targetMaterials = section.getString("target-materials");
             if (targetMaterials != null) {
-                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager()
-                    .getMaterialClass(targetMaterials);
+                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetMaterials);
                 if (materialClass == null) {
-                    Inscription.logger
-                        .warning("[ChainBreakAttributeType] '" + targetMaterials + "' is not a valid damage class.");
+                    Inscription.logger.warning("[ChainBreakAttributeType] '" + targetMaterials + "' is not a valid damage class.");
                     return null;
                 }
                 attributeType.toolMaterials = materialClass;
@@ -267,11 +274,9 @@ public class ChainBreakAttributeType extends AttributeType {
 
             String targetBlocks = section.getString("target-blocks");
             if (targetBlocks != null) {
-                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager()
-                    .getMaterialClass(targetBlocks);
+                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetBlocks);
                 if (materialClass == null) {
-                    Inscription.logger
-                        .warning("[ChainBreakAttributeType] '" + targetBlocks + "' is not a valid damage class.");
+                    Inscription.logger.warning("[ChainBreakAttributeType] '" + targetBlocks + "' is not a valid damage class.");
                     return null;
                 }
                 attributeType.blockMaterials = materialClass;
@@ -302,8 +307,7 @@ public class ChainBreakAttributeType extends AttributeType {
                     }
                     return true;
                 }
-                @SuppressWarnings("deprecation") private boolean isSimilarData(MaterialData block1,
-                    MaterialData block2) {
+                @SuppressWarnings("deprecation") private boolean isSimilarData(MaterialData block1, MaterialData block2) {
                     if (block1 instanceof Wood && block2 instanceof Wood) {
                         /* Log Checking */
                         if (block1 instanceof Tree && block2 instanceof Tree) {
@@ -315,9 +319,7 @@ public class ChainBreakAttributeType extends AttributeType {
                         } else if (block1 instanceof WoodenStep && block2 instanceof WoodenStep) {
                             return ((WoodenStep) block1).getSpecies().equals(((Tree) block1).getSpecies());
                         }
-                    } else if (block1.getItemType().equals(Material.STONE) && block2.getItemType()
-                        .equals(Material.STONE))
-                    {
+                    } else if (block1.getItemType().equals(Material.STONE) && block2.getItemType().equals(Material.STONE)) {
                         return block1.getData() == block2.getData();
                     }
                     return block1.getItemType().equals(block2.getItemType());
@@ -352,16 +354,15 @@ public class ChainBreakAttributeType extends AttributeType {
                     BlockData blockData = block.getBlockData();
                     Material toolMaterial = tool.getType();
 
-                    int totalBlocks = data.get() + data.getTool(toolMaterial) + data.getBlock(blockData) + data
-                        .getToolBlock(toolMaterial, blockData);
+                    int totalBlocks = data.get() + data.getTool(toolMaterial) + data.getBlock(blockData) + data.getToolBlock(toolMaterial, blockData);
 
-                    Inscription.logger.finest(
-                        "[Break Event] Chain Amount: " + totalBlocks + " (" + blockData.getMaterial() + "/" + blockData
-                            .getAsString(true) + ")");
+                    Inscription.logger
+                        .finest("[Break Event] Chain Amount: " + totalBlocks + " (" + blockData.getMaterial() + "/" + blockData.getAsString(true) + ")");
 
                     /* No need to check for materials if this is less-than-equal to 0 */
-                    if (totalBlocks <= 0)
+                    if (totalBlocks <= 0) {
                         return;
+                    }
 
 
                     /* Setting up the search's data structures */
@@ -373,9 +374,7 @@ public class ChainBreakAttributeType extends AttributeType {
 
                     /* Loop while we have a queue or we haven't out grown our quota */
                     while (markedLocations.size() <= totalBlocks && blockQueue.size() > 0) {
-                        Inscription.logger.finest(
-                            "Marked Size:" + markedLocations.size() + "/" + totalBlocks + ", Queue Size:" + blockQueue
-                                .size());
+                        Inscription.logger.finest("Marked Size:" + markedLocations.size() + "/" + totalBlocks + ", Queue Size:" + blockQueue.size());
                         Block target = blockQueue.poll();
                         if (target == null) {
                             break;

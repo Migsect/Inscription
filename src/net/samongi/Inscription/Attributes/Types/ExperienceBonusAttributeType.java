@@ -55,9 +55,9 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
             }
 
             @Override public String getLoreLine() {
-                String chanceString = getMultiplierString(this.getGlyph());
+                String chanceString = getDisplayString(this.getGlyph(), "+", "x");
 
-                String infoLine = ChatColor.BLUE + "+" + chanceString + "x" + ChatColor.YELLOW + " extra experience.";
+                String infoLine = chanceString + ChatColor.YELLOW + " extra experience.";
                 return this.getType().getDescriptionLoreLine() + infoLine;
             }
         };

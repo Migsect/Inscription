@@ -70,9 +70,8 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                         double newValue = currentValue + (1 - currentValue) * multiplier;
                         data.setArmor(armorMaterial, newValue);
 
-                        Inscription.logger.finer(
-                            "  +C Added '" + multiplier + "' bonus to '" + armorMaterial.toString() + "' "
-                                + currentValue + "->" + newValue);
+                        Inscription.logger
+                            .finer("  +C Added '" + multiplier + "' bonus to '" + armorMaterial.toString() + "' " + currentValue + "->" + newValue);
                     }
                 } else if (m_armorMaterials.isGlobal()) {
                     for (EntityDamageEvent.DamageCause damageType : m_damageTypes.getDamageTypes()) {
@@ -80,9 +79,7 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                         double newValue = currentValue + (1 - currentValue) * multiplier;
                         data.setDamageType(damageType, newValue);
 
-                        Inscription.logger.finer(
-                            "  +C Added '" + multiplier + "' bonus to '" + damageType.toString() + "' " + currentValue
-                                + "->" + newValue);
+                        Inscription.logger.finer("  +C Added '" + multiplier + "' bonus to '" + damageType.toString() + "' " + currentValue + "->" + newValue);
                     }
                 } else {
                     for (Material armorMaterial : m_armorMaterials.getMaterials()) {
@@ -92,8 +89,8 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                             data.setArmorDamageType(armorMaterial, damageType, newValue);
 
                             Inscription.logger.finer(
-                                "  +C Added '" + multiplier + "' bonus to '" + armorMaterial.toString() + "', ''"
-                                    + damageType.toString() + "' " + currentValue + "->" + newValue);
+                                "  +C Added '" + multiplier + "' bonus to '" + armorMaterial.toString() + "', ''" + damageType.toString() + "' " + currentValue
+                                    + "->" + newValue);
                         }
                     }
                 }
@@ -103,13 +100,13 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
             }
 
             @Override public String getLoreLine() {
-                String multiplierString = getMultiplierPercentageString(this.getGlyph());
+                String multiplierString = getDisplayString(this.getGlyph(), "-", "%");
                 String armorClass = m_armorMaterials.getName();
                 String damageClass = m_damageTypes.getName();
 
                 String infoLine =
-                    ChatColor.BLUE + "-" + multiplierString + "%" + ChatColor.YELLOW + " " + ChatColor.BLUE
-                        + damageClass + ChatColor.YELLOW + " damage while wearing " + ChatColor.BLUE + armorClass;
+                    multiplierString + ChatColor.YELLOW + " " + ChatColor.BLUE + damageClass + ChatColor.YELLOW + " damage while wearing " + ChatColor.BLUE
+                        + armorClass;
                 return this.getType().getDescriptionLoreLine() + infoLine;
             }
         };
@@ -142,13 +139,11 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
         public double getDamageType(EntityDamageEvent.DamageCause damageType) {
             return this.m_damageReduction.getOrDefault(damageType, 0.0);
         }
-        public void setArmorDamageType(Material armorMaterial, EntityDamageEvent.DamageCause damageType,
-            double amount) {
+        public void setArmorDamageType(Material armorMaterial, EntityDamageEvent.DamageCause damageType, double amount) {
             if (!this.m_armorDamageReduction.containsKey(armorMaterial)) {
                 this.m_armorDamageReduction.put(armorMaterial, new HashMap<>());
             }
-            HashMap<EntityDamageEvent.DamageCause, Double> damageReduction = this.m_armorDamageReduction
-                .get(armorMaterial);
+            HashMap<EntityDamageEvent.DamageCause, Double> damageReduction = this.m_armorDamageReduction.get(armorMaterial);
             damageReduction.put(damageType, amount);
         }
         public double getArmorDamageType(Material armorMaterial, EntityDamageEvent.DamageCause damageType) {
@@ -201,11 +196,9 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
 
             String targetArmor = section.getString("target-materials");
             if (targetArmor != null) {
-                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager()
-                    .getMaterialClass(targetArmor);
+                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetArmor);
                 if (materialClass == null) {
-                    Inscription.logger
-                        .warning("[DamageReductionAttributeType] '" + targetArmor + "' is not a valid material class.");
+                    Inscription.logger.warning("[DamageReductionAttributeType] '" + targetArmor + "' is not a valid material class.");
                     return null;
                 }
                 attributeType.m_armorMaterials = materialClass;
@@ -213,11 +206,9 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
 
             String targetDamageTypes = section.getString("target-damage");
             if (targetDamageTypes != null) {
-                DamageClass damageTypeClass = Inscription.getInstance().getTypeClassManager()
-                    .getDamageClass(targetDamageTypes);
+                DamageClass damageTypeClass = Inscription.getInstance().getTypeClassManager().getDamageClass(targetDamageTypes);
                 if (damageTypeClass == null) {
-                    Inscription.logger.warning(
-                        "[DamageReductionAttributeType] '" + targetDamageTypes + "' is not a valid damage class.");
+                    Inscription.logger.warning("[DamageReductionAttributeType] '" + targetDamageTypes + "' is not a valid damage class.");
                     return null;
                 }
                 attributeType.m_damageTypes = damageTypeClass;
@@ -265,14 +256,11 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                         armorDamageTypeReduction += data.getArmorDamageType(armorMaterial, damageCause) * 0.25;
                     }
 
-                    double totalMultiplier = (1 - baseReduction) * (1 - armorReduction) * (1 - damageTypeReduction) * (1
-                        - armorDamageTypeReduction);
+                    double totalMultiplier = (1 - baseReduction) * (1 - armorReduction) * (1 - damageTypeReduction) * (1 - armorDamageTypeReduction);
                     double reducedDamage = Math.max(0, damageDone * totalMultiplier);
                     event.setDamage(reducedDamage);
 
-                    Inscription.logger.finest(
-                        "" + "[EntityDamageEvent] DamageReduction " + (1 - totalMultiplier) + " " + damageDone + " -> "
-                            + reducedDamage);
+                    Inscription.logger.finest("" + "[EntityDamageEvent] DamageReduction " + (1 - totalMultiplier) + " " + damageDone + " -> " + reducedDamage);
                 }
             };
         }

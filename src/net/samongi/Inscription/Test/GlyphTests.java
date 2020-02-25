@@ -3,8 +3,6 @@ package net.samongi.Inscription.Test;
 import static org.junit.Assert.*;
 
 import net.samongi.Inscription.Glyphs.Glyph;
-import net.samongi.Inscription.Glyphs.GlyphElement_OLD;
-import net.samongi.Inscription.Glyphs.GlyphRarity_OLD;
 
 import org.junit.Test;
 

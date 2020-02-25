@@ -69,28 +69,33 @@ public class DamageAttributeType extends AttributeType {
             attributeType.n_maxDamage = maxDamage;
             attributeType.m_minDamage = minDamage;
 
-            String targetEntities = section.getString("target-entities");
-            if (targetEntities != null) {
-                EntityClass e_class = Inscription.getInstance().getTypeClassManager().getEntityClass(targetEntities);
-                if (e_class == null) {
-                    Inscription.logger
-                        .warning("[DamageAttributeType] '" + targetEntities + "' is not a valid material class.");
-                    return null;
-                }
-                attributeType.setTargetEntities(e_class);
+            String targetEntitiesString = section.getString("target-entities");
+            if (targetEntitiesString == null) {
+                return null;
             }
 
-            String targetMaterial = section.getString("target-materials");
-            if (targetMaterial != null) {
-                MaterialClass m_class = Inscription.getInstance().getTypeClassManager()
-                    .getMaterialClass(targetMaterial);
-                attributeType.setTargetMaterials(m_class);
-                if (m_class == null) {
-                    Inscription.logger
-                        .warning("[DamageAttributeType] '" + targetMaterial + "' is not a valid material class.");
-                    return null;
-                }
+            EntityClass targetEntities = Inscription.getInstance().getTypeClassManager()
+                .getEntityClass(targetEntitiesString);
+            if (targetEntities == null) {
+                Inscription.logger
+                    .warning("[DamageAttributeType] '" + targetEntitiesString + "' is not a valid material class.");
+                return null;
             }
+            attributeType.setTargetEntities(targetEntities);
+
+            String targetMaterialString = section.getString("target-materials");
+            if (targetMaterialString == null) {
+                return null;
+            }
+
+            MaterialClass targetMaterial = Inscription.getInstance().getTypeClassManager()
+                .getMaterialClass(targetMaterialString);
+            if (targetMaterial == null) {
+                Inscription.logger
+                    .warning("[DamageAttributeType] '" + targetMaterialString + "' is not a valid material class.");
+                return null;
+            }
+            attributeType.setTargetMaterials(targetMaterial);
 
             return attributeType;
         }
@@ -195,13 +200,13 @@ public class DamageAttributeType extends AttributeType {
             }
 
             @Override public String getLoreLine() {
-                String damage_str = getDamageString(this.getGlyph());
-                String item_class = m_targetMaterials.getName();
-                String entity_class = m_targetEntities.getName();
+                String damageStr = getDamageString(this.getGlyph());
+                String itemClass = m_targetMaterials.getName();
+                String entityClass = m_targetEntities.getName();
 
                 String info_line =
-                    ChatColor.BLUE + "+" + damage_str + "%" + ChatColor.YELLOW + " damage to " + ChatColor.BLUE
-                        + entity_class + ChatColor.YELLOW + " using " + ChatColor.BLUE + item_class;
+                    ChatColor.BLUE + "+" + damageStr + "%" + ChatColor.YELLOW + " damage to " + ChatColor.BLUE
+                        + entityClass + ChatColor.YELLOW + " using " + ChatColor.BLUE + itemClass;
 
                 return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - "
                     + ChatColor.RESET + info_line;
@@ -300,11 +305,12 @@ public class DamageAttributeType extends AttributeType {
         return String.format("%.1f", this.getDamage(glyph) * 100);
     }
 
-    public void setTargetEntities(EntityClass e_class) {
-        this.m_targetEntities = e_class;
+    public void setTargetEntities(EntityClass entityClass) {
+
+        this.m_targetEntities = entityClass;
     }
-    public void setTargetMaterials(MaterialClass m_class) {
-        this.m_targetMaterials = m_class;
+    public void setTargetMaterials(MaterialClass materialClass) {
+        this.m_targetMaterials = materialClass;
     }
 
 }

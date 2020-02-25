@@ -69,20 +69,17 @@ public class DurabilityAttributeType extends ChanceAttributeType {
                         double newValue = currentValue + (1 - currentValue) * chance;
                         data.setTool(t, newValue > 1 ? 1 : newValue);
 
-                        Inscription.logger.finer(
-                            "  +C Added '" + chance + "' bonus to '" + t.toString() + "' " + currentValue + "->"
-                                + newValue);
+                        Inscription.logger.finer("  +C Added '" + chance + "' bonus to '" + t.toString() + "' " + currentValue + "->" + newValue);
                     }
                 }
                 playerData.setData(data);
             }
 
             @Override public String getLoreLine() {
-                String chanceString = getChanceString(this.getGlyph());
+                String chanceString = getDisplayString(this.getGlyph(), "+", "%");
                 String toolClass = m_toolMaterials.getName();
 
-                String info_line = ChatColor.BLUE + "+" + chanceString + "%" + ChatColor.YELLOW
-                    + " chance to not use durability using " + ChatColor.BLUE + toolClass;
+                String info_line = chanceString + ChatColor.YELLOW + " chance to not use durability using " + ChatColor.BLUE + toolClass;
                 return this.getType().getDescriptionLoreLine() + info_line;
             }
 
@@ -108,8 +105,9 @@ public class DurabilityAttributeType extends ChanceAttributeType {
             return this.global;
         }
         public double getTool(Material mat) {
-            if (!this.tool_chance.containsKey(mat))
+            if (!this.tool_chance.containsKey(mat)) {
                 return 0;
+            }
             return this.tool_chance.get(mat);
         }
 
@@ -157,11 +155,9 @@ public class DurabilityAttributeType extends ChanceAttributeType {
             /* Setting all the targeting if there is any */
             String targetMaterials = section.getString("target-materials");
             if (targetMaterials != null) {
-                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager()
-                    .getMaterialClass(targetMaterials);
+                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetMaterials);
                 if (materialClass == null) {
-                    Inscription.logger
-                        .warning("[DurabilityAttributeType] '" + targetMaterials + "' is not a valid material class.");
+                    Inscription.logger.warning("[DurabilityAttributeType] '" + targetMaterials + "' is not a valid material class.");
                     return null;
                 }
                 attributeType.m_toolMaterials = materialClass;
