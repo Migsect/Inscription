@@ -37,7 +37,7 @@ public class DamageAttributeType extends AttributeType {
     private MaterialClass m_targetMaterials;
 
     private double m_minDamage;
-    private double n_maxDamage;
+    private double m_maxDamage;
 
     //----------------------------------------------------------------------------------------------------------------//
     protected DamageAttributeType(GeneralAttributeParser parser) {
@@ -45,7 +45,31 @@ public class DamageAttributeType extends AttributeType {
     }
 
     //----------------------------------------------------------------------------------------------------------------//
+    public double getMultiplier(Glyph glyph) {
+        int glyph_level = glyph.getLevel_LEGACY();
+        int rarity_level = glyph.getRarity().getRank();
 
+        double rarity_multiplier = 1 + this.m_rarityMultiplier * rarity_level;
+        double baseMultiplier = this.m_minDamage + (this.m_maxDamage - this.m_minDamage) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
+        return rarity_multiplier * baseMultiplier;
+    }
+    public String getMultiplierString(Glyph glyph) {
+        return String.format("%.1f", 100 * this.getMultiplier(glyph));
+    }
+    public String getMinMultiplierString(Glyph glyph) {
+        return String.format("%.1f", 100 * this.m_minDamage * calculateRarityMultiplier(glyph));
+    }
+    public String getMaxMultiplierString(Glyph glyph) {
+        return String.format("%.1f", 100 * this.m_maxDamage * calculateRarityMultiplier(glyph));
+    }
+    public String getDisplayString(Glyph glyph, String prefix, String suffix) {
+        String chanceString = prefix + getMultiplierString(glyph) + suffix;
+        String minChanceString = prefix + getMinMultiplierString(glyph) + suffix;
+        String maxChanceString = prefix + getMaxMultiplierString(glyph) + suffix;
+
+        return org.bukkit.ChatColor.BLUE + chanceString + org.bukkit.ChatColor.DARK_GRAY + "[" + minChanceString + "," + maxChanceString + "]";
+    }
+    //----------------------------------------------------------------------------------------------------------------//
     public static class Constructor extends AttributeTypeConstructor {
 
         @Override public AttributeType construct(ConfigurationSection section) {
@@ -66,7 +90,7 @@ public class DamageAttributeType extends AttributeType {
                 return null;
             }
 
-            attributeType.n_maxDamage = maxDamage;
+            attributeType.m_maxDamage = maxDamage;
             attributeType.m_minDamage = minDamage;
 
             String targetEntitiesString = section.getString("target-entities");
@@ -201,13 +225,12 @@ public class DamageAttributeType extends AttributeType {
             }
 
             @Override public String getLoreLine() {
-                String damageStr = getDamageString(this.getGlyph());
+                String damageStr = getDisplayString(this.getGlyph(), "+", "%");
                 String itemClass = m_targetMaterials.getName();
                 String entityClass = m_targetEntities.getName();
 
                 String info_line =
-                    ChatColor.BLUE + "+" + damageStr + "%" + ChatColor.YELLOW + " damage to " + ChatColor.BLUE + entityClass + ChatColor.YELLOW + " using "
-                        + ChatColor.BLUE + itemClass;
+                    damageStr + ChatColor.YELLOW + " damage to " + ChatColor.BLUE + entityClass + ChatColor.YELLOW + " using " + ChatColor.BLUE + itemClass;
 
                 return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - " + ChatColor.RESET + info_line;
             }
@@ -297,7 +320,7 @@ public class DamageAttributeType extends AttributeType {
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + m_rarityMultiplier * rarity_level;
-        double base_damage = m_minDamage + (n_maxDamage - m_minDamage) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
+        double base_damage = m_minDamage + (m_maxDamage - m_minDamage) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
         return rarity_multiplier * base_damage;
     }
     /**

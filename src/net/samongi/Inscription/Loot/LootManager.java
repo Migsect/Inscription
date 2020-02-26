@@ -104,9 +104,7 @@ public class LootManager implements Listener, ConfigurationParsing {
 
         this.m_entityDropChances.put(type, chance);
         this.m_entityGenerators.put(type, generator);
-        Inscription.logger.fine(
-            "Registered drop for entity '" + type.toString() + "' with generator '" + generator.getTypeName()
-                + "' with chance " + chance);
+        Inscription.logger.fine("Registered drop for entity '" + type.toString() + "' with generator '" + generator.getTypeName() + "' with chance " + chance);
     }
 
     /**
@@ -119,17 +117,15 @@ public class LootManager implements Listener, ConfigurationParsing {
     public void registerGeneratorToMaterial(Material type, GlyphGenerator generator, double chance) {
         this.m_blockDropChances.put(type, chance);
         this.m_blockGenerators.put(type, generator);
-        Inscription.logger.fine(
-            "Registered drop for material '" + type.toString() + "' with generator '" + generator.getTypeName()
-                + "' with chance " + chance);
+        Inscription.logger
+            .fine("Registered drop for material '" + type.toString() + "' with generator '" + generator.getTypeName() + "' with chance " + chance);
 
     }
 
     public void addGeneratorToExperienceOverflow(Map<String, Integer> experienceMap, GlyphGenerator generator) {
         this.m_experienceOverflowThresholds.add(experienceMap);
         this.m_experienceOverflowGenerators.add(generator);
-        Inscription.logger
-            .fine(String.format("Registered experience overflow with generator '%s'", generator.getTypeName()));
+        Inscription.logger.fine(String.format("Registered experience overflow with generator '%s'", generator.getTypeName()));
     }
     // ---------------------------------------------------------------------------------------------------------------//
 
@@ -181,8 +177,7 @@ public class LootManager implements Listener, ConfigurationParsing {
                 continue;
             }
 
-            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager()
-                .getGeneratorByType(generatorString);
+            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager().getGeneratorByType(generatorString);
             if (generator == null) {
                 Inscription.logger.warning(String.format("'%s' is not a valid generator type.", generatorString));
                 continue;
@@ -220,12 +215,10 @@ public class LootManager implements Listener, ConfigurationParsing {
             String generatorString = materialSection.getString("generator");
             if (generatorString == null) {
 
-                Inscription.logger
-                    .warning(String.format("Section '%s' does not define a generator type.", materialKey));
+                Inscription.logger.warning(String.format("Section '%s' does not define a generator type.", materialKey));
                 continue;
             }
-            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager()
-                .getGeneratorByType(generatorString);
+            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager().getGeneratorByType(generatorString);
             if (generator == null) {
                 Inscription.logger.warning(String.format("'%s' is not a valid generator type.", generatorString));
                 continue;
@@ -253,13 +246,11 @@ public class LootManager implements Listener, ConfigurationParsing {
 
             String generatorString = experienceSection.getString("generator");
             if (generatorString == null) {
-                Inscription.logger
-                    .warning(String.format("Section '%s' does not define a generator type.", experienceSectionKey));
+                Inscription.logger.warning(String.format("Section '%s' does not define a generator type.", experienceSectionKey));
                 continue;
             }
 
-            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager()
-                .getGeneratorByType(generatorString);
+            GlyphGenerator generator = Inscription.getInstance().getGeneratorManager().getGeneratorByType(generatorString);
             if (generator == null) {
                 Inscription.logger.warning(String.format("'%s' is not a valid generator type.", generatorString));
                 continue;
@@ -332,15 +323,17 @@ public class LootManager implements Listener, ConfigurationParsing {
         if (!m_entityDropChances.containsKey(type)) {
             return;
         }
-        if (!m_entityGenerators.containsKey(type))
+        if (!m_entityGenerators.containsKey(type)) {
             return;
+        }
         double typeChance = m_entityDropChances.get(type);
         Inscription.logger.finest(String.format("Glyph Drop Chance %s", typeChance));
 
         // Checking to see if the mob will drop the glyph
         Random rand = new Random();
-        if (rand.nextDouble() > typeChance)
+        if (rand.nextDouble() > typeChance) {
             return;
+        }
 
         GlyphGenerator generator = m_entityGenerators.get(type);
         Location loc = event.getEntity().getLocation();
@@ -353,7 +346,7 @@ public class LootManager implements Listener, ConfigurationParsing {
             return;
         }
 
-        Location location = event.getPlayer().getLocation();
+        Location location = event.getBlock().getLocation();
         Material type = event.getBlock().getType();
         BlockTracker tracker = Inscription.getInstance().getBlockTracker();
         if (tracker.isTracked(type) && tracker.isPlaced(location)) {
@@ -368,8 +361,9 @@ public class LootManager implements Listener, ConfigurationParsing {
 
         // Checking to see if the mob will drop the glyph
         Random rand = new Random();
-        if (rand.nextDouble() > typeChance)
+        if (rand.nextDouble() > typeChance) {
             return;
+        }
 
         GlyphGenerator generator = m_blockGenerators.get(type);
 
@@ -469,8 +463,7 @@ public class LootManager implements Listener, ConfigurationParsing {
         itemMeta.setDisplayName("Undiscovered Glyph");
 
         List<String> itemLore = new ArrayList<String>();
-        itemLore.add(ChatColor.MAGIC + "" + ChatColor.YELLOW + "Unknown " + ChatColor.BLUE + generator.getDisplayName()
-            + ChatColor.YELLOW + " Glyph");
+        itemLore.add(ChatColor.MAGIC + "" + ChatColor.YELLOW + "Unknown " + ChatColor.BLUE + generator.getDisplayName() + ChatColor.YELLOW + " Glyph");
         itemLore.add(ChatColor.YELLOW + "Use to discover a random glyph.");
         itemMeta.setLore(itemLore);
         itemMeta.setCustomModelData(generator.getConsumableModel());

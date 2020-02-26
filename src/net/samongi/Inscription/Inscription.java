@@ -178,7 +178,7 @@ public class Inscription extends JavaPlugin {
     }
 
     private void setupBlockTracker() {
-        m_blockTracker = new BlockTracker(new File(TRACKER_DATA_FOLDER));
+        m_blockTracker = new BlockTracker(new File(this.getDataFolder(), TRACKER_DATA_FOLDER));
         m_blockTracker.configureTracker(this.getConfig());
         for (World world : Bukkit.getWorlds()) {
             m_blockTracker.loadWorldChunks(world);

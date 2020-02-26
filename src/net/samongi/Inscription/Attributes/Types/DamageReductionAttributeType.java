@@ -100,7 +100,7 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
             }
 
             @Override public String getLoreLine() {
-                String multiplierString = getDisplayString(this.getGlyph(), "-", "%");
+                String multiplierString = getDisplayString(this.getGlyph(), 100, "-", "%");
                 String armorClass = m_armorMaterials.getName();
                 String damageClass = m_damageTypes.getName();
 

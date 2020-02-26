@@ -31,22 +31,25 @@ public abstract class MultiplierAttributeType extends AttributeType {
         return rarity_multiplier * base_chance;
     }
 
-    public String getMultiplierString(Glyph glyph) {
-        return String.format("%.1f", this.getMultiplier(glyph));
+    public String getMultiplierString(Glyph glyph, double multiplier) {
+        return String.format("%.1f", multiplier * this.getMultiplier(glyph));
     }
-    public String getMinMultiplierString(Glyph glyph) {
-        return String.format("%.1f", this.m_minMultiplier * calculateRarityMultiplier(glyph));
+    public String getMinMultiplierString(Glyph glyph, double multiplier) {
+        return String.format("%.1f", multiplier * this.m_minMultiplier * calculateRarityMultiplier(glyph));
     }
-    public String getMaxMultiplierString(Glyph glyph) {
-        return String.format("%.1f", this.m_maxMultiplier * calculateRarityMultiplier(glyph));
+    public String getMaxMultiplierString(Glyph glyph, double multiplier) {
+        return String.format("%.1f", multiplier * this.m_maxMultiplier * calculateRarityMultiplier(glyph));
     }
-    public String getDisplayString(Glyph glyph) {
-        return getDisplayString(glyph, "", "");
+    public String getDisplayString(Glyph glyph, double multiplier) {
+        return getDisplayString(glyph, multiplier, "", "");
     }
     public String getDisplayString(Glyph glyph, String prefix, String suffix) {
-        String multiplierString = prefix + getMultiplierString(glyph) + suffix;
-        String minMultiplierString = prefix + getMinMultiplierString(glyph) + suffix;
-        String maxMultiplierString = prefix + getMaxMultiplierString(glyph) + suffix;
+        return getDisplayString(glyph, 1, prefix, suffix);
+    }
+    public String getDisplayString(Glyph glyph, double multiplier, String prefix, String suffix) {
+        String multiplierString = prefix + getMultiplierString(glyph, multiplier) + suffix;
+        String minMultiplierString = prefix + getMinMultiplierString(glyph, multiplier) + suffix;
+        String maxMultiplierString = prefix + getMaxMultiplierString(glyph, multiplier) + suffix;
 
         return ChatColor.BLUE + multiplierString + ChatColor.DARK_GRAY + "[" + minMultiplierString + "," + maxMultiplierString + "]";
     }
