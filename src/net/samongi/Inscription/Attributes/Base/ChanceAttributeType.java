@@ -1,6 +1,5 @@
 package net.samongi.Inscription.Attributes.Base;
 
-import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Attributes.GeneralAttributeParser;
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Attributes.AttributeType;
@@ -31,7 +30,7 @@ public abstract class ChanceAttributeType extends AttributeType {
     }
 
     public double getChance(Glyph glyph) {
-        int glyph_level = glyph.getLevel();
+        int glyph_level = glyph.getLevel_LEGACY();
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + this.m_rarityMultiplier * rarity_level;

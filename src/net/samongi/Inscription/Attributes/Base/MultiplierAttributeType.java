@@ -1,7 +1,6 @@
 package net.samongi.Inscription.Attributes.Base;
 
 import net.samongi.Inscription.Attributes.AttributeType;
-import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Attributes.GeneralAttributeParser;
 import net.samongi.Inscription.Glyphs.Glyph;
 import org.bukkit.ChatColor;
@@ -24,7 +23,7 @@ public abstract class MultiplierAttributeType extends AttributeType {
     }
 
     public double getMultiplier(Glyph glyph) {
-        int glyph_level = glyph.getLevel();
+        int glyph_level = glyph.getLevel_LEGACY();
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = calculateRarityMultiplier(glyph);

@@ -10,16 +10,21 @@ public class GlyphTests {
 
     @Test public void constructorTest_0() {
         Glyph glyph = new Glyph();
-        if (glyph.getRarity() != null)
+        if (glyph.getRarity() != null) {
             fail("Glyph had a rarity set.");
-        if (glyph.getElement() != null)
+        }
+        if (glyph.getElement() != null) {
             fail("Glyph had a element set.");
-        if (glyph.getAttributes().size() != 0)
+        }
+        if (glyph.getAttributes().size() != 0) {
             fail("Glyph did not have an emepty attribute array.");
-        if (glyph.getLevel() != 0)
+        }
+        if (glyph.getLevel_LEGACY() != 0) {
             fail("Glyph had a non-zero levle");
-        if (glyph.getExperienceToLevel().size() != 0)
+        }
+        if (glyph.getExperienceToLevel_LEGACY().size() != 0) {
             fail("Glyph had a experience values");
+        }
     }
 
     //    @Test public void rarityTest_0() {

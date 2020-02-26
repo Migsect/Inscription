@@ -74,11 +74,9 @@ public class DamageAttributeType extends AttributeType {
                 return null;
             }
 
-            EntityClass targetEntities = Inscription.getInstance().getTypeClassManager()
-                .getEntityClass(targetEntitiesString);
+            EntityClass targetEntities = Inscription.getInstance().getTypeClassManager().getEntityClass(targetEntitiesString);
             if (targetEntities == null) {
-                Inscription.logger
-                    .warning("[DamageAttributeType] '" + targetEntitiesString + "' is not a valid material class.");
+                Inscription.logger.warning("[DamageAttributeType] '" + targetEntitiesString + "' is not a valid material class.");
                 return null;
             }
             attributeType.setTargetEntities(targetEntities);
@@ -88,11 +86,9 @@ public class DamageAttributeType extends AttributeType {
                 return null;
             }
 
-            MaterialClass targetMaterial = Inscription.getInstance().getTypeClassManager()
-                .getMaterialClass(targetMaterialString);
+            MaterialClass targetMaterial = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetMaterialString);
             if (targetMaterial == null) {
-                Inscription.logger
-                    .warning("[DamageAttributeType] '" + targetMaterialString + "' is not a valid material class.");
+                Inscription.logger.warning("[DamageAttributeType] '" + targetMaterialString + "' is not a valid material class.");
                 return null;
             }
             attributeType.setTargetMaterials(targetMaterial);
@@ -104,8 +100,9 @@ public class DamageAttributeType extends AttributeType {
             return new Listener() {
 
                 @EventHandler public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
-                    if (event.isCancelled())
+                    if (event.isCancelled()) {
                         return;
+                    }
 
                     Entity damager = event.getDamager();
 
@@ -122,15 +119,17 @@ public class DamageAttributeType extends AttributeType {
                         Player playerDamager = (Player) damager;
                         PlayerData player_data = Inscription.getInstance().getPlayerManager().getData(playerDamager);
                         CacheData data = player_data.getData(DamageAttributeType.TYPE_IDENTIFIER);
-                        if (!(data instanceof DamageAttributeType.Data))
+                        if (!(data instanceof DamageAttributeType.Data)) {
                             return;
+                        }
                         DamageAttributeType.Data damageData = (DamageAttributeType.Data) data;
 
                         // getting damage bonus relavant information
                         ItemStack itemInHand = playerDamager.getInventory().getItemInMainHand();
                         Material material = Material.AIR;
-                        if (itemInHand != null)
+                        if (itemInHand != null) {
                             material = itemInHand.getType();
+                        }
                         EntityType entity = event.getEntity().getType();
 
                         // adding up the damage bonus
@@ -143,8 +142,9 @@ public class DamageAttributeType extends AttributeType {
                         Inscription.logger.finest("[Damage Event] Damage Bonus: " + damage_bonus);
 
                         event.setDamage(event.getDamage() * (1 + damage_bonus));
-                    } else
+                    } else {
                         return;
+                    }
                 }
             }; // End Attribute Listener definition
         }
@@ -158,10 +158,12 @@ public class DamageAttributeType extends AttributeType {
             // Caching the data
             @Override public void cache(PlayerData data) {
                 CacheData cached_data = data.getData(DamageAttributeType.TYPE_IDENTIFIER);
-                if (cached_data == null)
+                if (cached_data == null) {
                     cached_data = new DamageAttributeType.Data();
-                if (!(cached_data instanceof DamageAttributeType.Data))
+                }
+                if (!(cached_data instanceof DamageAttributeType.Data)) {
                     return;
+                }
 
                 Inscription.logger.fine("  Caching attribute for " + m_typeDescription);
                 Inscription.logger.fine("    'target_entities' is global?: " + m_targetEntities.isGlobal());
@@ -190,8 +192,7 @@ public class DamageAttributeType extends AttributeType {
                     for (EntityType e : m_targetEntities.getEntities())
                         for (Material m : m_targetMaterials.getMaterials()) {
                             double d = damageData.get(e, m);
-                            Inscription.logger.fine(
-                                "  +C Added '" + damage + "' damage to '" + e.toString() + "|" + m.toString() + "'");
+                            Inscription.logger.fine("  +C Added '" + damage + "' damage to '" + e.toString() + "|" + m.toString() + "'");
                             damageData.set(e, m, d + damage);
                         }
                 }
@@ -205,11 +206,10 @@ public class DamageAttributeType extends AttributeType {
                 String entityClass = m_targetEntities.getName();
 
                 String info_line =
-                    ChatColor.BLUE + "+" + damageStr + "%" + ChatColor.YELLOW + " damage to " + ChatColor.BLUE
-                        + entityClass + ChatColor.YELLOW + " using " + ChatColor.BLUE + itemClass;
+                    ChatColor.BLUE + "+" + damageStr + "%" + ChatColor.YELLOW + " damage to " + ChatColor.BLUE + entityClass + ChatColor.YELLOW + " using "
+                        + ChatColor.BLUE + itemClass;
 
-                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - "
-                    + ChatColor.RESET + info_line;
+                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - " + ChatColor.RESET + info_line;
             }
         };
     }
@@ -233,8 +233,9 @@ public class DamageAttributeType extends AttributeType {
             this.entity_damage.put(entity, amount);
         }
         public void set(EntityType entity, Material mat, Double amount) {
-            if (!material_entity_damage.containsKey(entity))
+            if (!material_entity_damage.containsKey(entity)) {
                 material_entity_damage.put(entity, new HashMap<Material, Double>());
+            }
             Map<Material, Double> e_damage = material_entity_damage.get(entity);
             e_damage.put(mat, amount);
         }
@@ -244,21 +245,25 @@ public class DamageAttributeType extends AttributeType {
             return this.global;
         }
         public double get(Material mat) {
-            if (!this.material_damage.containsKey(mat))
+            if (!this.material_damage.containsKey(mat)) {
                 return 0.0;
+            }
             return this.material_damage.get(mat);
         }
         public double get(EntityType entity) {
-            if (!this.entity_damage.containsKey(entity))
+            if (!this.entity_damage.containsKey(entity)) {
                 return 0.0;
+            }
             return this.entity_damage.get(entity);
         }
         public double get(EntityType entity, Material mat) {
-            if (!material_entity_damage.containsKey(entity))
+            if (!material_entity_damage.containsKey(entity)) {
                 return 0;
+            }
             Map<Material, Double> e_damage = material_entity_damage.get(entity);
-            if (!e_damage.containsKey(mat))
+            if (!e_damage.containsKey(mat)) {
                 return 0;
+            }
             return e_damage.get(mat);
         }
 
@@ -288,7 +293,7 @@ public class DamageAttributeType extends AttributeType {
      * @return A ratio of damage multiplication
      */
     private double getDamage(Glyph glyph) {
-        int glyph_level = glyph.getLevel();
+        int glyph_level = glyph.getLevel_LEGACY();
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + m_rarityMultiplier * rarity_level;

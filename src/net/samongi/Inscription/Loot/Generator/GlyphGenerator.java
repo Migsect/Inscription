@@ -69,7 +69,7 @@ public class GlyphGenerator {
         Glyph glyph = new Glyph();
         glyph.setElement(this.m_elementWeight.getRandom());
         glyph.setRarity(this.m_rarityWeights.getRandom());
-        glyph.setLevel(min_level + rand.nextInt(max_level - min_level + 1));
+        glyph.setLevel_LEGACY(min_level + rand.nextInt(max_level - min_level + 1));
 
         int attribute_count = this.m_attributeCountsWeights.getRandom();
         Set<String> current_attributes = new HashSet<>();
@@ -119,8 +119,7 @@ public class GlyphGenerator {
     }
     public void addAttributeType(AttributeType type, int weight) {
         if (weight <= 0) {
-            Inscription.logger
-                .fine("AttributeType '" + type.getName() + "' attempted to be registered with weight " + weight);
+            Inscription.logger.fine("AttributeType '" + type.getName() + "' attempted to be registered with weight " + weight);
             return;
         }
         this.m_attributeWeights.put(type, weight);
@@ -148,8 +147,9 @@ public class GlyphGenerator {
         ConfigurationSection root = config.getConfig().getConfigurationSection("generators");
         for (String s : root.getKeys(false)) {
             GlyphGenerator generator = GlyphGenerator.parse(root.getConfigurationSection(s));
-            if (generator == null)
+            if (generator == null) {
                 continue;
+            }
             generators.add(generator);
         }
 
@@ -223,8 +223,9 @@ public class GlyphGenerator {
             }
             catch (NumberFormatException e) {
             }
-            if (int_k <= 0)
+            if (int_k <= 0) {
                 continue; // TODO error message
+            }
 
             int weight = attribute_counts.getInt(k);
             generator.addAttributeCount(int_k, weight);

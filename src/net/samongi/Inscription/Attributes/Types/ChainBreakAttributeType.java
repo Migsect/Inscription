@@ -12,7 +12,6 @@ import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
-import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import net.samongi.SamongiLib.Items.ItemUtil;
 import net.samongi.SamongiLib.Items.MaskedBlockData;
@@ -76,7 +75,7 @@ public class ChainBreakAttributeType extends AttributeType {
         return this.maxBlocks;
     }
     public int getAmount(Glyph glyph) {
-        int glyph_level = glyph.getLevel();
+        int glyph_level = glyph.getLevel_LEGACY();
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + this.m_rarityMultiplier * rarity_level;

@@ -58,8 +58,9 @@ public class GlyphInventory implements Serializable {
         Player player = (Player) event.getPlayer();
         Inventory inventory = event.getInventory();
         // Checking if the closed inventory is an inventory.
-        if (!GlyphInventory.isGlyphInventory(inventory))
+        if (!GlyphInventory.isGlyphInventory(inventory)) {
             return;
+        }
         GlyphInventory glyphInventory = GlyphInventory.getGlyphInventory(inventory);
         // Syncing the inventory on the close.
         glyphInventory.sync(inventory, player);
@@ -70,21 +71,24 @@ public class GlyphInventory implements Serializable {
         }
     }
     public static void onInventoryClick(InventoryClickEvent event) {
-        if (event.isCancelled())
+        if (event.isCancelled()) {
             return;
+        }
 
         Player player = (Player) event.getWhoClicked();
         Inventory inventory = event.getClickedInventory();
 
-        if (!GlyphInventory.isGlyphInventory(inventory))
+        if (!GlyphInventory.isGlyphInventory(inventory)) {
             return;
+        }
         GlyphInventory glyphInventory = GlyphInventory.getGlyphInventory(inventory);
 
         int slot = event.getSlot(); // the clicked slot.
 
         // Canceling the event if the slot is locked
-        if (glyphInventory.isLocked(slot))
+        if (glyphInventory.isLocked(slot)) {
             event.setCancelled(true);
+        }
 
         // Paying for the slot if the player who clicked it has enough experience.
         if (event.getClick().isLeftClick() && event.getClick().isShiftClick() && glyphInventory.isLocked(slot)) {
@@ -127,8 +131,9 @@ public class GlyphInventory implements Serializable {
             m_lockedSlots[i] = true;
         }
         List<Integer> unlockedSlotsSection = section.getIntegerList("unlocked-slots");
-        if (unlockedSlotsSection == null)
+        if (unlockedSlotsSection == null) {
             throw new InvalidConfigurationException("No 'unlocked-slots' key");
+        }
         for (int i : unlockedSlotsSection) {
             this.m_lockedSlots[i] = false;
             this.m_unlockedSlots++;
@@ -136,8 +141,9 @@ public class GlyphInventory implements Serializable {
 
         /* Setting the glyphs */
         ConfigurationSection glyphsSection = section.getConfigurationSection("glyphs");
-        if (glyphsSection == null)
+        if (glyphsSection == null) {
             throw new InvalidConfigurationException("No 'glyphs' key");
+        }
         Set<String> keys = glyphsSection.getKeys(false);
         for (String k : keys) {
 
@@ -150,8 +156,9 @@ public class GlyphInventory implements Serializable {
             }
 
             ConfigurationSection glyphSection = glyphsSection.getConfigurationSection(k);
-            if (glyphSection == null)
+            if (glyphSection == null) {
                 throw new InvalidConfigurationException("No 'glyphs." + k + "' key");
+            }
             Glyph glyph = Glyph.getGlyph(glyphSection);
             if (glyph == null) {
                 Inscription.logger.severe("Glyph was null while constructing GlyphInventory for '" + owner + "'");
@@ -166,8 +173,9 @@ public class GlyphInventory implements Serializable {
         this.m_lockedSlots[slot] = is_locked;
         this.m_unlockedSlots = 0;
         for (int i = 0; i < getMaxGlyphSlots(); i++) {
-            if (m_lockedSlots[i] == false)
+            if (m_lockedSlots[i] == false) {
                 this.m_unlockedSlots++;
+            }
         }
     }
     public boolean isLocked(int slot) {
@@ -212,8 +220,7 @@ public class GlyphInventory implements Serializable {
      */
     public Inventory getInventory() {
         if (this.inventory == null || this.inventory.getViewers().size() == 0) {
-            this.inventory = Bukkit.getServer()
-                .createInventory(null, GlyphInventory.getMaxGlyphSlots(), ChatColor.BLUE + "Glyph Inventory");
+            this.inventory = Bukkit.getServer().createInventory(null, GlyphInventory.getMaxGlyphSlots(), ChatColor.BLUE + "Glyph Inventory");
             Inscription.logger.finest("Glyphs lazy: " + g_glyphs);
             for (int index : g_glyphs.keySet()) {
                 Glyph glyph = g_glyphs.get(index);
@@ -234,10 +241,12 @@ public class GlyphInventory implements Serializable {
             if (!lock_state) // if lock_state is false
             {
                 ItemStack item = inventory.getItem(i);
-                if (item == null)
+                if (item == null) {
                     continue;
-                if (!item.getType().equals(Material.GRAY_STAINED_GLASS))
+                }
+                if (!item.getType().equals(Material.GRAY_STAINED_GLASS)) {
                     continue;
+                }
                 inventory.clear(i);
                 continue;
             }
@@ -247,8 +256,7 @@ public class GlyphInventory implements Serializable {
             ItemMeta im = lock_item.getItemMeta();
             im.setDisplayName(ChatColor.BOLD + "" + ChatColor.GREEN + "Unlock Glyph Slot");
             List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.WHITE + "Use " + ChatColor.YELLOW + this.m_unlockedSlots + " Levels" + ChatColor.WHITE
-                + " to unlock this slot.");
+            lore.add(ChatColor.WHITE + "Use " + ChatColor.YELLOW + this.m_unlockedSlots + " Levels" + ChatColor.WHITE + " to unlock this slot.");
             lore.add(ChatColor.AQUA + "Shift-Left Click" + ChatColor.WHITE + " to pay the Levels");
             im.setLore(lore);
 
@@ -264,8 +272,9 @@ public class GlyphInventory implements Serializable {
         /* Getting all the slots that are locked */
         List<Integer> unlockedSlots = new ArrayList<>();
         for (int i = 0; i < this.m_lockedSlots.length; i++) {
-            if (!this.m_lockedSlots[i])
+            if (!this.m_lockedSlots[i]) {
                 unlockedSlots.add(i);
+            }
         }
         section.set("unlocked-slots", unlockedSlots);
 
@@ -295,8 +304,9 @@ public class GlyphInventory implements Serializable {
      * @param player    The player that caused the sync
      */
     public void sync(Inventory inventory, Player player) {
-        if (!inventory.equals(this.inventory))
+        if (!inventory.equals(this.inventory)) {
             return;
+        }
 
         // Parsing all the glyphs
         for (int index = 0; index < GlyphInventory.getMaxGlyphSlots(); index++) {
@@ -322,8 +332,9 @@ public class GlyphInventory implements Serializable {
         }
 
         PlayerData data = Inscription.getInstance().getPlayerManager().getData(this.g_owner);
-        if (data == null)
+        if (data == null) {
             return;
+        }
         Inscription.logger.fine("Caching Glyphs for Glyph Inventory of: " + data.getPlayerName());
         this.cacheGlyphs(data);
     }
@@ -338,14 +349,12 @@ public class GlyphInventory implements Serializable {
         data.clearCachedData();
         for (Glyph glyph : this.g_glyphs.values()) {
             if (glyph == null) {
-                Inscription.logger
-                    .severe("Found glyph data to be null when caching player data: '" + data.getPlayerName() + "'");
+                Inscription.logger.severe("Found glyph data to be null when caching player data: '" + data.getPlayerName() + "'");
                 continue;
             }
             for (Attribute attribute : glyph.getAttributes()) {
                 if (attribute == null) {
-                    Inscription.logger
-                        .severe("Found attribute to be null when caching player data: '" + data.getPlayerName() + "'");
+                    Inscription.logger.severe("Found attribute to be null when caching player data: '" + data.getPlayerName() + "'");
                     continue;
 
                 }
@@ -386,9 +395,9 @@ public class GlyphInventory implements Serializable {
         List<Glyph> glyphGroup = new ArrayList<>();
         for (Glyph glyph : this.g_glyphs.values()) {
             // First we need to get the experience that the glyph needs
-            int glyphExperience = glyph.remainingExperience(type);
+            int glyphExperience = glyph.remainingExperience_LEGACY(type);
             // If it doesn't need any experience or is max level we will ignore it
-            if (glyphExperience <= 0 || glyph.isMaxLevel()) {
+            if (glyphExperience <= 0 || glyph.isMaxLevel_LEGACY()) {
                 continue;
             }
             glyphGroup.add(glyph); // Adding the glyph to the group
@@ -436,24 +445,23 @@ public class GlyphInventory implements Serializable {
                 experienceExcessPool -= 1;
             }
 
-            if (glyph.getLevel() < Glyph.MAX_LEVEL) {
+            if (glyph.getLevel_LEGACY() < Glyph.MAX_LEVEL) {
                 // Adding the experience and attempting to levelup the glyph
-                glyph.addExperience(type, availableExperience);
-                int prior_level = glyph.getLevel();
-                boolean didLevel = glyph.attemptLevelup();
+                glyph.addExperience_LEGACY(type, availableExperience);
+                int prior_level = glyph.getLevel_LEGACY();
+                boolean didLevel = glyph.attemptLevelup_LEGACY();
                 boolean displayLevelMessage = didLevel;
                 // Leveling up the glyph if it can.
                 while (didLevel) {
-                    didLevel = glyph.attemptLevelup();
+                    didLevel = glyph.attemptLevelup_LEGACY();
                 }
 
                 if (displayLevelMessage) {
                     Player owner = Bukkit.getPlayer(this.g_owner);
                     owner.sendMessage(ChatColor.YELLOW + "Congratulations!");
-                    owner.sendMessage(
-                        ChatColor.WHITE + "[" + glyph.getItemStack().getItemMeta().getDisplayName() + ChatColor.WHITE
-                            + "] " + ChatColor.YELLOW + "has leveled up to " + ChatColor.GREEN + "Level " + glyph
-                            .getLevel() + ChatColor.WHITE + " from " + ChatColor.GREEN + "Level " + prior_level);
+                    owner.sendMessage(ChatColor.WHITE + "[" + glyph.getItemStack().getItemMeta().getDisplayName() + ChatColor.WHITE + "] " + ChatColor.YELLOW
+                        + "has leveled up to " + ChatColor.GREEN + "Level " + glyph.getLevel_LEGACY() + ChatColor.WHITE + " from " + ChatColor.GREEN + "Level "
+                        + prior_level);
                     owner.playSound(owner.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
                 }
             }
@@ -461,7 +469,7 @@ public class GlyphInventory implements Serializable {
         }
         // Cleaning up the rest of experience pool to make sure there is no waste
         if (experiencePool > 0) {
-            glyphGroup.get(rand.nextInt(glyphGroup.size())).addExperience(type, experiencePool);
+            glyphGroup.get(rand.nextInt(glyphGroup.size())).addExperience_LEGACY(type, experiencePool);
         }
 
         return true;

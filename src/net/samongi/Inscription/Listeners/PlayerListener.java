@@ -123,9 +123,9 @@ public class PlayerListener implements Listener {
                 continue;
             }
 
-            int modelData = glyph.getCustomModelData();
-            itemMeta.setCustomModelData(modelData);
-            item.setItemMeta(itemMeta);
+            // int modelData = glyph.getCustomModelData();
+            // itemMeta.setCustomModelData(modelData);
+            item.setItemMeta(glyph.getItemStack().getItemMeta());
         }
     }
 }
