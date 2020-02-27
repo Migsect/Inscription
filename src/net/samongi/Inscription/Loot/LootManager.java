@@ -28,6 +28,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -372,7 +373,8 @@ public class LootManager implements Listener, ConfigurationParsing {
 
     @EventHandler public void onPlayerInteractEvent(PlayerInteractEvent event) {
         EquipmentSlot usedSlot = event.getHand();
-        if (event.useItemInHand() == Event.Result.DENY || usedSlot == EquipmentSlot.OFF_HAND) {
+        if ((event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null) ||
+            event.useItemInHand() == Event.Result.DENY || usedSlot == EquipmentSlot.OFF_HAND) {
             return;
         }
         Player player = event.getPlayer();
