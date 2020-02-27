@@ -24,6 +24,7 @@ public class GlyphTypesManager implements ConfigurationParsing {
 
     private Map<String, GlyphRarity> m_glyphRarities = new HashMap<>();
     private Map<String, GlyphRarity> m_glyphRaritiesByDisplay = new HashMap<>();
+    private Map<Integer, GlyphRarity> m_glyphRaritiesByRank = new HashMap<>();
 
     // ---------------------------------------------------------------------------------------------------------------//
     public GlyphElement getElement(String typeName) {
@@ -40,6 +41,10 @@ public class GlyphTypesManager implements ConfigurationParsing {
 
     public GlyphRarity getRarityByDisplay(String displayName) {
         return m_glyphRaritiesByDisplay.get(displayName);
+    }
+
+    public GlyphRarity getRarityByRank(int rank) {
+        return m_glyphRaritiesByRank.get(rank);
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
@@ -62,8 +67,7 @@ public class GlyphTypesManager implements ConfigurationParsing {
             }
             m_glyphElements.put(element.getType(), element);
             m_glyphElementsByDisplay.put(element.getDisplay(), element);
-            Inscription.logger
-                .info(String.format(" - Added Element: '%s(%s)'", element.getType(), element.getDisplay()));
+            Inscription.logger.info(String.format(" - Added Element: '%s(%s)'", element.getType(), element.getDisplay()));
         }
 
         return true;
@@ -89,6 +93,7 @@ public class GlyphTypesManager implements ConfigurationParsing {
             }
             m_glyphRarities.put(rarity.getType(), rarity);
             m_glyphRaritiesByDisplay.put(rarity.getDisplay(), rarity);
+            m_glyphRaritiesByRank.put(rarity.getRank(), rarity);
             Inscription.logger.info(String.format(" - Added Rarity: '%s(%s)'", rarity.getType(), rarity.getDisplay()));
         }
 

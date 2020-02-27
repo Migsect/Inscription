@@ -196,17 +196,31 @@ public class Glyph {
     private int m_level = 0;
 
     // Stored experience in the glyph
-    private Map<String, Integer> m_experienceToNextLevel = new HashMap<>();
+    private Map<String, Integer> m_experienceToNextLevel_LEGACY = new HashMap<>();
     private Map<String, Integer> m_totalExperience = new HashMap<>();
 
     // ---------------------------------------------------------------------------------------------------------------//
+    public Glyph clone() {
+        Glyph glyph = new Glyph();
 
+        glyph.m_rarity = m_rarity;
+        glyph.m_element = m_element;
+        for (Attribute attribute : m_attributes) {
+            glyph.addAttribute(attribute.getType().generate());
+        }
+        glyph.m_level = m_level;
+        glyph.addExperience_LEGACY(m_experienceToNextLevel_LEGACY);
+
+        return glyph;
+    }
     public Map<String, Integer> getBaseExperienceRequirement() {
         Map<String, Integer> glyphExperience = new HashMap<>();
         for (Attribute attribute : m_attributes) {
-            Map<String, Integer> attributeExperience = attribute.getType().getBaseExperience();
+            Map<String, Integer> attributeExperience = attribute.getBaseExperience();
             for (String experienceType : attributeExperience.keySet()) {
-                glyphExperience.put(experienceType, glyphExperience.getOrDefault(experienceType, 0) + attributeExperience.get(experienceType));
+                int currentExperience = glyphExperience.getOrDefault(experienceType, 0);
+                int addedExperience = attributeExperience.get(experienceType);
+                glyphExperience.put(experienceType, currentExperience + addedExperience);
             }
         }
         return glyphExperience;
@@ -215,9 +229,11 @@ public class Glyph {
     public Map<String, Integer> getLevelExperienceRequirement() {
         Map<String, Integer> glyphExperience = new HashMap<>();
         for (Attribute attribute : m_attributes) {
-            Map<String, Integer> attributeExperience = attribute.getType().getLevelExperience();
+            Map<String, Integer> attributeExperience = attribute.getLevelExperience();
             for (String experienceType : attributeExperience.keySet()) {
-                glyphExperience.put(experienceType, glyphExperience.getOrDefault(experienceType, 0) + attributeExperience.get(experienceType));
+                int currentExperience = glyphExperience.getOrDefault(experienceType, 0);
+                int addedExperience = attributeExperience.get(experienceType);
+                glyphExperience.put(experienceType, currentExperience + addedExperience);
             }
         }
         return glyphExperience;
@@ -261,22 +277,30 @@ public class Glyph {
     }
 
     public Map<String, Integer> getTotalExperience_LEGACY() {
-        Map<String, Integer> totalExperience = new HashMap<>(m_experienceToNextLevel);
+        Map<String, Integer> totalExperience = new HashMap<>(m_experienceToNextLevel_LEGACY);
         for (String experienceType : getRelevantExperienceTypes()) {
+            if (totalExperience.containsKey(experienceType)) {
+                continue;
+            }
             totalExperience.put(experienceType, 0);
         }
 
+        int level = m_level - 1;
+
         Map<String, Integer> baseExperienceRequirement = getBaseExperienceRequirement();
         Map<String, Integer> levelExperienceRequirement = getLevelExperienceRequirement();
+
         for (String experienceType : totalExperience.keySet()) {
+
             int baseExperience = baseExperienceRequirement.getOrDefault(experienceType, 0);
             int levelExperience = levelExperienceRequirement.getOrDefault(experienceType, 0);
 
-            int baseExperienceComponent = baseExperience * m_level;
-            int levelExperienceComponent = (levelExperience * m_level * (m_level + 1)) / 2;
-            int experience = baseExperienceComponent + levelExperience;
+            int baseExperienceComponent = baseExperience * level;
+            int levelExperienceComponent = (levelExperience * level * (level + 1)) / 2;
+            int experience = baseExperienceComponent + levelExperienceComponent;
 
-            totalExperience.put(experienceType, experience + totalExperience.getOrDefault(experienceType, 0));
+            int currentExperience = totalExperience.getOrDefault(experienceType, 0);
+            totalExperience.put(experienceType, currentExperience + experience);
         }
         return totalExperience;
 
@@ -320,22 +344,20 @@ public class Glyph {
      */
     public Map<String, Integer> getExperienceToLevel_LEGACY() {
         // The mapping of experience to return
-        Map<String, Integer> ret_exp = new HashMap<>();
-        for (Attribute a : this.getAttributes()) {
-            Map<String, Integer> a_exp = a.getExperience(); // experience for the
-            // attribute
-            for (String k : a_exp.keySet()) {
-                if (ret_exp.containsKey(k)) {
-                    ret_exp.put(k, ret_exp.get(k) + a_exp.get(k));
-                } else {
-                    ret_exp.put(k, a_exp.get(k));
-                }
+        Map<String, Integer> returnExperience = new HashMap<>();
+        for (Attribute attribute : this.getAttributes()) {
+            Map<String, Integer> attributeExperience = attribute.getExperience(); // experience for the attribute
+            for (String experienceType : attributeExperience.keySet()) {
+                int additionalExperience = attributeExperience.getOrDefault(experienceType, 0);
+                int currentExperience = returnExperience.getOrDefault(experienceType, 0);
+
+                returnExperience.put(experienceType, currentExperience + additionalExperience);
             }
         }
-        return ret_exp;
+        return returnExperience;
     }
 
-    public int getExperienceToLevel_LEGACY(String type) {
+    public int qExperienceToLevel_LEGACY(String type) {
         Integer amount = this.getExperienceToLevel_LEGACY().get(type);
         if (amount == null) {
             return 0;
@@ -344,7 +366,7 @@ public class Glyph {
     }
 
     public Map<String, Integer> getExperience_LEGACY() {
-        return this.m_experienceToNextLevel;
+        return this.m_experienceToNextLevel_LEGACY;
     }
     /**
      * Returns the amount of the type experience that this glyph has
@@ -354,10 +376,10 @@ public class Glyph {
      * @return The amount of experience stored on the glyph
      */
     public int getExperience_LEGACY(String type) {
-        if (!this.m_experienceToNextLevel.containsKey(type)) {
+        if (!this.m_experienceToNextLevel_LEGACY.containsKey(type)) {
             return 0;
         }
-        return this.m_experienceToNextLevel.get(type);
+        return this.m_experienceToNextLevel_LEGACY.get(type);
     }
     /**
      * Sets the experience stored on this glyph to the mapping of experience
@@ -366,7 +388,7 @@ public class Glyph {
      * @param m_experience The mapping of the experience
      */
     public void setExperience_LEGACY(Map<String, Integer> m_experience) {
-        this.m_experienceToNextLevel = new HashMap<>(m_experience);
+        this.m_experienceToNextLevel_LEGACY = new HashMap<>(m_experience);
     }
     /**
      * Will set the experience of the specified type to the specified amount
@@ -375,7 +397,7 @@ public class Glyph {
      * @param experience The amount of experience to set to
      */
     public void setExperience_LEGACY(String type, int experience) {
-        this.m_experienceToNextLevel.put(type, experience);
+        this.m_experienceToNextLevel_LEGACY.put(type, experience);
     }
     /**
      * Adds the map of experience types and amounts to the current amount of
@@ -387,12 +409,13 @@ public class Glyph {
      */
     public void addExperience_LEGACY(Map<String, Integer> experience) {
         // Looping through all the experience values in the passed in map
-        for (String s : experience.keySet()) {
-            int current_experience = 0;
-            if (this.m_experienceToNextLevel.containsKey(s)) {
-                current_experience = this.m_experienceToNextLevel.get(s);
-            }
-            this.m_experienceToNextLevel.put(s, experience.get(s) + current_experience);
+        for (String experienceType : experience.keySet()) {
+            addExperience_LEGACY(experienceType, experience.get(experienceType));
+            //            int current_experience = 0;
+            //            if (this.m_experienceToNextLevel_LEGACY.containsKey(experienceType)) {
+            //                current_experience = this.m_experienceToNextLevel_LEGACY.get(experienceType);
+            //            }
+            //            this.m_experienceToNextLevel_LEGACY.put(experienceType, experience.get(experienceType) + current_experience);
         }
     }
     /**
@@ -403,10 +426,10 @@ public class Glyph {
      */
     public void addExperience_LEGACY(String type, int experience) {
         int current_experience = 0;
-        if (this.m_experienceToNextLevel.containsKey(type)) {
-            current_experience = this.m_experienceToNextLevel.get(type);
+        if (this.m_experienceToNextLevel_LEGACY.containsKey(type)) {
+            current_experience = this.m_experienceToNextLevel_LEGACY.get(type);
         }
-        this.m_experienceToNextLevel.put(type, experience + current_experience);
+        this.m_experienceToNextLevel_LEGACY.put(type, experience + current_experience);
     }
     /**
      * Will reset all experience that is currently stored in this glyph
@@ -415,7 +438,7 @@ public class Glyph {
      * of experience this glyph had previously had.
      */
     public void resetExperience_LEGACY() {
-        this.m_experienceToNextLevel = new HashMap<String, Integer>();
+        this.m_experienceToNextLevel_LEGACY = new HashMap<String, Integer>();
     }
 
     public boolean isMaxLevel() {
@@ -429,12 +452,12 @@ public class Glyph {
         if (this.isMaxLevel_LEGACY()) {
             return false;
         }
-        Map<String, Integer> level_experience = this.getExperienceToLevel_LEGACY();
-        for (String type : level_experience.keySet()) {
-            if (!this.m_experienceToNextLevel.containsKey(type)) {
+        Map<String, Integer> levelExperience = this.getExperienceToLevel_LEGACY();
+        for (String type : levelExperience.keySet()) {
+            if (!this.m_experienceToNextLevel_LEGACY.containsKey(type)) {
                 return false;
             }
-            if (this.m_experienceToNextLevel.get(type) < level_experience.get(type)) {
+            if (this.m_experienceToNextLevel_LEGACY.get(type) < levelExperience.get(type)) {
                 return false;
             }
         }
@@ -452,9 +475,9 @@ public class Glyph {
         if (!this.canLevel_LEGACY()) {
             return false;
         }
-        Map<String, Integer> level_experience = this.getExperienceToLevel_LEGACY();
-        for (String type : level_experience.keySet()) {
-            this.m_experienceToNextLevel.put(type, this.m_experienceToNextLevel.get(type) - level_experience.get(type));
+        Map<String, Integer> levelExperience = this.getExperienceToLevel_LEGACY();
+        for (String type : levelExperience.keySet()) {
+            this.m_experienceToNextLevel_LEGACY.put(type, this.m_experienceToNextLevel_LEGACY.get(type) - levelExperience.get(type));
         }
         this.addLevel_LEGACY();
         return true;
@@ -467,19 +490,19 @@ public class Glyph {
      * @return A map of the remaining experience needed for each experience type
      */
     public Map<String, Integer> remainingExperience_LEGACY() {
-        Map<String, Integer> remain_exp = new HashMap<>();
-        Map<String, Integer> required_exp = this.getExperienceToLevel_LEGACY();
-        for (String t : required_exp.keySet()) {
-            if (this.m_experienceToNextLevel.containsKey(t)) {
-                remain_exp.put(t, required_exp.get(t) - this.m_experienceToNextLevel.get(t));
+        Map<String, Integer> remainingExperience = new HashMap<>();
+        Map<String, Integer> requiredExperience = this.getExperienceToLevel_LEGACY();
+        for (String t : requiredExperience.keySet()) {
+            if (this.m_experienceToNextLevel_LEGACY.containsKey(t)) {
+                remainingExperience.put(t, requiredExperience.get(t) - this.m_experienceToNextLevel_LEGACY.get(t));
             } else {
-                remain_exp.put(t, required_exp.get(t));
+                remainingExperience.put(t, requiredExperience.get(t));
             }
-            if (remain_exp.get(t) <= 0) {
-                remain_exp.remove(t);
+            if (remainingExperience.get(t) <= 0) {
+                remainingExperience.remove(t);
             }
         }
-        return remain_exp;
+        return remainingExperience;
     }
     /**
      * Returns the remaining experience for the specific type of experience
@@ -493,10 +516,10 @@ public class Glyph {
             return -1;
         }
         int required_exp = required_exp_map.get(type);
-        if (!this.m_experienceToNextLevel.containsKey(type)) {
+        if (!this.m_experienceToNextLevel_LEGACY.containsKey(type)) {
             return required_exp;
         }
-        return required_exp - this.m_experienceToNextLevel.get(type);
+        return required_exp - this.m_experienceToNextLevel_LEGACY.get(type);
     }
 
     //--------------------------------------------------------------------------------------------------------------------//
@@ -579,8 +602,8 @@ public class Glyph {
         Map<String, Integer> experienceToLevel = this.getExperienceToLevel_LEGACY();
         for (String type : experienceToLevel.keySet()) {
             int experienceAmount = 0;
-            if (this.m_experienceToNextLevel.containsKey(type)) {
-                experienceAmount = this.m_experienceToNextLevel.get(type);
+            if (this.m_experienceToNextLevel_LEGACY.containsKey(type)) {
+                experienceAmount = this.m_experienceToNextLevel_LEGACY.get(type);
             }
             int requiredAmount = experienceToLevel.get(type);
             String experienceLine = "";
@@ -699,8 +722,8 @@ public class Glyph {
 
         /* Setting the experience */
         ConfigurationSection experienceSection = new YamlConfiguration();
-        for (String key : this.m_experienceToNextLevel.keySet()) {
-            int amount = this.m_experienceToNextLevel.get(key);
+        for (String key : this.m_experienceToNextLevel_LEGACY.keySet()) {
+            int amount = this.m_experienceToNextLevel_LEGACY.get(key);
             experienceSection.set(key, amount);
         }
         section.set("experience", experienceSection);

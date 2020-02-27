@@ -52,8 +52,7 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     //        new BlockDataAgeableComparator()
     //    });
     // Experience mapping for material related events
-    private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{
-        MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
+    private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
     private Map<MaskedBlockData, ExperienceReward> m_experiencePerBreak = new HashMap<>();
     private Map<MaskedBlockData, ExperienceReward> m_experiencePerPlace = new HashMap<>();
     private Map<Material, ExperienceReward> m_experiencePerCraft = new HashMap<>();
@@ -87,21 +86,18 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
 
         PlayerData data = Inscription.getInstance().getPlayerManager().getData((Player) player);
         if (data == null) {
-            Inscription.logger
-                .severe("Player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
+            Inscription.logger.severe("Player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
             return;
         }
 
         for (String experienceType : experienceMapping.keySet()) {
             int experienceAmount = experienceMapping.get(experienceType);
-            boolean experienceDistributed = data.getGlyphInventory()
-                .distributeExperience(experienceType, experienceAmount);
+            boolean experienceDistributed = data.getGlyphInventory().distributeExperience(experienceType, experienceAmount);
 
             // If the experience wasn't actually distributed, we need to trigger an event that the experience overflowed
             // back to the character profile.
             if (!experienceDistributed) {
-                PlayerExperienceOverflowEvent overflowEvent = new PlayerExperienceOverflowEvent(player, experienceType,
-                    experienceAmount);
+                PlayerExperienceOverflowEvent overflowEvent = new PlayerExperienceOverflowEvent(player, experienceType, experienceAmount);
                 Bukkit.getPluginManager().callEvent(overflowEvent);
 
                 // The amount may have been changed during the event calls.
@@ -219,8 +215,9 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     }
 
     @EventHandler public void onCraftItem(CraftItemEvent event) {
-        if (event.isCancelled())
+        if (event.isCancelled()) {
             return;
+        }
 
         Recipe recipe = event.getRecipe(); // getting the recipe
         ItemStack result = recipe.getResult(); // getting the result of the craft event
@@ -285,15 +282,11 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
                     }
                     // The total times the item was crafted
                     int totalCrafts = itemsCrafted / result.getAmount();
-                    Inscription.logger.fine(
-                        "  items crafted: " + itemsCrafted + " result amount: " + result.getAmount() + " total crafts: "
-                            + totalCrafts);
+                    Inscription.logger.fine("  items crafted: " + itemsCrafted + " result amount: " + result.getAmount() + " total crafts: " + totalCrafts);
 
                     PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
                     if (data == null) {
-                        Inscription.logger.fine(
-                            "ERROR: player data return null on call for: " + player.getName() + ":" + player
-                                .getUniqueId());
+                        Inscription.logger.fine("ERROR: player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
                         return;
                     }
                     if (craftReward != null) {

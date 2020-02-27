@@ -90,6 +90,7 @@ public class ChainBreakAttributeType extends AttributeType {
         return String.format("%d", (int) (this.getMin() * calculateRarityMultiplier(glyph)));
     }
     public String getMaxAmountString(Glyph glyph) {
+
         return String.format("%d", (int) (this.getMax() * calculateRarityMultiplier(glyph)));
     }
     public String getDisplayString(Glyph glyph, String prefix, String suffix) {

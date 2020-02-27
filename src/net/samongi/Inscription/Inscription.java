@@ -19,6 +19,7 @@ import net.samongi.Inscription.Listeners.EntityListener;
 import net.samongi.Inscription.Listeners.PlayerListener;
 import net.samongi.Inscription.Loot.LootManager;
 import net.samongi.Inscription.Player.PlayerManager;
+import net.samongi.Inscription.Recipe.RecipeManager;
 import net.samongi.Inscription.TypeClasses.EntityClass;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
 import net.samongi.Inscription.TypeClasses.TypeClassManager;
@@ -69,6 +70,7 @@ public class Inscription extends JavaPlugin {
     private PlayerManager m_playerManager = null;
     private GeneratorManager m_generatorManager = null;
     private GlyphTypesManager m_glyphTypesManager = null;
+    private RecipeManager m_recipeManager = null;
 
     //----------------------------------------------------------------------------------------------------------------//
     public Inscription() {
@@ -134,6 +136,12 @@ public class Inscription extends JavaPlugin {
         m_glyphTypesManager.parse(new File(getDataFolder(), GLYPH_TYPES_DIRECTORY));
     }
 
+    private void setupRecipeManager() {
+        m_recipeManager = new RecipeManager();
+        m_recipeManager.registerRecipes();
+        getServer().getPluginManager().registerEvents(m_recipeManager, this);
+    }
+
     //----------------------------------------------------------------------------------------------------------------//
     @Override public void onEnable() {
         /* Configuration handling */
@@ -154,6 +162,7 @@ public class Inscription extends JavaPlugin {
         setupGeneratorManager();
         setupLootManager();  // Should always occur after attribute and type class manager
         setupPlayerManager();
+        setupRecipeManager();
 
         createListeners();
         createCommands();
@@ -240,5 +249,8 @@ public class Inscription extends JavaPlugin {
     }
     public GlyphTypesManager getGlyphTypesManager() {
         return m_glyphTypesManager;
+    }
+    public RecipeManager getRecipeManager() {
+        return m_recipeManager;
     }
 }

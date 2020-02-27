@@ -66,6 +66,32 @@ public abstract class Attribute implements Serializable {
      */
     public abstract String getLoreLine();
 
+    public Map<String, Integer> getBaseExperience() {
+        Map<String, Integer> experienceMap = new HashMap<>(this.getType().getBaseExperience());
+
+        int rarityRank = this.getGlyph().getRarity().getRank();
+        double rarityMultiplier = 1 + rarityRank * this.getType().getRarityMultiplier();
+
+        for (String experienceType : experienceMap.keySet()) {
+            int nextValue = (int) (experienceMap.get(experienceType) * rarityMultiplier);
+            experienceMap.put(experienceType, nextValue);
+        }
+        return experienceMap;
+    }
+    public Map<String, Integer> getLevelExperience() {
+
+        Map<String, Integer> experienceMap = new HashMap<>(this.getType().getLevelExperience());
+
+        int rarityRank = this.getGlyph().getRarity().getRank();
+        double rarityMultiplier = 1 + rarityRank * this.getType().getRarityMultiplier();
+
+        for (String experienceType : experienceMap.keySet()) {
+            int nextValue = (int) (experienceMap.get(experienceType) * rarityMultiplier);
+            experienceMap.put(experienceType, nextValue);
+        }
+        return experienceMap;
+    }
+
     /**
      * Returns the required experience that this attribute requires for the glyph to level up
      * This takes into account the level of the glyph it is currently set to.
@@ -76,20 +102,22 @@ public abstract class Attribute implements Serializable {
         if (this.getType().getBaseExperience() == null) {
             return new HashMap<String, Integer>();
         }
-        Map<String, Integer> experience_map = new HashMap<>(this.getType().getBaseExperience());
-        int glyph_level = this.getGlyph().getLevel_LEGACY();
-        int ratity_level = this.getGlyph().getRarity().getRank();
-        double rarity_multiplier = this.getType().getRarityMultiplier();
+        Map<String, Integer> experienceMap = new HashMap<>();
 
-        for (String s : this.getType().getLevelExperience().keySet()) {
-            if (!experience_map.containsKey(s)) {
-                experience_map.put(s, (int) (this.getType().getLevelExperience().get(s) * glyph_level * (1 + rarity_multiplier * ratity_level)));
-            } else {
-                experience_map
-                    .put(s, (int) (experience_map.get(s) + this.getType().getLevelExperience().get(s) * glyph_level * (1 + rarity_multiplier * ratity_level)));
-            }
+        int glyphLevel = this.getGlyph().getLevel_LEGACY();
+
+        Map<String, Integer> baseExperienceMap = getBaseExperience();
+        Map<String, Integer> levelExperienceMap = getLevelExperience();
+
+        for (String experienceType : levelExperienceMap.keySet()) {
+
+            int levelExperience = levelExperienceMap.getOrDefault(experienceType, 0);
+            int baseExperience = baseExperienceMap.getOrDefault(experienceType, 0);
+            int currentExperience = experienceMap.getOrDefault(experienceType, 0);
+
+            experienceMap.put(experienceType, currentExperience + baseExperience + glyphLevel * levelExperience);
         }
-        return experience_map;
+        return experienceMap;
     }
 
 }
