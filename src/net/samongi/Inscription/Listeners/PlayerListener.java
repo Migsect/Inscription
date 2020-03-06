@@ -1,17 +1,20 @@
 package net.samongi.Inscription.Listeners;
 
+import net.samongi.Inscription.Altars;
 import net.samongi.Inscription.Experience.PlayerExperienceOverflowEvent;
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.GlyphInventory;
 import net.samongi.Inscription.Player.PlayerData;
 
+import net.samongi.SamongiLib.Blocks.Altar;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -55,35 +58,43 @@ public class PlayerListener implements Listener {
         GlyphInventory.onInventoryClick(event);
     }
 
+    public boolean checkGlyphInventory_LEGACY(Material clickedMaterial, Material handMaterial) {
+        if (handMaterial == null || clickedMaterial == null) {
+            Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventory_LEGACY : false");
+            return false;
+        }
+        boolean result = (clickedMaterial.equals(Material.ENCHANTING_TABLE) || clickedMaterial.equals(Material.LECTERN)) && handMaterial.equals(Material.PAPER);
+
+        Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventory_LEGACY : " + result);
+        return result;
+    }
+    public boolean checkGlyphInventoryAltar(Block block) {
+        Altar altar = Altars.getInscriptionAltar();
+        boolean result = altar.checkPattern(block);
+        Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventoryAltar : " + result);
+        return result;
+    }
+
     @EventHandler public void onPlayerInteractEvent(PlayerInteractEvent event) {
-        onPlayerInteractEnchantingBlock(event);
-        //Inscription.getInstance().getLootManager().onPlayerInteractEvent(event);
-    }
-
-    @EventHandler public void onPlayerExperienceOverflowEvent(PlayerExperienceOverflowEvent event) {
-        //Inscription.getInstance().getLootManager().onPlayerExperienceOverflowEvent(event);
-
-    }
-
-    private void onPlayerInteractEnchantingBlock(PlayerInteractEvent event) {
         if (event.useInteractedBlock() == Event.Result.DENY) {
             return;
         }
         Player player = event.getPlayer();
 
         ItemStack handItem = event.getItem();
-        if (handItem == null) {
-            return;
-        }
+
         Block clickedBlock = event.getClickedBlock();
         if (clickedBlock == null) {
             return;
         }
+        if (!event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
+            return;
+        }
 
         Material clickedMaterial = clickedBlock.getType();
-        Material handMaterial = handItem.getType();
+        Material handMaterial = handItem == null ? null : handItem.getType();
 
-        if ((clickedMaterial.equals(Material.ENCHANTING_TABLE) || clickedMaterial.equals(Material.LECTERN)) && handMaterial.equals(Material.PAPER)) {
+        if (checkGlyphInventory_LEGACY(clickedMaterial, handMaterial) || checkGlyphInventoryAltar(clickedBlock)) {
             PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
             GlyphInventory inventory = data.getGlyphInventory();
             BukkitRunnable task = new BukkitRunnable() {

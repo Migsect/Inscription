@@ -14,8 +14,6 @@ import net.samongi.Inscription.Attributes.AttributeManager;
 import net.samongi.Inscription.Attributes.Types.*;
 import net.samongi.Inscription.Glyphs.Types.GlyphTypesManager;
 import net.samongi.Inscription.Loot.Generator.GeneratorManager;
-import net.samongi.Inscription.Listeners.BlockListener;
-import net.samongi.Inscription.Listeners.EntityListener;
 import net.samongi.Inscription.Listeners.PlayerListener;
 import net.samongi.Inscription.Loot.LootManager;
 import net.samongi.Inscription.Player.PlayerManager;
@@ -211,8 +209,6 @@ public class Inscription extends JavaPlugin {
 
     private void createListeners() {
         PluginManager pluginManager = getServer().getPluginManager();
-        pluginManager.registerEvents(new BlockListener(), this);
-        pluginManager.registerEvents(new EntityListener(), this);
         pluginManager.registerEvents(new PlayerListener(), this);
     }
 
@@ -223,6 +219,7 @@ public class Inscription extends JavaPlugin {
         m_attributeManager.registerConstructor(new ChainBreakAttributeType.Constructor());
         m_attributeManager.registerConstructor(new ExperienceBonusAttributeType.Constructor());
         m_attributeManager.registerConstructor(new DamageReductionAttributeType.Constructor());
+        m_attributeManager.registerConstructor(new WaypointAttributeType.Constructor());
     }
 
     //----------------------------------------------------------------------------------------------------------------//

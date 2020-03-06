@@ -2,9 +2,7 @@ package net.samongi.Inscription.TypeClasses;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import net.samongi.Inscription.Inscription;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
@@ -20,10 +18,12 @@ public class TypeClassManager implements ConfigurationParsing {
     private static final String ENTITY_SECTION_KEY = "entity-classes";
     private static final String MATERIAL_SECTION_KEY = "material-classes";
     private static final String DAMAGE_SECTION_KEY = "damage-classes";
+    private static final String BIOME_SECTION_KEY = "biome-classes";
 
     private final Map<String, EntityClass> m_entityClasses = new HashMap<>();
     private final Map<String, MaterialClass> m_materialClasses = new HashMap<>();
     private final Map<String, DamageClass> m_damageClasses = new HashMap<>();
+    private final Map<String, BiomeClass> m_biomeClasses = new HashMap<>();
 
     public void registerEntityClass(EntityClass entityClass) {
         String typeName = entityClass.getTypeName();
@@ -40,18 +40,28 @@ public class TypeClassManager implements ConfigurationParsing {
         m_damageClasses.put(typeName, damageClass);
     }
 
+    public void registerBiomeClass(BiomeClass biomeClass) {
+        String typeName = biomeClass.getTypeName();
+        m_biomeClasses.put(typeName, biomeClass);
+    }
+
     public EntityClass getEntityClass(@Nonnull String typeName) {
         return this.m_entityClasses.get(TypeClassManager.convertToTypeName(typeName));
     }
 
     public MaterialClass getMaterialClass(@Nonnull String typeName) {
-
         return this.m_materialClasses.get(TypeClassManager.convertToTypeName(typeName));
     }
 
     public DamageClass getDamageClass(@Nonnull String typeName) {
-
         return this.m_damageClasses.get(TypeClassManager.convertToTypeName(typeName));
+    }
+
+    public BiomeClass getBiomeClass(@Nonnull String typeName) {
+        return this.m_biomeClasses.get(TypeClassManager.convertToTypeName(typeName));
+    }
+    public List<BiomeClass> getBiomeClasses() {
+        return new ArrayList<>(m_biomeClasses.values());
     }
 
     private static String convertToTypeName(String string) {
@@ -115,6 +125,25 @@ public class TypeClassManager implements ConfigurationParsing {
         return true;
     }
 
+    public boolean parseBiomes(ConfigurationSection section) {
+        if (section == null) {
+            return false;
+        }
+
+        Inscription.logger.fine("Found BiomeClass Definitions:");
+        Set<String> biomeClassKeys = section.getKeys(false);
+        for (String key : biomeClassKeys) {
+            Inscription.logger.fine("  Parsing Key: '" + key + "'");
+            ConfigurationSection classSection = section.getConfigurationSection(key);
+            BiomeClass biomeClass = BiomeClass.parse(classSection);
+            if (biomeClass == null) {
+                continue;
+            }
+            this.registerBiomeClass(biomeClass);
+        }
+        return true;
+    }
+
     @Override public boolean parseConfigFile(@Nonnull File file, @Nonnull ConfigFile config) {
         Inscription.logger.info("Parsing TypeClass Configurations in: '" + file.getAbsolutePath() + "'");
         FileConfiguration root = config.getConfig();
@@ -130,6 +159,10 @@ public class TypeClassManager implements ConfigurationParsing {
         }
         if (parseDamageTypes(root.getConfigurationSection(DAMAGE_SECTION_KEY))) {
             Inscription.logger.info(String.format(" - Registered: '%s'", DAMAGE_SECTION_KEY));
+            parsedSomething = true;
+        }
+        if (parseBiomes(root.getConfigurationSection(BIOME_SECTION_KEY))) {
+            Inscription.logger.info(String.format(" - Registered: '%s'", BIOME_SECTION_KEY));
             parsedSomething = true;
         }
 

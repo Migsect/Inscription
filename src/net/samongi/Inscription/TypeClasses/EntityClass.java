@@ -14,9 +14,7 @@ import org.bukkit.entity.EntityType;
  * Referred to by attributes and other plugin systems
  * to group together different creature types.
  */
-public class EntityClass implements Serializable {
-
-    private static final long serialVersionUID = 5229737283135685813L;
+public class EntityClass {
 
     /**
      * Returns an entity class with all the entities within it.

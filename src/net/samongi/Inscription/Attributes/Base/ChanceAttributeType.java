@@ -14,19 +14,19 @@ import org.bukkit.ChatColor;
  */
 public abstract class ChanceAttributeType extends AttributeType {
 
-    protected double min_chance;
-    protected double max_chance;
+    protected double m_minChance;
+    protected double m_maxChance;
 
     protected ChanceAttributeType(GeneralAttributeParser parser) {
         super(parser);
     }
 
     public void setMin(double chance) {
-        this.min_chance = chance;
+        this.m_minChance = chance;
     }
 
     public void setMax(double chance) {
-        this.max_chance = chance;
+        this.m_maxChance = chance;
     }
 
     public double getChance(Glyph glyph) {
@@ -34,7 +34,7 @@ public abstract class ChanceAttributeType extends AttributeType {
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + this.m_rarityMultiplier * rarity_level;
-        double base_chance = this.min_chance + (this.max_chance - this.min_chance) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
+        double base_chance = this.m_minChance + (this.m_maxChance - this.m_minChance) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
         return rarity_multiplier * base_chance;
     }
 
@@ -42,10 +42,10 @@ public abstract class ChanceAttributeType extends AttributeType {
         return String.format("%.1f", this.getChance(glyph) * 100);
     }
     public String getMinChanceString(Glyph glyph) {
-        return String.format("%.1f", this.min_chance * 100 * calculateRarityMultiplier(glyph));
+        return String.format("%.1f", this.m_minChance * 100 * calculateRarityMultiplier(glyph));
     }
     public String getMaxChanceString(Glyph glyph) {
-        return String.format("%.1f", this.max_chance * 100 * calculateRarityMultiplier(glyph));
+        return String.format("%.1f", this.m_maxChance * 100 * calculateRarityMultiplier(glyph));
     }
 
     public String getDisplayString(Glyph glyph) {

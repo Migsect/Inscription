@@ -10,9 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class DamageClass implements Serializable {
-
-    private static final long serialVersionUID = 710801571402251141L;
+public class DamageClass {
 
     public static DamageClass getGlobal(String name)
     {
@@ -59,7 +57,7 @@ public class DamageClass implements Serializable {
     public Set<EntityDamageEvent.DamageCause> getDamageTypes()
     {
         TypeClassManager manager = Inscription.getInstance().getTypeClassManager();
-        HashSet<EntityDamageEvent.DamageCause> returnSet = new HashSet(this.m_damageTypes);
+        HashSet<EntityDamageEvent.DamageCause> returnSet = new HashSet<>(this.m_damageTypes);
         if (manager == null) {
             return returnSet;
         }
@@ -97,11 +95,25 @@ public class DamageClass implements Serializable {
         this.m_inherited.add(className);
     }
 
+    public boolean isGlobal() {
+        if (this.m_isGlobal) {
+            return true;
+        }
+
+        TypeClassManager manager = Inscription.getInstance().getTypeClassManager();
+        for (String inherited : this.m_inherited) {
+            if (manager.getDamageClass(inherited) != null && manager.getDamageClass(inherited).isGlobal()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static DamageClass parse(@Nonnull ConfigurationSection section)
     {
         String name = section.getString("name");
         if (name == null) {
-            Inscription.logger.warning("Material class does not have a name defined.");
+            Inscription.logger.warning("Damage class does not have a name defined.");
             return null;
         }
         Inscription.logger.fine("Found name to be: '" + name + "'");
@@ -109,7 +121,7 @@ public class DamageClass implements Serializable {
         DamageClass damageClass = new DamageClass(name);
         List<String> damageTypes = section.getStringList("damage-types");
         if (damageTypes != null) {
-            Inscription.logger.fine("Found Materials:");
+            Inscription.logger.fine("Found DaamgeTypes:");
             for (String damageType : damageTypes) {
                 boolean valid = damageClass.addDamageType(damageType);
                 if (!valid) {
@@ -130,18 +142,5 @@ public class DamageClass implements Serializable {
 
         }
         return damageClass;
-    }
-    public boolean isGlobal() {
-        if (this.m_isGlobal) {
-            return true;
-        }
-
-        TypeClassManager manager = Inscription.getInstance().getTypeClassManager();
-        for (String inherited : this.m_inherited) {
-            if (manager.getMaterialClass(inherited) != null && manager.getMaterialClass(inherited).isGlobal()) {
-                return true;
-            }
-        }
-        return false;
     }
 }

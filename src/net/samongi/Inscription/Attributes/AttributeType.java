@@ -12,9 +12,7 @@ import org.bukkit.configuration.ConfigurationSection;
 
 import javax.annotation.Nonnull;
 
-public abstract class AttributeType implements Serializable {
-
-    private static final long serialVersionUID = 8046834107643613558L;
+public abstract class AttributeType {
 
     /**
      * Transforms the section into an int map of keys to integers

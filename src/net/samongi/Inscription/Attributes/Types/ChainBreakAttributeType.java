@@ -42,7 +42,6 @@ import javax.annotation.Nonnull;
 public class ChainBreakAttributeType extends AttributeType {
 
     //----------------------------------------------------------------------------------------------------------------//
-
     private static final String TYPE_IDENTIFIER = "CHAIN_BREAK";
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -104,12 +103,12 @@ public class ChainBreakAttributeType extends AttributeType {
     @Override public Attribute generate() {
         return new Attribute(this) {
 
-            @Override public void cache(PlayerData data) {
-                CacheData cached_data = data.getData(TYPE_IDENTIFIER);
-                if (cached_data == null) {
-                    cached_data = new Data();
+            @Override public void cache(PlayerData playerData) {
+                CacheData cachedData = playerData.getData(TYPE_IDENTIFIER);
+                if (cachedData == null) {
+                    cachedData = new Data();
                 }
-                if (!(cached_data instanceof Data)) {
+                if (!(cachedData instanceof Data)) {
                     return;
                 }
 
@@ -117,7 +116,8 @@ public class ChainBreakAttributeType extends AttributeType {
                 Inscription.logger.finer("    'blockMaterials' is global?: " + blockMaterials.isGlobal());
                 Inscription.logger.finer("    'toolMaterials' is global?: " + toolMaterials.isGlobal());
 
-                Data bonusData = (Data) cached_data;
+                Data bonusData = (Data) cachedData;
+
                 int amount = getAmount(this.getGlyph());
                 if (blockMaterials.isGlobal() && toolMaterials.isGlobal()) {
                     int a = bonusData.get();
@@ -147,8 +147,9 @@ public class ChainBreakAttributeType extends AttributeType {
                             Inscription.logger.finer("  +C Added '" + amount + "' bonus to '" + type.toString() + "|" + blockData.getAsString(true) + "'");
                         }
                 }
+
                 Inscription.logger.finer("  Finished caching for " + m_typeDescription);
-                data.setData(bonusData); // setting the data again.
+                playerData.setData(bonusData);
 
             }
 

@@ -2,25 +2,23 @@ package net.samongi.Inscription.Player;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import net.samongi.Inscription.Inscription;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-public class PlayerData implements Serializable {
+public class PlayerData {
 
-    private static final long serialVersionUID = 3049177777841203611L;
-
-    private transient Map<String, CacheData> cached_data = null;
-    private GlyphInventory glyphs = null;
+    //--------------------------------------------------------------------------------------------------------------------//
+    private Map<String, CacheData> m_cachedData = null;
+    private GlyphInventory m_glyphs = null;
+    private List<Location> m_waypoints = new ArrayList<>();
 
     /**
      * Tracks the amount of excess experience the player has.
@@ -30,6 +28,7 @@ public class PlayerData implements Serializable {
     private final UUID player_UUID;
     private String player_name = "NO NAME SET";
 
+    //--------------------------------------------------------------------------------------------------------------------//
     /**
      * Constructs a PlayerData object based off
      * the player object passed in.
@@ -39,7 +38,7 @@ public class PlayerData implements Serializable {
     public PlayerData(UUID player_UUID) {
         this.player_UUID = player_UUID;
         this.player_name = Bukkit.getPlayer(player_UUID).getName();
-        this.glyphs = new GlyphInventory(player_UUID);
+        this.m_glyphs = new GlyphInventory(player_UUID);
     }
 
     public PlayerData(ConfigFile file) throws InvalidConfigurationException {
@@ -67,7 +66,7 @@ public class PlayerData implements Serializable {
 
         /* Setting up the glyph Inventory */
         ConfigurationSection glyphsSection = section.getConfigurationSection("glyphs");
-        this.glyphs = new GlyphInventory(this.player_UUID, glyphsSection);
+        this.m_glyphs = new GlyphInventory(this.player_UUID, glyphsSection);
 
     }
     /**
@@ -107,13 +106,14 @@ public class PlayerData implements Serializable {
      * @return
      */
     public GlyphInventory getGlyphInventory() {
-        return this.glyphs;
+        return this.m_glyphs;
     }
 
     private Map<String, CacheData> getCachedData() {
-        if (this.cached_data == null)
-            this.cached_data = new HashMap<>();
-        return this.cached_data;
+        if (this.m_cachedData == null) {
+            this.m_cachedData = new HashMap<>();
+        }
+        return this.m_cachedData;
     }
 
     /**
@@ -132,7 +132,7 @@ public class PlayerData implements Serializable {
      * remove any entries entirely. (Resets the hashmap of data to be empty)
      */
     public void resetCachedData() {
-        this.cached_data = new HashMap<>();
+        this.m_cachedData = new HashMap<>();
     }
 
     public void setData(CacheData data) {
@@ -164,6 +164,29 @@ public class PlayerData implements Serializable {
         return this.m_experience;
     }
 
+    public List<Location> getWaypoints() {
+        return this.m_waypoints;
+    }
+
+    /**
+     * Adds a waypoint to the player's list of waypoints. If the player already has 27 waypoints, then this will pop
+     * the oldest waypoint that the player has.
+     *
+     * @param location The location to add as a waypoint.
+     */
+    public boolean addWaypoint(Location location) {
+        if (m_waypoints.size() > 27) {
+            m_waypoints.remove(0);
+        }
+        if(m_waypoints.contains(location))
+        {
+            return false;
+        }
+        m_waypoints.add(location);
+        return true;
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------//
     /**
      * Will attempt to load the specified player data file
      * If it fails to load the file for any reason it will
@@ -190,6 +213,7 @@ public class PlayerData implements Serializable {
 
         return playerData;
     }
+
     /**
      * Will attempt to save the specified player data file
      * If it fails to save the file for any reason it will
@@ -200,8 +224,9 @@ public class PlayerData implements Serializable {
      * @return False if the save failed.
      */
     public static boolean save(PlayerData data, File dir) {
-        if (!dir.isDirectory())
+        if (!dir.isDirectory()) {
             return false;
+        }
         File file = new File(dir, data.getPlayerUUID().toString() + ".yml");
 
         try {
@@ -219,7 +244,7 @@ public class PlayerData implements Serializable {
         ConfigFile configFile = new ConfigFile(file);
         ConfigurationSection section = configFile.getConfig();
         section.set("uuid", data.player_UUID.toString());
-        section.set("glyphs", data.glyphs.getAsConfigurationSection());
+        section.set("glyphs", data.m_glyphs.getAsConfigurationSection());
         section.set("stored_experience", data.serializeExperienceSection());
 
         configFile.saveConfig();
@@ -227,6 +252,7 @@ public class PlayerData implements Serializable {
         return true;
     }
 
+    //--------------------------------------------------------------------------------------------------------------------//
     public ConfigurationSection serializeExperienceSection() {
         ConfigurationSection section = new YamlConfiguration();
         for (String key : m_experience.keySet()) {

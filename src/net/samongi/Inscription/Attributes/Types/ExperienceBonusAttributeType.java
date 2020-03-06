@@ -19,7 +19,6 @@ import java.util.Random;
 
 public class ExperienceBonusAttributeType extends MultiplierAttributeType {
 
-    private static final long serialVersionUID = -6051996265080614309L;
     private static final String TYPE_IDENTIFIER = "EXPERIENCE_BONUS";
 
     //--------------------------------------------------------------------------------------------------------------------//
@@ -63,6 +62,7 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
         };
     }
 
+    //--------------------------------------------------------------------------------------------------------------------//
     public static class Data implements CacheData {
 
         /* Data members of the the data */
@@ -92,6 +92,7 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
         }
     }
 
+    //--------------------------------------------------------------------------------------------------------------------//
     public static class Constructor extends AttributeTypeConstructor {
 
         @Override public AttributeType construct(ConfigurationSection section) {

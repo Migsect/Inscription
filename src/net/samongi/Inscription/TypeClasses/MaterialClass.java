@@ -27,9 +27,8 @@ import javax.annotation.Nonnull;
  * Referred to by attributes and othe rplugin systems
  * to group together different material types.
  */
-public class MaterialClass implements Serializable {
+public class MaterialClass {
 
-    private static final long serialVersionUID = -4115095882218966162L;
 
     /**
      * Returns a material class with all the materials within it.
