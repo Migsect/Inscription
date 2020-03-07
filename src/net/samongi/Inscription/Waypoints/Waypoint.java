@@ -26,6 +26,7 @@ import org.bukkit.util.Vector;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Waypoint {
 
@@ -38,7 +39,9 @@ public class Waypoint {
     }
 
     //--------------------------------------------------------------------------------------------------------------------//
-
+    private @Nonnull Location getLocation() {
+        return m_location;
+    }
     private @Nonnull Block getBlock() {
         return m_location.getBlock();
     }
@@ -90,7 +93,7 @@ public class Waypoint {
         List<BiomeClass> biomes = Inscription.getInstance().getTypeClassManager().getBiomeClasses();
         Inscription.logger.finest("BiomeClass Amount: " + biomes.size());
         Set<BiomeClass> validBiomes = new HashSet<>(BiomeClass.getContaining(biome, biomes));
-        validBiomes.remove( Inscription.getInstance().getTypeClassManager().getBiomeClass("GLOBAL"));
+        validBiomes.remove(Inscription.getInstance().getTypeClassManager().getBiomeClass("GLOBAL"));
         return validBiomes;
     }
 
@@ -167,7 +170,8 @@ public class Waypoint {
         int fromDistance = waypointData.get(fromBiome, null);
         int toDistance = waypointData.get(null, toBiome);
         int fromToDistance = waypointData.get(fromBiome, toBiome);
-        Inscription.logger.finest(fromBiome + " -> " + toBiome + " Global: " + globalDistance+ " From: " + fromDistance + " To: " + toDistance+ " FromTo: " + fromToDistance);
+        Inscription.logger.finest(
+            fromBiome + " -> " + toBiome + " Global: " + globalDistance + " From: " + fromDistance + " To: " + toDistance + " FromTo: " + fromToDistance);
 
         return globalDistance + fromDistance + toDistance + fromToDistance + baseDistance;
     }
@@ -210,7 +214,7 @@ public class Waypoint {
 
     private @Nonnull String getDistanceString(@Nonnull Location other, int safeDistance) {
         int distance = getDistance(other);
-        String distanceString = ChatColor.GRAY + "Distance: " + ChatColor.AQUA + distance + "m " ;
+        String distanceString = ChatColor.GRAY + "Distance: " + ChatColor.AQUA + distance + "m ";
         distanceString += ChatColor.GRAY + "(" + ChatColor.BLUE + safeDistance + "m" + ChatColor.GRAY + ")";
         if (!isSameWorld(other)) {
             distanceString += ChatColor.DARK_PURPLE + " [Interworld]";
@@ -292,9 +296,25 @@ public class Waypoint {
 
         PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
         int slot = 0;
-        for (Location waypointLocation : playerData.getWaypointsSorted(m_location)) {
-            Waypoint waypoint = new Waypoint(waypointLocation);
-            int safeDistance = getSafeDistance(player, waypointLocation.getBlock());
+        List<Waypoint> waypoints = playerData.getWaypoints().stream().map((Location location) -> new Waypoint(location)).collect(Collectors.toList());
+        waypoints.sort((Waypoint a, Waypoint b) -> {
+            int aSafeDistance = a.getSafeDistance(player, getBlock());
+            int bSafeDistance = b.getSafeDistance(player, getBlock());
+            int aDistance = a.getDistance(getLocation());
+            int bDistance = b.getDistance(getLocation());
+            double aFailChance = a.getFailureChance(aDistance, aSafeDistance);
+            double bFailChance = b.getFailureChance(bDistance, bSafeDistance);
+            if (aFailChance > bFailChance) {
+                return 1;
+            }
+            if (aFailChance < bFailChance) {
+                return -1;
+            }
+            return bDistance - aDistance;
+        });
+
+        for (Waypoint waypoint : waypoints) {
+            int safeDistance = getSafeDistance(player, waypoint.getBlock());
 
             ItemStack menuIcon = waypoint.getItemIcon(m_location, safeDistance);
             boolean validWaypoint = waypoint.isValidAltar();
@@ -307,7 +327,7 @@ public class Waypoint {
                 }, false);
             }
             menu.addLeftClickAction(slot, () -> {
-                playerData.removeWaypoint(waypointLocation);
+                playerData.removeWaypoint(waypoint.getLocation());
                 player.sendMessage(ChatColor.YELLOW + "Waypoint removed");
                 getInventoryMenu(player).openMenu();
             }, true);

@@ -137,7 +137,6 @@ public class WaypointAttributeType extends AmountAttributeType {
         }
         public void set(Biome fromBiome, Biome toBiome, int amount) {
             Tuple key = new Tuple(fromBiome, toBiome);
-            Inscription.logger.finest("Set " + key.toString() + " " + m_speciedWaypointAmounts);
             m_speciedWaypointAmounts.put(key, amount);
         }
 
@@ -148,7 +147,6 @@ public class WaypointAttributeType extends AmountAttributeType {
         public int get(Biome fromBiome, Biome toBiome) {
             Tuple key = new Tuple(fromBiome, toBiome);
             int value = m_speciedWaypointAmounts.getOrDefault(key, 0);
-            Inscription.logger.finest("Get " + key.toString() + " " + value);
             return value;
         }
 
