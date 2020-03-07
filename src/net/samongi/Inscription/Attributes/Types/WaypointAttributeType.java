@@ -13,6 +13,7 @@ import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClasses.BiomeClass;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
+import net.samongi.Inscription.Waypoints.Waypoint;
 import net.samongi.SamongiLib.Blocks.Altar;
 import net.samongi.SamongiLib.Menu.InventoryMenu;
 import net.samongi.SamongiLib.Tuple.Tuple;
@@ -46,7 +47,7 @@ import java.util.*;
 public class WaypointAttributeType extends AmountAttributeType {
 
     //--------------------------------------------------------------------------------------------------------------------//
-    private static final String TYPE_IDENTIFIER = "WAYPOINT";
+    public static final String TYPE_IDENTIFIER = "WAYPOINT";
 
     //--------------------------------------------------------------------------------------------------------------------//
     private BiomeClass m_fromBiome = BiomeClass.getGlobal("any items");
@@ -99,9 +100,9 @@ public class WaypointAttributeType extends AmountAttributeType {
                     for (Biome toBiome : m_toBiome.getBiomes())
                         for (Biome fromBiome : m_fromBiome.getBiomes()) {
                             int currentAmount = amountData.get(fromBiome, toBiome);
-                            amountData.set(fromBiome, null, currentAmount + addedAmount);
+                            amountData.set(fromBiome, toBiome, currentAmount + addedAmount);
                             Inscription.logger.finer(
-                                "  +C Added '" + addedAmount + "' bonus to fromBiome:'" + fromBiome.toString() + "|toBiome:" + fromBiome.toString() + "'");
+                                "  +C Added '" + addedAmount + "' bonus to fromBiome:'" + fromBiome.toString() + "'|toBiome:'" + fromBiome.toString() + "'");
                         }
 
                 }
@@ -136,6 +137,7 @@ public class WaypointAttributeType extends AmountAttributeType {
         }
         public void set(Biome fromBiome, Biome toBiome, int amount) {
             Tuple key = new Tuple(fromBiome, toBiome);
+            Inscription.logger.finest("Set " + key.toString() + " " + m_speciedWaypointAmounts);
             m_speciedWaypointAmounts.put(key, amount);
         }
 
@@ -145,7 +147,9 @@ public class WaypointAttributeType extends AmountAttributeType {
         }
         public int get(Biome fromBiome, Biome toBiome) {
             Tuple key = new Tuple(fromBiome, toBiome);
-            return m_speciedWaypointAmounts.get(key);
+            int value = m_speciedWaypointAmounts.getOrDefault(key, 0);
+            Inscription.logger.finest("Get " + key.toString() + " " + value);
+            return value;
         }
 
         @Override public void clear() {
@@ -229,19 +233,6 @@ public class WaypointAttributeType extends AmountAttributeType {
             String menuTitle =
                 ChatColor.DARK_PURPLE + "Waypoint " + ChatColor.LIGHT_PURPLE + (currentDisplayName.isEmpty() ? "Unnamed Waypoint" : currentDisplayName);
 
-            //            if (!biomeClasses.isEmpty()) {
-            //                menuTitle += ChatColor.DARK_GRAY + "(";
-            //                for (int index = 0; index < biomeClasses.size(); index++) {
-            //                    BiomeClass biomeClass = biomeClasses.get(index);
-            //                    menuTitle += biomeClass.getName();
-            //                    if (index != biomeClasses.size() - 1) {
-            //                        menuTitle += ", ";
-            //                    }
-            //
-            //                }
-            //                menuTitle += ")";
-            //            }
-            //
             InventoryMenu menu = new InventoryMenu(player, 3, menuTitle);
 
             return menu;
@@ -291,39 +282,8 @@ public class WaypointAttributeType extends AmountAttributeType {
             return new Listener() {
 
                 void openWaypointMenu(@Nonnull Player player, @Nonnull Location location) {
-                    PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
-                    Block fromBlock = location.getBlock();
-                    Biome fromBiome = fromBlock.getBiome();
-
-                    InventoryMenu menu = getInventoryMenu(player, fromBlock);
-                    if (menu == null) {
-                        return;
-                    }
-
-                    int slot = 0;
-                    for (Location waypointLocation : playerData.getWaypoints()) {
-                        Block waypointBlock = waypointLocation.getBlock();
-                        BlockData waypointBlockData = waypointBlock.getBlockData();
-                        // We need to first check if the altar is still valid before we make it a option.
-                        Altar waypointAltar = Altars.getWaypointAltar();
-                        if (!waypointAltar.checkPattern(waypointBlock)) {
-                            continue;
-                        }
-
-                        ItemStack menuIcon = getMenuItemStack(waypointBlock, location);
-                        if (menuIcon == null) {
-                            continue;
-                        }
-                        menu.setItem(slot, menuIcon);
-                        menu.addClickAction(slot, ()-> {
-                            player.closeInventory();
-                            player.teleport(new Location(waypointBlock.getWorld(), waypointBlock.getX() + 0.5, waypointBlock.getY(),  waypointBlock.getZ() + 0.5));
-                            player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, (float)1.0, (float)1.0);
-                        });
-
-                        slot++;
-                    }
-
+                    Waypoint waypoint = new Waypoint(location);
+                    InventoryMenu menu = waypoint.getInventoryMenu(player);
                     menu.openMenu();
                 }
                 void registerWaypointLocation(@Nonnull Player player, @Nonnull Location location) {

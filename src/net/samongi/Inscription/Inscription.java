@@ -18,6 +18,7 @@ import net.samongi.Inscription.Listeners.PlayerListener;
 import net.samongi.Inscription.Loot.LootManager;
 import net.samongi.Inscription.Player.PlayerManager;
 import net.samongi.Inscription.Recipe.RecipeManager;
+import net.samongi.Inscription.TypeClasses.BiomeClass;
 import net.samongi.Inscription.TypeClasses.EntityClass;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
 import net.samongi.Inscription.TypeClasses.TypeClassManager;
@@ -55,6 +56,29 @@ public class Inscription extends JavaPlugin {
     private static int s_maxLevel = 100;
     public static int getMaxLevel() {
         return s_maxLevel;
+    }
+
+
+    private static int s_baseInterworldDistance = 10000;
+    private static double s_minimumWaypointFailureChance = 0.05;
+    private static double s_maximumWaypointFailureChance = 0.95;
+    private static int s_baseWaypointDistance = 128;
+    private static int s_waypointFailureExponentBase = 2;
+
+    public static int getBaseInterworldDistance() {
+        return s_baseInterworldDistance;
+    }
+    public static double getMinimumWaypointFailureChance() {
+        return s_minimumWaypointFailureChance;
+    }
+    public static double getMaximumWaypointFailureChance() {
+        return s_maximumWaypointFailureChance;
+    }
+    public static int getBaseWaypointDistance() {
+        return s_baseWaypointDistance;
+    }
+    public static int getWaypointFailureExponentBase() {
+        return s_waypointFailureExponentBase;
     }
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -126,6 +150,7 @@ public class Inscription extends JavaPlugin {
         m_typeClassManager.registerEntityClass(EntityClass.getGlobal("GLOBAL"));
         m_typeClassManager.registerEntityClass(EntityClass.getGlobalLiving("GLOBAL_LIVING"));
         m_typeClassManager.registerMaterialClass(MaterialClass.getGlobal("GLOBAL"));
+        m_typeClassManager.registerBiomeClass(BiomeClass.getGlobal("GLOBAL"));
         m_typeClassManager.parse(new File(getDataFolder(), TYPE_CLASS_DIRECTORY));
     }
 
@@ -182,6 +207,10 @@ public class Inscription extends JavaPlugin {
         logger.info("Logger set to: " + logger.getLevel().toString());
 
         s_maxLevel = getConfig().getInt("max-glyph-level", 100);
+        s_minimumWaypointFailureChance = getConfig().getInt("min-waypoint-failure-chance", 0);
+        s_maximumWaypointFailureChance = getConfig().getInt("max-waypoint-failure-chance", 100);
+        s_baseWaypointDistance = getConfig().getInt("base-waypoint-distance", 64);
+        s_waypointFailureExponentBase = getConfig().getInt("waypoint-failure-exponent-base", 2);
     }
 
     private void setupBlockTracker() {

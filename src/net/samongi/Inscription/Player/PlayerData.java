@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.*;
 
 import net.samongi.Inscription.Inscription;
+import net.samongi.Inscription.Waypoints.Waypoint;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
@@ -59,6 +60,13 @@ public class PlayerData {
         ConfigurationSection storedExperienceSection = section.getConfigurationSection("stored_experience");
         if (storedExperienceSection != null) {
             deserializeExperienceSection(storedExperienceSection);
+        }
+
+
+        ConfigurationSection waypointSection = section.getConfigurationSection("waypoints");
+        if(waypointSection != null)
+        {
+            deserailizeWaypointLocations(waypointSection);
         }
 
         /* Grabbing the player's name */
@@ -165,7 +173,17 @@ public class PlayerData {
     }
 
     public List<Location> getWaypoints() {
-        return this.m_waypoints;
+        return m_waypoints;
+    }
+
+    public List<Location> getWaypointsSorted(Location fromLocation) {
+        List<Location> locations = new ArrayList<>(m_waypoints);
+        locations.sort((Location a, Location b) -> {
+            Waypoint waypointA = new Waypoint(a);
+            Waypoint waypointB = new Waypoint(b);
+            return waypointA.getDistance(fromLocation) - waypointB.getDistance(fromLocation);
+        });
+        return locations;
     }
 
     /**
@@ -175,14 +193,21 @@ public class PlayerData {
      * @param location The location to add as a waypoint.
      */
     public boolean addWaypoint(Location location) {
-        if (m_waypoints.size() > 27) {
-            m_waypoints.remove(0);
+        if (m_waypoints.size() >= 27) {
+            return false;
         }
-        if(m_waypoints.contains(location))
-        {
+        if (m_waypoints.contains(location)) {
             return false;
         }
         m_waypoints.add(location);
+        return true;
+    }
+
+    public boolean removeWaypoint(Location location) {
+        if (!m_waypoints.contains(location)) {
+            return false;
+        }
+        m_waypoints.remove(location);
         return true;
     }
 
@@ -246,6 +271,7 @@ public class PlayerData {
         section.set("uuid", data.player_UUID.toString());
         section.set("glyphs", data.m_glyphs.getAsConfigurationSection());
         section.set("stored_experience", data.serializeExperienceSection());
+        section.set("waypoints", data.serailizeWaypointLocations());
 
         configFile.saveConfig();
 
@@ -269,4 +295,25 @@ public class PlayerData {
             m_experience.put(key, value);
         }
     }
+    //--------------------------------------------------------------------------------------------------------------------//
+    public ConfigurationSection serailizeWaypointLocations() {
+        ConfigurationSection section = new YamlConfiguration();
+        int index = 0;
+        for(Location location : m_waypoints)
+        {
+            section.set("" + index, location.serialize());
+            index++;
+        }
+        return section;
+    }
+
+    public void deserailizeWaypointLocations(ConfigurationSection section) {
+        m_waypoints.clear();
+        for (String key : section.getKeys(false)) {
+            Map<String, Object> locationMap = section.getConfigurationSection(key).getValues(false);
+            Location location = Location.deserialize(locationMap);
+            m_waypoints.add(location);
+        }
+    }
+    //--------------------------------------------------------------------------------------------------------------------//
 }

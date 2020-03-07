@@ -25,7 +25,7 @@ public class BiomeClass {
     public static List<BiomeClass> getContaining(Biome biome, List<BiomeClass> biomeClasses) {
         List<BiomeClass> containingClasses = new ArrayList<>();
         for (BiomeClass biomeClass : biomeClasses) {
-            if (biomeClass.getBiomes().contains(biomeClass)) {
+            if (biomeClass.getBiomes().contains(biome)) {
                 containingClasses.add(biomeClass);
             }
         }
@@ -62,11 +62,11 @@ public class BiomeClass {
         }
 
         for (String biomeClassKey : this.m_inherited) {
-            BiomeClass damageClass = manager.getBiomeClass(biomeClassKey);
-            if (damageClass == null) {
+            BiomeClass biomeClass = manager.getBiomeClass(biomeClassKey);
+            if (biomeClass == null) {
                 continue;
             }
-            returnSet.addAll(damageClass.getBiomes());
+            returnSet.addAll(biomeClass.getBiomes());
         }
 
         return returnSet;
