@@ -18,6 +18,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.craftbukkit.libs.jline.internal.Nullable;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
@@ -80,7 +81,7 @@ public class Waypoint {
         int distance = (int) fromVector.getDistance(toVector);
 
         boolean sameWorld = isSameWorld(other);
-        return distance + (sameWorld ? 0 : Inscription.getBaseInterworldDistance());
+        return distance + (sameWorld ? 0 : Inscription.getInstance().getWaypointManager().getBaseInterworldDistance());
     }
 
     public boolean isSameWorld(@Nonnull Location other) {
@@ -104,12 +105,12 @@ public class Waypoint {
 
     private double getFailureChance(int distance, int safeDistance) {
         double exponent = Math.max((distance / (double) safeDistance) - 1, 0);
-        double exponentBase = Inscription.getWaypointFailureExponentBase();
+        double exponentBase = Inscription.getInstance().getWaypointManager().getFailureExponentBase();
 
         double failureChance = 1 - (1 / Math.pow(exponentBase, exponent));
 
-        double minFailureChance = Inscription.getMinimumWaypointFailureChance();
-        double maxFailureChance = Inscription.getMaximumWaypointFailureChance();
+        double minFailureChance = Inscription.getInstance().getWaypointManager().getMinimumFailureChance();
+        double maxFailureChance = Inscription.getInstance().getWaypointManager().getMaximumFailureChance();
 
         return Math.max(Math.min(failureChance, maxFailureChance), minFailureChance);
     }
@@ -154,7 +155,7 @@ public class Waypoint {
     }
 
     private int getSafeDistance(Player player, Block toBlock) {
-        int baseDistance = Inscription.getBaseWaypointDistance();
+        int baseDistance = Inscription.getInstance().getWaypointManager().getBaseDistance();
 
         PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
         CacheData data = playerData.getData(WaypointAttributeType.TYPE_IDENTIFIER);
@@ -174,6 +175,57 @@ public class Waypoint {
             fromBiome + " -> " + toBiome + " Global: " + globalDistance + " From: " + fromDistance + " To: " + toDistance + " FromTo: " + fromToDistance);
 
         return globalDistance + fromDistance + toDistance + fromToDistance + baseDistance;
+    }
+
+    private int getCost(Location toLocation) {
+        int distance = getDistance(toLocation);
+        int currencyPower = Inscription.getInstance().getWaypointManager().getCurrencyPower();
+        return (int) Math.floor(distance / (double) currencyPower);
+    }
+
+    private boolean hasCost(Player player, Location toLocation) {
+        Material currency = Inscription.getInstance().getWaypointManager().getCurrency();
+        if (currency == null) {
+            return true;
+        }
+
+        int currencyCost = getCost(toLocation);
+
+        Inventory inventory = player.getInventory();
+        return inventory.containsAtLeast(new ItemStack(currency), currencyCost);
+    }
+
+    private boolean payCost(Player player, Location toLocation) {
+        int remainingCost = getCost(toLocation);
+        Material currency = Inscription.getInstance().getWaypointManager().getCurrency();
+        if (remainingCost == 0 || currency == null) {
+            return true;
+        }
+        if (!hasCost(player, toLocation)) {
+            return false;
+        }
+
+        Inventory inventory = player.getInventory();
+        for (int index = 0; index < inventory.getSize(); index++) {
+            ItemStack item = inventory.getItem(index);
+            if (item.getType() != currency) {
+                continue;
+            }
+
+            int itemAmount = item.getAmount();
+            if (itemAmount > remainingCost) {
+                item.setAmount(itemAmount - remainingCost);
+                remainingCost = 0;
+            } else {
+                inventory.clear(index);
+                remainingCost -= itemAmount;
+            }
+
+            if (remainingCost <= 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     //--------------------------------------------------------------------------------------------------------------------//
@@ -265,8 +317,19 @@ public class Waypoint {
         return ChatColor.GRAY + "Chance to Fail: " + getFailureChanceColor(failureChance) + failurePercentString;
     }
 
+    private String getCostString(Player player, Location fromLocation) {
+        Material currency = Inscription.getInstance().getWaypointManager().getCurrency();
+        String currencyString = currency.toString().toLowerCase().replace('_', ' ');
+        int cost = getCost(fromLocation);
+
+        String costString = ChatColor.GRAY + "Cost: ";
+        costString += hasCost(player, fromLocation) ? ChatColor.GREEN : ChatColor.DARK_RED;
+        costString += cost + " " + currencyString + (cost > 1 ? "s" : "");
+        return costString;
+    }
+
     //--------------------------------------------------------------------------------------------------------------------//
-    public @Nonnull ItemStack getItemIcon(@Nonnull Location fromLocation, int safeDistance) {
+    public @Nonnull ItemStack getItemIcon(@Nonnull Player player, @Nonnull Location fromLocation, int safeDistance) {
 
         ItemStack bannerItem = isValidAltar() ? getBannerItem() : new ItemStack(Material.BARRIER);
 
@@ -278,6 +341,7 @@ public class Waypoint {
         lore.add("");
         lore.add(getDistanceString(fromLocation, safeDistance));
         lore.add(getFailureChanceString(getDistance(fromLocation), safeDistance));
+        lore.add(getCostString(player, fromLocation));
         lore.add("");
         lore.add(getCoordinateString());
         lore.add(getBiomeString());
@@ -316,12 +380,17 @@ public class Waypoint {
         for (Waypoint waypoint : waypoints) {
             int safeDistance = getSafeDistance(player, waypoint.getBlock());
 
-            ItemStack menuIcon = waypoint.getItemIcon(m_location, safeDistance);
+            ItemStack menuIcon = waypoint.getItemIcon(player, m_location, safeDistance);
             boolean validWaypoint = waypoint.isValidAltar();
 
             menu.setItem(slot, menuIcon);
             if (validWaypoint) {
                 menu.addLeftClickAction(slot, () -> {
+                    boolean paid = waypoint.payCost(player, m_location);
+                    if (!paid) {
+                        return;
+                    }
+
                     player.closeInventory();
                     waypoint.teleport(player, getTeleportLocation(), safeDistance);
                 }, false);

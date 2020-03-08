@@ -1,4 +1,23 @@
 loggingLevel: ALL
+drop-consumables: true
+max-glyph-level: 100
+min-waypoint-failure-chance: 0
+max-waypoint-failure-chance: 100
+base-waypoint-distance: 64
+waypoint-failure-exponent-base: 2
+experience-sources:
+  chunk-explore:
+    explore-radius: 2
+    max-inhabited-time: 72000
+    max-inhabited-reduction: 0.75
+waypoints:
+  base-distance: 64
+  base-interworld-distance: 10000
+  min-failure-chance: 0.0
+  max-failure-chance: 1.0
+  failure-exponent-base: 2
+  currency: EMERALD
+  currency-power: 1000
 placement-tracking:
   - STONE
   - ENDER_STONE
@@ -39,14 +58,3 @@ placement-tracking:
   - LAPIS_ORE
   - QUARTZ_ORE
   - DIAMOND_ORE
-drop-consumables: true
-max-glyph-level: 100
-min-waypoint-failure-chance: 0
-max-waypoint-failure-chance: 100
-base-waypoint-distance: 64
-waypoint-failure-exponent-base: 2
-experience-sources:
-  chunk-explore:
-    explore-radius: 2
-    max-inhabited-time: 72000
-    max-inhabited-reduction: 0.75

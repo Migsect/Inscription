@@ -423,9 +423,9 @@ public class LootManager implements Listener, ConfigurationParsing {
 
         String experienceType = event.getExperienceType();
         Inscription.logger.finest("[PlayerExperienceOverflowEvent] '" + experienceType + "' : " + amount);
-        PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
+        PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
 
-        Map<String, Integer> futureExperienceMapping = new HashMap<>(data.getExperience());
+        Map<String, Integer> futureExperienceMapping = new HashMap<>(playerData.getExperience());
         // Updating the current experience to reflect what it may become.
         futureExperienceMapping.put(experienceType, futureExperienceMapping.getOrDefault(experienceType, 0) + amount);
 
@@ -447,10 +447,10 @@ public class LootManager implements Listener, ConfigurationParsing {
                 // Removing the experience (this will put the character into negatives for the type that caused the
                 // overflow for a glyph.
                 for (String key : mapping.keySet()) {
-                    data.addExperience(key, -mapping.get(key));
+                    playerData.addExperience(key, -mapping.get(key));
                 }
                 // The experience should be negative or 0 that's currently on the player.
-                event.setAmount(amount + data.getExperience(experienceType));
+                event.setAmount(amount + playerData.getExperience(experienceType));
                 break;
             }
             index++;

@@ -67,44 +67,52 @@ public class Altars {
         s_waypointAltar.addPossibleFocusBlock(Material.CYAN_BANNER.createBlockData());
 
         s_waypointAltar.addTranslation('O', Material.OBSIDIAN.createBlockData());
-        s_waypointAltar.addTranslation('L', Material.LAPIS_BLOCK.createBlockData());
+        s_waypointAltar.addTranslation('D', Material.DIAMOND_BLOCK.createBlockData());
 
         // @formatter:off
         s_waypointAltar.addLayer(-1, new String[]{
-            "       ",
-            "       ",
-            "       ",
-            "   O   ",
-            "       ",
-            "       ",
-            "       ",
+            "         ",
+            "         ",
+            "         ",
+            "         ",
+            "    O    ",
+            "         ",
+            "         ",
+            "         ",
+            "         ",
         });
         s_waypointAltar.addLayer(0, new String[]{
-            "O     O",
-            "       ",
-            "       ",
-            "       ",
-            "       ",
-            "       ",
-            "O     O",
+            "    O    ",
+            "         ",
+            "         ",
+            "         ",
+            "O       O",
+            "         ",
+            "         ",
+            "         ",
+            "    O    ",
         });
         s_waypointAltar.addLayer(1, new String[]{
-            "O     O",
-            "       ",
-            "       ",
-            "       ",
-            "       ",
-            "       ",
-            "O     O",
+            "    O    ",
+            "         ",
+            "         ",
+            "         ",
+            "O       O",
+            "         ",
+            "         ",
+            "         ",
+            "    O    ",
         });
         s_waypointAltar.addLayer(2, new String[]{
-            "L     L",
-            "       ",
-            "       ",
-            "       ",
-            "       ",
-            "       ",
-            "L     L",
+            "    D    ",
+            "         ",
+            "         ",
+            "         ",
+            "D       D",
+            "         ",
+            "         ",
+            "         ",
+            "    D    ",
         });
         // @formatter:on
 

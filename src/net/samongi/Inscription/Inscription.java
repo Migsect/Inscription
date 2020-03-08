@@ -60,28 +60,6 @@ public class Inscription extends JavaPlugin {
         return s_maxLevel;
     }
 
-    private static int s_baseInterworldDistance = 10000;
-    private static double s_minimumWaypointFailureChance = 0.05;
-    private static double s_maximumWaypointFailureChance = 0.95;
-    private static int s_baseWaypointDistance = 128;
-    private static int s_waypointFailureExponentBase = 2;
-
-    public static int getBaseInterworldDistance() {
-        return s_baseInterworldDistance;
-    }
-    public static double getMinimumWaypointFailureChance() {
-        return s_minimumWaypointFailureChance;
-    }
-    public static double getMaximumWaypointFailureChance() {
-        return s_maximumWaypointFailureChance;
-    }
-    public static int getBaseWaypointDistance() {
-        return s_baseWaypointDistance;
-    }
-    public static int getWaypointFailureExponentBase() {
-        return s_waypointFailureExponentBase;
-    }
-
     //----------------------------------------------------------------------------------------------------------------//
     private CommandHandler m_commandHandler;
     private BlockTracker m_blockTracker;
@@ -221,10 +199,6 @@ public class Inscription extends JavaPlugin {
         logger.info("Logger set to: " + logger.getLevel().toString());
 
         s_maxLevel = getConfig().getInt("max-glyph-level", 100);
-        s_minimumWaypointFailureChance = getConfig().getInt("min-waypoint-failure-chance", 0);
-        s_maximumWaypointFailureChance = getConfig().getInt("max-waypoint-failure-chance", 100);
-        s_baseWaypointDistance = getConfig().getInt("base-waypoint-distance", 64);
-        s_waypointFailureExponentBase = getConfig().getInt("waypoint-failure-exponent-base", 2);
     }
 
     private void setupBlockTracker() {
@@ -292,5 +266,8 @@ public class Inscription extends JavaPlugin {
     }
     public RecipeManager getRecipeManager() {
         return m_recipeManager;
+    }
+    public WaypointManager getWaypointManager() {
+        return m_waypointManager;
     }
 }
