@@ -12,6 +12,7 @@ import net.samongi.Inscription.Experience.BlockTracker;
 import net.samongi.Inscription.Experience.ExperienceManager;
 import net.samongi.Inscription.Attributes.AttributeManager;
 import net.samongi.Inscription.Attributes.Types.*;
+import net.samongi.Inscription.Experience.ExperienceSource.*;
 import net.samongi.Inscription.Glyphs.Types.GlyphTypesManager;
 import net.samongi.Inscription.Loot.Generator.GeneratorManager;
 import net.samongi.Inscription.Listeners.PlayerListener;
@@ -22,6 +23,7 @@ import net.samongi.Inscription.TypeClasses.BiomeClass;
 import net.samongi.Inscription.TypeClasses.EntityClass;
 import net.samongi.Inscription.TypeClasses.MaterialClass;
 import net.samongi.Inscription.TypeClasses.TypeClassManager;
+import net.samongi.Inscription.Waypoints.WaypointManager;
 import net.samongi.SamongiLib.CommandHandling.CommandHandler;
 import net.samongi.SamongiLib.Logger.BetterLogger;
 
@@ -58,7 +60,6 @@ public class Inscription extends JavaPlugin {
         return s_maxLevel;
     }
 
-
     private static int s_baseInterworldDistance = 10000;
     private static double s_minimumWaypointFailureChance = 0.05;
     private static double s_maximumWaypointFailureChance = 0.95;
@@ -93,6 +94,7 @@ public class Inscription extends JavaPlugin {
     private GeneratorManager m_generatorManager = null;
     private GlyphTypesManager m_glyphTypesManager = null;
     private RecipeManager m_recipeManager = null;
+    private WaypointManager m_waypointManager = null;
 
     //----------------------------------------------------------------------------------------------------------------//
     public Inscription() {
@@ -108,6 +110,13 @@ public class Inscription extends JavaPlugin {
 
     private void setupExperienceManager() {
         m_experienceManager = new ExperienceManager();
+        m_experienceManager.registerExperienceSource(DamageDoneExperienceSource.CONFIG_KEY, new DamageDoneExperienceSource());
+        m_experienceManager.registerExperienceSource(KillExperienceSource.CONFIG_KEY, new KillExperienceSource());
+        m_experienceManager.registerExperienceSource(MaterialCraftExperienceSource.CONFIG_KEY, new MaterialCraftExperienceSource());
+        m_experienceManager.registerExperienceSource(MaterialIngredientExperienceSource.CONFIG_KEY, new MaterialIngredientExperienceSource());
+        m_experienceManager.registerExperienceSource(MaterialPlaceExperienceSource.CONFIG_KEY, new MaterialPlaceExperienceSource());
+        m_experienceManager.registerExperienceSource(MaterialBreakExperienceSource.CONFIG_KEY, new MaterialBreakExperienceSource());
+        m_experienceManager.registerExperienceSource(ChunkExploreExperienceSource.CONFIG_KEY, new ChunkExploreExperienceSource());
         m_experienceManager.parse(new File(this.getDataFolder(), EXPERIENCE_DIRECTORY));
 
         getServer().getPluginManager().registerEvents(m_experienceManager, this);
@@ -165,6 +174,10 @@ public class Inscription extends JavaPlugin {
         getServer().getPluginManager().registerEvents(m_recipeManager, this);
     }
 
+    private void setupWaypointManager() {
+        m_waypointManager = new WaypointManager();
+        getServer().getPluginManager().registerEvents(m_waypointManager, this);
+    }
     //----------------------------------------------------------------------------------------------------------------//
     @Override public void onEnable() {
         /* Configuration handling */
@@ -186,6 +199,7 @@ public class Inscription extends JavaPlugin {
         setupLootManager();  // Should always occur after attribute and type class manager
         setupPlayerManager();
         setupRecipeManager();
+        setupWaypointManager();
 
         createListeners();
         createCommands();

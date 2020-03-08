@@ -1,26 +1,52 @@
-loggingLevel: FINEST
+loggingLevel: ALL
 placement-tracking:
   - STONE
   - ENDER_STONE
+  - GRANITE
+  - ANDESITE
+  - DIORITE
+  - OBSIDIAN
   - NETHERRACK
+  - SOUL_SAND
   - SAND
-  - SANDSTONE
-  - DIRT
-  - GRASS
+  - RED_SAND
   - GRAVEL
+  - SANDSTONE
+  - RED_SANDSTONE
   - CLAY
+  - GRASS_BLOCK
+  - PODZOL
+  - DIRT
   - HARDENED_CLAY
   - STAINED_CLAY
-  - LOG
-  - LOG_2
+  - OAK_WOOD
+  - BIRCH_WOOD
+  - SPRUCE_WOOD
+  - JUNGLE_WOOD
+  - DARK_OAK_WOOD
+  - ACACIA_WOOD
+  - OAK_LOG
+  - BIRCH_LOG
+  - SPRUCE_LOG
+  - JUNGLE_LOG
+  - DARK_OAK_LOG
+  - ACACIA_LOG
+  - GLOWSTONE
   - COAL_ORE
   - IRON_ORE
   - GOLD_ORE
   - REDSTONE_ORE
-  - GLOWING_REDSTONE_ORE
   - LAPIS_ORE
   - QUARTZ_ORE
   - DIAMOND_ORE
 drop-consumables: true
 max-glyph-level: 100
- 
+min-waypoint-failure-chance: 0
+max-waypoint-failure-chance: 100
+base-waypoint-distance: 64
+waypoint-failure-exponent-base: 2
+experience-sources:
+  chunk-explore:
+    explore-radius: 2
+    max-inhabited-time: 72000
+    max-inhabited-reduction: 0.75

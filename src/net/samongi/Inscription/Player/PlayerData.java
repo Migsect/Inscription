@@ -9,8 +9,11 @@ import net.samongi.Inscription.Waypoints.Waypoint;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
+import net.samongi.SamongiLib.Tuple.Tuple;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -20,6 +23,7 @@ public class PlayerData {
     private Map<String, CacheData> m_cachedData = null;
     private GlyphInventory m_glyphs = null;
     private List<Location> m_waypoints = new ArrayList<>();
+    private Set<Tuple> m_exploredChunks = new HashSet<>();
 
     /**
      * Tracks the amount of excess experience the player has.
@@ -62,12 +66,16 @@ public class PlayerData {
             deserializeExperienceSection(storedExperienceSection);
         }
 
-
         ConfigurationSection waypointSection = section.getConfigurationSection("waypoints");
-        if(waypointSection != null)
-        {
+        if (waypointSection != null) {
             deserailizeWaypointLocations(waypointSection);
         }
+
+        ConfigurationSection exploredChunksSection = section.getConfigurationSection("explored-chunks");
+        if (exploredChunksSection != null) {
+            deserailizeExploredChunks(exploredChunksSection);
+        }
+
 
         /* Grabbing the player's name */
         this.player_name = Bukkit.getPlayer(player_UUID).getName();
@@ -211,6 +219,14 @@ public class PlayerData {
         return true;
     }
 
+    public void addExploredChunk(Chunk chunk) {
+        Tuple chunkCoords = new Tuple(chunk.getWorld().getUID(), chunk.getX(), chunk.getZ());
+        m_exploredChunks.add(chunkCoords);
+    }
+    public boolean isChunkExplored(Chunk chunk) {
+        Tuple chunkCoords = new Tuple(chunk.getWorld().getUID(), chunk.getX(), chunk.getZ());
+        return m_exploredChunks.contains(chunkCoords);
+    }
     //--------------------------------------------------------------------------------------------------------------------//
     /**
      * Will attempt to load the specified player data file
@@ -272,6 +288,7 @@ public class PlayerData {
         section.set("glyphs", data.m_glyphs.getAsConfigurationSection());
         section.set("stored_experience", data.serializeExperienceSection());
         section.set("waypoints", data.serailizeWaypointLocations());
+        section.set("explored-chunks", data.serailizeExploredChunks());
 
         configFile.saveConfig();
 
@@ -299,8 +316,7 @@ public class PlayerData {
     public ConfigurationSection serailizeWaypointLocations() {
         ConfigurationSection section = new YamlConfiguration();
         int index = 0;
-        for(Location location : m_waypoints)
-        {
+        for (Location location : m_waypoints) {
             section.set("" + index, location.serialize());
             index++;
         }
@@ -313,6 +329,45 @@ public class PlayerData {
             Map<String, Object> locationMap = section.getConfigurationSection(key).getValues(false);
             Location location = Location.deserialize(locationMap);
             m_waypoints.add(location);
+        }
+    }
+    //--------------------------------------------------------------------------------------------------------------------//
+    public ConfigurationSection serailizeExploredChunks() {
+        ConfigurationSection section = new YamlConfiguration();
+        int index = 0;
+        for (Tuple chunkCoordinate : m_exploredChunks) {
+            UUID worldId = chunkCoordinate.get(0);
+            int x = chunkCoordinate.get(1);
+            int z = chunkCoordinate.get(2);
+
+            ConfigurationSection subSection = new YamlConfiguration();
+            subSection.set("world", worldId.toString());
+            subSection.set("x", x);
+            subSection.set("z", z);
+
+            section.set("" + index, subSection);
+            index++;
+        }
+        return section;
+    }
+    public void deserailizeExploredChunks(ConfigurationSection section) {
+        m_exploredChunks.clear();
+        for (String key : section.getKeys(false)) {
+
+            ConfigurationSection subSection = section.getConfigurationSection(key);
+
+            if (!subSection.contains("world") || !subSection.contains("x") || !subSection.contains("z")) {
+                Inscription.logger.warning("Player " + player_UUID + " had invalid explored coord at " + key);
+                continue;
+            }
+            String worldString = subSection.getString("world");
+            int x = subSection.getInt("x");
+            int z = subSection.getInt("z");
+            UUID worldID = UUID.fromString(worldString);
+
+            Tuple chunkCoordinate = new Tuple(worldID, x, z);
+            m_exploredChunks.add(chunkCoordinate);
+
         }
     }
     //--------------------------------------------------------------------------------------------------------------------//
