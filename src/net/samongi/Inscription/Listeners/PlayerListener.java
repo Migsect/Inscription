@@ -60,18 +60,18 @@ public class PlayerListener implements Listener {
 
     public boolean checkGlyphInventory_LEGACY(Material clickedMaterial, Material handMaterial) {
         if (handMaterial == null || clickedMaterial == null) {
-            Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventory_LEGACY : false");
+            // Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventory_LEGACY : false");
             return false;
         }
         boolean result = (clickedMaterial.equals(Material.ENCHANTING_TABLE) || clickedMaterial.equals(Material.LECTERN)) && handMaterial.equals(Material.PAPER);
 
-        Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventory_LEGACY : " + result);
+        // Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventory_LEGACY : " + result);
         return result;
     }
     public boolean checkGlyphInventoryAltar(Block block) {
         Altar altar = Altars.getInscriptionAltar();
         boolean result = altar.checkPattern(block);
-        Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventoryAltar : " + result);
+        // Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventoryAltar : " + result);
         return result;
     }
 
@@ -104,7 +104,7 @@ public class PlayerListener implements Listener {
                 }
             };
             task.runTask(Inscription.getInstance());
-            Inscription.logger.finest("Player Attempted to open Glyph Inventory through Enchanting table");
+            // Inscription.logger.finest("Player Attempted to open Glyph Inventory through Enchanting table");
         }
     }
 

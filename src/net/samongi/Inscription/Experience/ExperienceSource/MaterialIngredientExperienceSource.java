@@ -59,13 +59,13 @@ public class MaterialIngredientExperienceSource implements ExperienceSource {
         CraftItemEvent triggerEvent = event.getBaseEvent();
         int totalCrafts = event.getAmountCrafted();
 
-        Player player = (Player) triggerEvent.getWhoClicked();
-        Recipe recipe = triggerEvent.getRecipe();
+        Player player = event.getPlayer();
+        Recipe recipe = event.getRecipe();
         ItemStack result = recipe.getResult();
         Material resultMaterial = recipe.getResult().getType();
 
         // Calculating the ingredients for material-ingredient experience.
-        ItemStack[] craftingMatrix = triggerEvent.getInventory().getMatrix();
+        ItemStack[] craftingMatrix = event.getMatrix();
         List<Material> ingredients = new ArrayList<>();
 
         // We aren't going to reward experience if the result is not cycling result.

@@ -26,15 +26,6 @@ public class Altars {
             "B     B",
             "BB   BB",
         });
-        s_inscriptionAltar.addLayer(1, new String[]{
-            "BB   BB",
-            "B     B",
-            "       ",
-            "       ",
-            "       ",
-            "B     B",
-            "BB   BB",
-        });
         // @formatter:on
 
         return s_inscriptionAltar;

@@ -124,7 +124,7 @@ public class Waypoint {
 
         World world = m_location.getWorld();
         assert world != null;
-        Block block = world.getHighestBlockAt((int) x, (int) z);
+        Block block = world.getHighestBlockAt((int) (x + m_location.getX()), (int) (z + m_location.getZ()));
 
         return new Location(m_location.getWorld(), block.getX() + 0.5, block.getY() + 1, block.getZ() + 0.5);
     }
@@ -132,14 +132,15 @@ public class Waypoint {
     private @Nonnull Location getTeleportLocation() {
         return new Location(m_location.getWorld(), m_location.getX() + 0.5, m_location.getY(), m_location.getZ() + 0.5);
     }
-    private void teleport(Player player, Location fromLocation, int safeDistance) {
-        int distance = getDistance(fromLocation);
+
+    private void teleport(Player player, Waypoint fromWaypoint, int safeDistance) {
+        int distance = getDistance(fromWaypoint.getTeleportLocation());
         double failureChance = getFailureChance(distance, safeDistance);
 
         Random random = new Random();
         double randomRoll = random.nextDouble();
         if (failureChance > randomRoll) {
-            Location failureLocation = getFailureLocation(distance).clone();
+            Location failureLocation = fromWaypoint.getFailureLocation(distance).clone();
             failureLocation.setDirection(new Vector(random.nextDouble(), 0.0, random.nextDouble()));
             player.teleport(failureLocation);
             player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, (float) 1.0, (float) 1.0);
@@ -392,7 +393,7 @@ public class Waypoint {
                     }
 
                     player.closeInventory();
-                    waypoint.teleport(player, getTeleportLocation(), safeDistance);
+                    waypoint.teleport(player, this, safeDistance);
                 }, false);
             }
             menu.addLeftClickAction(slot, () -> {

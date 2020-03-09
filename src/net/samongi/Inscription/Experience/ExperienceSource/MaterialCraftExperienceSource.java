@@ -35,8 +35,8 @@ public class MaterialCraftExperienceSource implements ExperienceSource {
         CraftItemEvent triggerEvent = event.getBaseEvent();
         int totalCrafts = event.getAmountCrafted();
 
-        Player player = (Player) triggerEvent.getWhoClicked();
-        Recipe recipe = triggerEvent.getRecipe();
+        Player player = event.getPlayer();
+        Recipe recipe = event.getRecipe();
         Material resultMaterial = recipe.getResult().getType();
 
         ExperienceReward craftReward = getExpPerCraft(resultMaterial);

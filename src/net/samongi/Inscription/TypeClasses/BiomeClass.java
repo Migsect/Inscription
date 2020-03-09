@@ -68,7 +68,6 @@ public class BiomeClass {
             }
             returnSet.addAll(biomeClass.getBiomes());
         }
-
         return returnSet;
     }
 
