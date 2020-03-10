@@ -12,8 +12,7 @@ import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Attributes.Base.ChanceAttributeType;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
-import net.samongi.Inscription.TypeClasses.MaterialClass;
-import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
+import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;

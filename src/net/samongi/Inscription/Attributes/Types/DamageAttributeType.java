@@ -11,8 +11,8 @@ import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
-import net.samongi.Inscription.TypeClasses.EntityClass;
-import net.samongi.Inscription.TypeClasses.MaterialClass;
+import net.samongi.Inscription.TypeClass.TypeClasses.EntityClass;
+import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;

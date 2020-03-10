@@ -14,8 +14,7 @@ import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Attributes.Base.ChanceAttributeType;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
-import net.samongi.Inscription.TypeClasses.MaterialClass;
-import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
+import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
 
 import net.samongi.SamongiLib.Items.MaskedBlockData;
 import org.bukkit.Location;
@@ -28,7 +27,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 public class BlockBonusAttributeType extends ChanceAttributeType {
 

@@ -11,7 +11,8 @@ import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
-import net.samongi.Inscription.TypeClasses.MaterialClass;
+import net.samongi.Inscription.TypeClass.TypeClasses.BlockClass;
+import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
 
 import net.samongi.SamongiLib.Items.ItemUtil;
 import net.samongi.SamongiLib.Items.MaskedBlockData;
@@ -48,8 +49,8 @@ public class ChainBreakAttributeType extends AttributeType {
     private int minBlocks;
     private int maxBlocks;
 
-    private MaterialClass blockMaterials = MaterialClass.getGlobal("any items");
-    private MaterialClass toolMaterials = MaterialClass.getGlobal("any items");
+    private BlockClass blockMaterials = null;
+    private MaterialClass toolMaterials = null;
 
     //----------------------------------------------------------------------------------------------------------------//
     protected ChainBreakAttributeType(GeneralAttributeParser parser) {
@@ -132,19 +133,19 @@ public class ChainBreakAttributeType extends AttributeType {
                         Inscription.logger.finer("  +C Added '" + amount + "' bonus to '" + tool.toString() + "'");
                     }
                 } else if (toolMaterials.isGlobal()) {
-                    for (BlockData blockData : blockMaterials.getBlockData()) {
-                        int a = bonusData.getBlock(blockData);
-                        bonusData.setBlock(blockData, a + amount);
+                    for (MaskedBlockData blockData : blockMaterials.getBlockDatas()) {
+                        int a = bonusData.getBlock(blockData.getBlockData());
+                        bonusData.setBlock(blockData.getBlockData(), a + amount);
 
-                        Inscription.logger.finer("  +C Added '" + amount + "' bonus to '" + blockData.getAsString(true) + "'");
+                        Inscription.logger.finer("  +C Added '" + amount + "' bonus to '" + blockData.getBlockData().getAsString(true) + "'");
                     }
                 } else {
                     for (Material type : toolMaterials.getMaterials())
-                        for (BlockData blockData : blockMaterials.getBlockData()) {
-                            int a = bonusData.getToolBlock(type, blockData);
-                            bonusData.setToolBlock(type, blockData, a + amount);
+                        for (MaskedBlockData blockData : blockMaterials.getBlockDatas()) {
+                            int a = bonusData.getToolBlock(type, blockData.getBlockData());
+                            bonusData.setToolBlock(type, blockData.getBlockData(), a + amount);
 
-                            Inscription.logger.finer("  +C Added '" + amount + "' bonus to '" + type.toString() + "|" + blockData.getAsString(true) + "'");
+                            Inscription.logger.finer("  +C Added '" + amount + "' bonus to '" + type.toString() + "|" + blockData.getBlockData().getAsString(true) + "'");
                         }
                 }
 
@@ -265,7 +266,7 @@ public class ChainBreakAttributeType extends AttributeType {
 
             String targetMaterials = section.getString("target-materials");
             if (targetMaterials != null) {
-                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetMaterials);
+                MaterialClass materialClass = MaterialClass.handler.getTypeClass(targetMaterials);
                 if (materialClass == null) {
                     Inscription.logger.warning("[ChainBreakAttributeType] '" + targetMaterials + "' is not a valid damage class.");
                     return null;
@@ -275,12 +276,12 @@ public class ChainBreakAttributeType extends AttributeType {
 
             String targetBlocks = section.getString("target-blocks");
             if (targetBlocks != null) {
-                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetBlocks);
-                if (materialClass == null) {
+                BlockClass blockClass = BlockClass.handler.getTypeClass(targetBlocks);
+                if (blockClass == null) {
                     Inscription.logger.warning("[ChainBreakAttributeType] '" + targetBlocks + "' is not a valid damage class.");
                     return null;
                 }
-                attributeType.blockMaterials = materialClass;
+                attributeType.blockMaterials = blockClass;
             }
 
             return attributeType;

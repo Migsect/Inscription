@@ -1,12 +1,11 @@
 package net.samongi.Inscription.Waypoints;
 
 import net.samongi.Inscription.Altars;
-import net.samongi.Inscription.Attributes.Types.BlockBonusAttributeType;
 import net.samongi.Inscription.Attributes.Types.WaypointAttributeType;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
-import net.samongi.Inscription.TypeClasses.BiomeClass;
+import net.samongi.Inscription.TypeClass.TypeClasses.BiomeClass;
 import net.samongi.SamongiLib.Blocks.Altar;
 import net.samongi.SamongiLib.Menu.InventoryMenu;
 import net.samongi.SamongiLib.Vector.SamIntVector;

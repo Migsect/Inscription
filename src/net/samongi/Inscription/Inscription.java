@@ -19,10 +19,8 @@ import net.samongi.Inscription.Listeners.PlayerListener;
 import net.samongi.Inscription.Loot.LootManager;
 import net.samongi.Inscription.Player.PlayerManager;
 import net.samongi.Inscription.Recipe.RecipeManager;
-import net.samongi.Inscription.TypeClasses.BiomeClass;
-import net.samongi.Inscription.TypeClasses.EntityClass;
-import net.samongi.Inscription.TypeClasses.MaterialClass;
-import net.samongi.Inscription.TypeClasses.TypeClassManager;
+import net.samongi.Inscription.TypeClass.TypeClasses.*;
+import net.samongi.Inscription.TypeClass.TypeClassManager;
 import net.samongi.Inscription.Waypoints.WaypointManager;
 import net.samongi.SamongiLib.CommandHandling.CommandHandler;
 import net.samongi.SamongiLib.Logger.BetterLogger;
@@ -134,11 +132,13 @@ public class Inscription extends JavaPlugin {
 
     public void setupTypeClassManager() {
         m_typeClassManager = new TypeClassManager();
-        m_typeClassManager.registerEntityClass(EntityClass.getGlobal("GLOBAL"));
-        m_typeClassManager.registerEntityClass(EntityClass.getGlobalLiving("GLOBAL_LIVING"));
-        m_typeClassManager.registerMaterialClass(MaterialClass.getGlobal("GLOBAL"));
-        m_typeClassManager.registerBiomeClass(BiomeClass.getGlobal("GLOBAL"));
+        m_typeClassManager.registerTypeClassHandler(BiomeClass.handler);
+        m_typeClassManager.registerTypeClassHandler(BlockClass.handler);
+        m_typeClassManager.registerTypeClassHandler(DamageClass.handler);
+        m_typeClassManager.registerTypeClassHandler(EntityClass.handler);
+        m_typeClassManager.registerTypeClassHandler(MaterialClass.handler);
         m_typeClassManager.parse(new File(getDataFolder(), TYPE_CLASS_DIRECTORY));
+        m_typeClassManager.updateAllInvertedClasses();
     }
 
     public void setupGlyphTypesManager() {

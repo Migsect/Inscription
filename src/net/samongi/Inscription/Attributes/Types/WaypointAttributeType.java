@@ -1,47 +1,20 @@
 package net.samongi.Inscription.Attributes.Types;
 
 import net.md_5.bungee.api.ChatColor;
-import net.samongi.Inscription.Altars;
 import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Attributes.Base.AmountAttributeType;
-import net.samongi.Inscription.Attributes.Base.MultiplierAttributeType;
 import net.samongi.Inscription.Attributes.GeneralAttributeParser;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
-import net.samongi.Inscription.TypeClasses.BiomeClass;
-import net.samongi.Inscription.TypeClasses.MaterialClass;
-import net.samongi.Inscription.Waypoints.Waypoint;
-import net.samongi.SamongiLib.Blocks.Altar;
-import net.samongi.SamongiLib.Menu.InventoryMenu;
+import net.samongi.Inscription.TypeClass.TypeClasses.BiomeClass;
 import net.samongi.SamongiLib.Tuple.Tuple;
-import net.samongi.SamongiLib.Vector.SamIntVector;
-import net.samongi.SamongiLib.Vector.SamVector;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.block.Banner;
 import org.bukkit.block.Biome;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerExpChangeEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.util.Vector;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 public class WaypointAttributeType extends AmountAttributeType {
