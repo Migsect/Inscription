@@ -25,8 +25,8 @@ public class BlockClass extends TypeClass {
     public static final TypeClassHandler<BlockClass> handler = new TypeClassHandler<>("block-classes", BlockClass::new, new BlockClass("GLOBAL", true));
 
     //----------------------------------------------------------------------------------------------------------------//
-    private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
     private final Set<MaskedBlockData> m_blockData = new HashSet<>();
+    private final MaskedBlockData.Mask[] m_defaultDataMasks = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
 
     //----------------------------------------------------------------------------------------------------------------//
     private BlockClass(String name, boolean isGlobal) {
@@ -34,6 +34,7 @@ public class BlockClass extends TypeClass {
     }
     private BlockClass(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
+        parse(section);
     }
     //----------------------------------------------------------------------------------------------------------------//
     @Nonnull public Set<MaskedBlockData> getBlockDatas() {
@@ -41,7 +42,7 @@ public class BlockClass extends TypeClass {
     }
 
     public boolean containsBlockData(@Nonnull BlockData type) {
-        MaskedBlockData key = new MaskedBlockData(type, BLOCKDATA_MASKS);
+        MaskedBlockData key = new MaskedBlockData(type, m_defaultDataMasks);
         return this.m_blockData.contains(key);
     }
 
@@ -50,7 +51,7 @@ public class BlockClass extends TypeClass {
     }
 
     public void addBlockData(@Nonnull BlockData blockData) {
-        MaskedBlockData key = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
+        MaskedBlockData key = new MaskedBlockData(blockData, m_defaultDataMasks);
         this.m_blockData.add(key);
     }
 
@@ -98,7 +99,7 @@ public class BlockClass extends TypeClass {
         return handler;
     }
 
-    @Override protected void addGlobalClassMembers() {
+    @Override public void addGlobalClassMembers() {
         for (Material type : Material.values()) {
             if (!type.isBlock()) {
                 continue;

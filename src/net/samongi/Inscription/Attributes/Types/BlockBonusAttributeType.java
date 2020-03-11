@@ -14,6 +14,7 @@ import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
 import net.samongi.Inscription.Attributes.Base.ChanceAttributeType;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
+import net.samongi.Inscription.TypeClass.TypeClasses.BlockClass;
 import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
 
 import net.samongi.SamongiLib.Items.MaskedBlockData;
@@ -30,16 +31,12 @@ import org.bukkit.inventory.ItemStack;
 
 public class BlockBonusAttributeType extends ChanceAttributeType {
 
-    /* *** static variables *** */
-    private static final long serialVersionUID = 604221447378305403L;
+    //----------------------------------------------------------------------------------------------------------------//
     private static final String TYPE_IDENTIFIER = "BLOCK_BONUS";
 
     //----------------------------------------------------------------------------------------------------------------//
-
-    /* The blocks where the bonus occurs */
-    private MaterialClass m_blockMaterials = MaterialClass.getGlobal("any items");
-    /* The tools that the bonus occurs with */
-    private MaterialClass m_toolMaterials = MaterialClass.getGlobal("any items");
+    private BlockClass m_blockMaterials;
+    private MaterialClass m_toolMaterials;
 
     //----------------------------------------------------------------------------------------------------------------//
     protected BlockBonusAttributeType(GeneralAttributeParser parser) {
@@ -79,21 +76,21 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
                             .finer("  +C Added '" + chance + "' bonus to '" + toolMaterial.toString() + "'");
                     }
                 } else if (m_toolMaterials.isGlobal()) {
-                    for (BlockData blockData : m_blockMaterials.getBlockData()) {
-                        double c = bonusData.getBlock(blockData);
-                        bonusData.setBlock(blockData, c + chance);
+                    for (MaskedBlockData blockData : m_blockMaterials.getBlockDatas()) {
+                        double c = bonusData.getBlock(blockData.getBlockData());
+                        bonusData.setBlock(blockData.getBlockData(), c + chance);
 
                         Inscription.logger
-                            .finer("  +C Added '" + chance + "' bonus to '" + blockData.getAsString(true) + "'");
+                            .finer("  +C Added '" + chance + "' bonus to '" + blockData.getBlockData().getAsString(true) + "'");
                     }
                 } else {
                     for (Material toolMaterial : m_toolMaterials.getMaterials())
-                        for (BlockData blockData : m_blockMaterials.getBlockData()) {
-                            double c = bonusData.getToolBlock(toolMaterial, blockData);
-                            bonusData.setToolBlock(toolMaterial, blockData, c + chance);
+                        for (MaskedBlockData blockData : m_blockMaterials.getBlockDatas()) {
+                            double c = bonusData.getToolBlock(toolMaterial, blockData.getBlockData());
+                            bonusData.setToolBlock(toolMaterial, blockData.getBlockData(), c + chance);
 
                             Inscription.logger.finer(
-                                "  +C Added '" + chance + "' bonus to '" + toolMaterial.toString() + "|" + blockData
+                                "  +C Added '" + chance + "' bonus to '" + toolMaterial.toString() + "|" + blockData.getBlockData()
                                     .getAsString(true) + "'");
                         }
                 }
@@ -209,8 +206,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
 
             String targetMaterials = section.getString("target-materials");
             if (targetMaterials != null) {
-                MaterialClass m_class = Inscription.getInstance().getTypeClassManager()
-                    .getMaterialClass(targetMaterials);
+                MaterialClass m_class = MaterialClass.handler.getTypeClass(targetMaterials);
                 if (m_class == null) {
                     Inscription.logger
                         .warning("[BlockBonusAttributeType] '" + targetMaterials + "' is not a valid material class.");
@@ -221,7 +217,7 @@ public class BlockBonusAttributeType extends ChanceAttributeType {
             String targetBlocks = section.getString("target-blocks");
 
             if (targetBlocks != null) {
-                MaterialClass m_class = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetBlocks);
+                BlockClass m_class = BlockClass.handler.getTypeClass(targetBlocks);
                 if (m_class == null) {
                     Inscription.logger
                         .warning("[BlockBonusAttributeType] '" + targetBlocks + "' is not a valid material class.");

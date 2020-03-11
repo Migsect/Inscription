@@ -45,6 +45,7 @@ public class MaterialClass extends TypeClass {
     }
     private MaterialClass(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
+        parse(section);
     }
     //----------------------------------------------------------------------------------------------------------------//
     @Nonnull public Set<Material> getMaterials() {
@@ -88,7 +89,7 @@ public class MaterialClass extends TypeClass {
         return handler;
     }
 
-    @Override protected void addGlobalClassMembers() {
+    @Override public void addGlobalClassMembers() {
         for (Material material : Material.values()) {
             addMaterial(material);
         }

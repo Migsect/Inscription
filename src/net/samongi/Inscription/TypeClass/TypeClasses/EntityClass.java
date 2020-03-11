@@ -45,6 +45,7 @@ public class EntityClass extends TypeClass {
     }
     private EntityClass(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
+        parse(section);
     }
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -76,7 +77,7 @@ public class EntityClass extends TypeClass {
         return handler;
     }
 
-    @Override protected void addGlobalClassMembers() {
+    @Override public void addGlobalClassMembers() {
         for (EntityType type : EntityType.values()) {
             addEntityType(type);
         }

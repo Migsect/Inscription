@@ -31,12 +31,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
-import org.bukkit.material.Leaves;
-import org.bukkit.material.MaterialData;
-import org.bukkit.material.Sapling;
-import org.bukkit.material.Tree;
-import org.bukkit.material.Wood;
-import org.bukkit.material.WoodenStep;
 
 import javax.annotation.Nonnull;
 
@@ -308,23 +302,6 @@ public class ChainBreakAttributeType extends AttributeType {
                         }
                     }
                     return true;
-                }
-                @SuppressWarnings("deprecation") private boolean isSimilarData(MaterialData block1, MaterialData block2) {
-                    if (block1 instanceof Wood && block2 instanceof Wood) {
-                        /* Log Checking */
-                        if (block1 instanceof Tree && block2 instanceof Tree) {
-                            return ((Tree) block1).getSpecies().equals(((Tree) block1).getSpecies());
-                        } else if (block1 instanceof Sapling && block2 instanceof Sapling) {
-                            return ((Sapling) block1).getSpecies().equals(((Tree) block1).getSpecies());
-                        } else if (block1 instanceof Leaves && block2 instanceof Leaves) {
-                            return ((Leaves) block1).getSpecies().equals(((Tree) block1).getSpecies());
-                        } else if (block1 instanceof WoodenStep && block2 instanceof WoodenStep) {
-                            return ((WoodenStep) block1).getSpecies().equals(((Tree) block1).getSpecies());
-                        }
-                    } else if (block1.getItemType().equals(Material.STONE) && block2.getItemType().equals(Material.STONE)) {
-                        return block1.getData() == block2.getData();
-                    }
-                    return block1.getItemType().equals(block2.getItemType());
                 }
 
                 @EventHandler public void onBlockBreak(BlockBreakEvent event) {

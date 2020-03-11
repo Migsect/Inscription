@@ -32,8 +32,7 @@ public class TypeClassHandler<TClass extends TypeClass> {
         m_typeClassConstructor = typeClassConstructor;
         register(globalClass);
     }
-    public TypeClassHandler(@Nonnull String sectionPath, @Nonnull TypeClass.TypeClassParser<TClass> typeClassConstructor,
-        TClass... globalClasses) {
+    public TypeClassHandler(@Nonnull String sectionPath, @Nonnull TypeClass.TypeClassParser<TClass> typeClassConstructor, TClass... globalClasses) {
         m_sectionPath = sectionPath;
         m_typeClassConstructor = typeClassConstructor;
         for (TClass globalClass : globalClasses) {
@@ -49,6 +48,10 @@ public class TypeClassHandler<TClass extends TypeClass> {
     //----------------------------------------------------------------------------------------------------------------//
     public void register(@Nonnull TClass typeClass) {
         String typeName = convertToTypeName(typeClass.getName());
+
+        if (typeClass.isGlobal()) {
+            typeClass.addGlobalClassMembers();
+        }
         m_classes.put(typeName, typeClass);
     }
 
@@ -56,6 +59,9 @@ public class TypeClassHandler<TClass extends TypeClass> {
         return m_classes.get(convertToTypeName(typeName));
     }
 
+    public @Nonnull Set<TClass> getTypeClasses() {
+        return new HashSet<TClass>(m_classes.values());
+    }
     /**
      * Gets all the type classes that the object is involved in.
      * Returns null if it is involved in no material classes.

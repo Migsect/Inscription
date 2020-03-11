@@ -29,6 +29,7 @@ public class DamageClass extends TypeClass {
     }
     private DamageClass(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
+        parse(section);
     }
     //----------------------------------------------------------------------------------------------------------------//
     @Nonnull public Set<EntityDamageEvent.DamageCause> getDamageTypes() {
@@ -77,7 +78,7 @@ public class DamageClass extends TypeClass {
         return handler;
     }
 
-    @Override protected void addGlobalClassMembers() {
+    @Override public void addGlobalClassMembers() {
         for (EntityDamageEvent.DamageCause type : EntityDamageEvent.DamageCause.values()) {
             addDamageType(type);
         }

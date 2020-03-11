@@ -15,7 +15,8 @@ import java.util.stream.Collectors;
 
 public class BiomeClass extends TypeClass {
     //----------------------------------------------------------------------------------------------------------------//
-    public static final TypeClassHandler<BiomeClass> handler = new TypeClassHandler<>("biome-classes", BiomeClass::new, new BiomeClass("GLOBAL", true));
+    private static final BiomeClass GLOBAL_CLASS = new BiomeClass("GLOBAL", true);
+    public static final TypeClassHandler<BiomeClass> handler = new TypeClassHandler<>("biome-classes", BiomeClass::new, GLOBAL_CLASS);
 
     //----------------------------------------------------------------------------------------------------------------//
 
@@ -27,6 +28,7 @@ public class BiomeClass extends TypeClass {
     }
     private BiomeClass(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
+        parse(section);
     }
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -46,13 +48,14 @@ public class BiomeClass extends TypeClass {
     }
 
     public void addBiome(@Nonnull Biome biome) {
-        this.m_biomes.add(biome);
+        Inscription.logger.finest("Biomes " + m_biomes + " Biome " + biome);
+        m_biomes.add(biome);
     }
 
     //----------------------------------------------------------------------------------------------------------------//
     @Override protected void parse(ConfigurationSection section) {
         List<String> biomeStrings = section.getStringList("biomes");
-        if (biomeStrings != null) {
+        if (!biomeStrings.isEmpty()) {
             Inscription.logger.fine("Found Biomes:");
             for (String biomeString : biomeStrings) {
                 boolean valid = addBiome(biomeString);
@@ -69,7 +72,7 @@ public class BiomeClass extends TypeClass {
         return BiomeClass.handler;
     }
 
-    @Override protected void addGlobalClassMembers() {
+    @Override public void addGlobalClassMembers() {
         for (Biome type : Biome.values()) {
             addBiome(type);
         }

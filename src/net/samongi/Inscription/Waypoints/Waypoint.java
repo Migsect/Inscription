@@ -90,10 +90,10 @@ public class Waypoint {
     private @Nonnull Set<BiomeClass> getBiomeClasses() {
         Biome biome = getBlock().getBiome();
         Inscription.logger.finest("Biome: " + biome);
-        List<BiomeClass> biomes = Inscription.getInstance().getTypeClassManager().getBiomeClasses();
+        Set<BiomeClass> biomes = BiomeClass.handler.getTypeClasses();
         Inscription.logger.finest("BiomeClass Amount: " + biomes.size());
-        Set<BiomeClass> validBiomes = new HashSet<>(BiomeClass.getContaining(biome, biomes));
-        validBiomes.remove(Inscription.getInstance().getTypeClassManager().getBiomeClass("GLOBAL"));
+        Set<BiomeClass> validBiomes = new HashSet<>(BiomeClass.handler.getContaining(biome, biomes));
+        validBiomes.remove(BiomeClass.handler.getTypeClass("GLOBAL"));
         return validBiomes;
     }
 

@@ -98,7 +98,7 @@ public class DamageAttributeType extends AttributeType {
                 return null;
             }
 
-            EntityClass targetEntities = Inscription.getInstance().getTypeClassManager().getEntityClass(targetEntitiesString);
+            EntityClass targetEntities = EntityClass.handler.getTypeClass(targetEntitiesString);
             if (targetEntities == null) {
                 Inscription.logger.warning("[DamageAttributeType] '" + targetEntitiesString + "' is not a valid material class.");
                 return null;
@@ -110,7 +110,7 @@ public class DamageAttributeType extends AttributeType {
                 return null;
             }
 
-            MaterialClass targetMaterial = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetMaterialString);
+            MaterialClass targetMaterial = MaterialClass.handler.getTypeClass(targetMaterialString);
             if (targetMaterial == null) {
                 Inscription.logger.warning("[DamageAttributeType] '" + targetMaterialString + "' is not a valid material class.");
                 return null;

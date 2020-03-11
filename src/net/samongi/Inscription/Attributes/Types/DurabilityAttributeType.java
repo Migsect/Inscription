@@ -24,11 +24,11 @@ import org.bukkit.inventory.ItemStack;
 
 public class DurabilityAttributeType extends ChanceAttributeType {
 
-    private static final long serialVersionUID = -8182691382483264948L;
+    //--------------------------------------------------------------------------------------------------------------------//
     private static final String TYPE_IDENTIFIER = "DURABILITY";
 
     //--------------------------------------------------------------------------------------------------------------------//
-    private MaterialClass m_toolMaterials = MaterialClass.getGlobal("any items");
+    private MaterialClass m_toolMaterials = null;
 
     //--------------------------------------------------------------------------------------------------------------------//
     protected DurabilityAttributeType(GeneralAttributeParser parser) {
@@ -37,8 +37,6 @@ public class DurabilityAttributeType extends ChanceAttributeType {
 
     @Override public Attribute generate() {
         return new Attribute(this) {
-
-            private static final long serialVersionUID = -6354912159590917251L;
 
             @Override public void cache(PlayerData playerData) {
                 CacheData cached_data = playerData.getData(DurabilityAttributeType.TYPE_IDENTIFIER);
@@ -154,7 +152,7 @@ public class DurabilityAttributeType extends ChanceAttributeType {
             /* Setting all the targeting if there is any */
             String targetMaterials = section.getString("target-materials");
             if (targetMaterials != null) {
-                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetMaterials);
+                MaterialClass materialClass = MaterialClass.handler.getTypeClass(targetMaterials);
                 if (materialClass == null) {
                     Inscription.logger.warning("[DurabilityAttributeType] '" + targetMaterials + "' is not a valid material class.");
                     return null;
@@ -208,4 +206,6 @@ public class DurabilityAttributeType extends ChanceAttributeType {
             };
         }
     }
+
+    //--------------------------------------------------------------------------------------------------------------------//
 }

@@ -29,8 +29,8 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
     private static final String TYPE_IDENTIFIER = "DAMAGE_REDUCTION";
 
     //----------------------------------------------------------------------------------------------------------------//
-    private MaterialClass m_armorMaterials = MaterialClass.getGlobal("any items");
-    private DamageClass m_damageTypes = DamageClass.getGlobal("any damage");
+    private MaterialClass m_armorMaterials = null;
+    private DamageClass m_damageTypes = null;
 
     //----------------------------------------------------------------------------------------------------------------//
     protected DamageReductionAttributeType(GeneralAttributeParser parser) {
@@ -195,7 +195,7 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
 
             String targetArmor = section.getString("target-materials");
             if (targetArmor != null) {
-                MaterialClass materialClass = Inscription.getInstance().getTypeClassManager().getMaterialClass(targetArmor);
+                MaterialClass materialClass = MaterialClass.handler.getTypeClass(targetArmor);
                 if (materialClass == null) {
                     Inscription.logger.warning("[DamageReductionAttributeType] '" + targetArmor + "' is not a valid material class.");
                     return null;
@@ -205,7 +205,7 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
 
             String targetDamageTypes = section.getString("target-damage");
             if (targetDamageTypes != null) {
-                DamageClass damageTypeClass = Inscription.getInstance().getTypeClassManager().getDamageClass(targetDamageTypes);
+                DamageClass damageTypeClass = DamageClass.handler.getTypeClass(targetDamageTypes);
                 if (damageTypeClass == null) {
                     Inscription.logger.warning("[DamageReductionAttributeType] '" + targetDamageTypes + "' is not a valid damage class.");
                     return null;

@@ -23,8 +23,8 @@ public class WaypointAttributeType extends AmountAttributeType {
     public static final String TYPE_IDENTIFIER = "WAYPOINT";
 
     //--------------------------------------------------------------------------------------------------------------------//
-    private BiomeClass m_fromBiome = BiomeClass.getGlobal("any items");
-    private BiomeClass m_toBiome = BiomeClass.getGlobal("any items");
+    private BiomeClass m_fromBiome = null;
+    private BiomeClass m_toBiome = null;
 
     //--------------------------------------------------------------------------------------------------------------------//
     protected WaypointAttributeType(GeneralAttributeParser parser) {
@@ -165,7 +165,7 @@ public class WaypointAttributeType extends AmountAttributeType {
 
             String fromBiome = section.getString("from-biome-class");
             if (fromBiome != null) {
-                BiomeClass biomeClass = Inscription.getInstance().getTypeClassManager().getBiomeClass(fromBiome);
+                BiomeClass biomeClass = BiomeClass.handler.getTypeClass(fromBiome);
                 if (biomeClass == null) {
                     Inscription.logger.warning("[WaypointAttributeType] '" + fromBiome + "' is not a valid biome class.");
                     return null;
@@ -175,7 +175,7 @@ public class WaypointAttributeType extends AmountAttributeType {
 
             String toBiome = section.getString("to-biome-class");
             if (toBiome != null) {
-                BiomeClass biomeClass = Inscription.getInstance().getTypeClassManager().getBiomeClass(toBiome);
+                BiomeClass biomeClass = BiomeClass.handler.getTypeClass(toBiome);
                 if (biomeClass == null) {
                     Inscription.logger.warning("[WaypointAttributeType] '" + toBiome + "' is not a valid biome class.");
                     return null;

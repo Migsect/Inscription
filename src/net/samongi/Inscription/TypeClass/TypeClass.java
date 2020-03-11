@@ -30,9 +30,6 @@ public abstract class TypeClass {
     protected TypeClass(@Nonnull String name, boolean isGlobal) {
         m_name = name;
         m_isGlobal = isGlobal;
-        if (m_isGlobal) {
-            addGlobalClassMembers();
-        }
     }
 
     protected TypeClass(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
@@ -57,8 +54,6 @@ public abstract class TypeClass {
                 addInherited(inheritedClass);
             }
         }
-
-        parse(section);
     }
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -103,7 +98,7 @@ public abstract class TypeClass {
      * Adds all class members that will make this class global.
      * This is called when the m)_
      */
-    protected abstract void addGlobalClassMembers();
+    public abstract void addGlobalClassMembers();
 
     public final Set<Object> getClassMembers() {
         Set<Object> classMembers = getDirectClassMembers();
