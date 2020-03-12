@@ -45,7 +45,19 @@ public class MaterialClass extends TypeClass {
     }
     private MaterialClass(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
-        parse(section);
+
+        List<String> materialStrings = section.getStringList("materials");
+        if (materialStrings != null) {
+            Inscription.logger.fine("Found Materials:");
+            for (String materialString : materialStrings) {
+                boolean valid = addMaterial(materialString);
+                if (!valid) {
+                    Inscription.logger.warning("'" + materialString + "' is not a valid type for MaterialClass '" + getName() + "'");
+                    continue;
+                }
+                Inscription.logger.fine(" - '" + materialString + "'");
+            }
+        }
     }
     //----------------------------------------------------------------------------------------------------------------//
     @Nonnull public Set<Material> getMaterials() {
@@ -97,21 +109,6 @@ public class MaterialClass extends TypeClass {
 
     @Override public Set<Object> getDirectClassMembers() {
         return new HashSet<>(m_materials);
-    }
-
-    @Override protected void parse(ConfigurationSection section) {
-        List<String> materialStrings = section.getStringList("materials");
-        if (materialStrings != null) {
-            Inscription.logger.fine("Found Materials:");
-            for (String materialString : materialStrings) {
-                boolean valid = addMaterial(materialString);
-                if (!valid) {
-                    Inscription.logger.warning("'" + materialString + "' is not a valid type for MaterialClass '" + getName() + "'");
-                    continue;
-                }
-                Inscription.logger.fine(" - '" + materialString + "'");
-            }
-        }
     }
 
     //----------------------------------------------------------------------------------------------------------------//

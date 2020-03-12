@@ -57,9 +57,6 @@ public abstract class TypeClass {
     }
 
     //----------------------------------------------------------------------------------------------------------------//
-    protected abstract void parse(ConfigurationSection section);
-
-    //----------------------------------------------------------------------------------------------------------------//
     public final @Nonnull String getName() {
         return m_name;
     }

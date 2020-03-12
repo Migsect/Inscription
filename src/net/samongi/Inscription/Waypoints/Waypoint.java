@@ -208,7 +208,7 @@ public class Waypoint {
         Inventory inventory = player.getInventory();
         for (int index = 0; index < inventory.getSize(); index++) {
             ItemStack item = inventory.getItem(index);
-            if (item.getType() != currency) {
+            if (item == null || item.getType() != currency) {
                 continue;
             }
 

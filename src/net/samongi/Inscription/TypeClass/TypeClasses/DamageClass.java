@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DamageClass extends TypeClass {
+
     //----------------------------------------------------------------------------------------------------------------//
     public static final TypeClassHandler<DamageClass> handler = new TypeClassHandler<>("damage-classes", DamageClass::new, new DamageClass("GLOBAL", true));
 
@@ -29,15 +30,26 @@ public class DamageClass extends TypeClass {
     }
     private DamageClass(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
-        parse(section);
+
+        List<String> damageTypeStrings = section.getStringList("damage-types");
+        if (damageTypeStrings != null) {
+            Inscription.logger.fine("Found DaamgeTypes:");
+            for (String damageTypeString : damageTypeStrings) {
+                boolean valid = addDamageType(damageTypeString);
+                if (!valid) {
+                    Inscription.logger.warning("'" + damageTypeString + "' is not a valid type for DamageClass '" + getName() + "'");
+                    continue;
+                }
+                Inscription.logger.fine(" - '" + damageTypeString + "'");
+            }
+        }
     }
     //----------------------------------------------------------------------------------------------------------------//
     @Nonnull public Set<EntityDamageEvent.DamageCause> getDamageTypes() {
         return getClassMembers().stream().map((Object obj) -> (EntityDamageEvent.DamageCause) obj).collect(Collectors.toSet());
     }
 
-    public boolean addDamageType(@Nonnull String damageType)
-    {
+    public boolean addDamageType(@Nonnull String damageType) {
         try {
             EntityDamageEvent.DamageCause damageCause = EntityDamageEvent.DamageCause.valueOf(damageType);
             this.m_damageTypes.add(damageCause);
@@ -48,32 +60,15 @@ public class DamageClass extends TypeClass {
         return true;
     }
 
-    public void addDamageType(@Nonnull EntityDamageEvent.DamageCause damageType)
-    {
+    public void addDamageType(@Nonnull EntityDamageEvent.DamageCause damageType) {
         this.m_damageTypes.add(damageType);
     }
 
-    public boolean containsDamageType(@Nonnull EntityDamageEvent.DamageCause type)
-    {
+    public boolean containsDamageType(@Nonnull EntityDamageEvent.DamageCause type) {
         return this.m_damageTypes.contains(type);
     }
 
     //----------------------------------------------------------------------------------------------------------------//
-    @Override protected void parse(ConfigurationSection section) {
-                List<String> damageTypeStrings = section.getStringList("damage-types");
-                if (damageTypeStrings != null) {
-                    Inscription.logger.fine("Found DaamgeTypes:");
-                    for (String damageTypeString : damageTypeStrings) {
-                        boolean valid = addDamageType(damageTypeString);
-                        if (!valid) {
-                            Inscription.logger.warning("'" + damageTypeString + "' is not a valid type for DamageClass '" + getName() + "'");
-                            continue;
-                        }
-                        Inscription.logger.fine(" - '" + damageTypeString + "'");
-                    }
-                }
-    }
-
     @Override protected TypeClassHandler<?> getTypeClassManager() {
         return handler;
     }

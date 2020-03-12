@@ -45,7 +45,20 @@ public class EntityClass extends TypeClass {
     }
     private EntityClass(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
-        parse(section);
+
+        List<String> entityStrings = section.getStringList("entities");
+        if (entityStrings != null) {
+            Inscription.logger.fine("Found EntityTypes:");
+            for (String entityString : entityStrings) {
+                boolean valid = addEntityType(entityString);
+
+                if (!valid) {
+                    Inscription.logger.warning("'" + entityString + "' is not a valid type for EntityClass '" + getName() + "'");
+                    continue;
+                }
+                Inscription.logger.fine(" - '" + entityString + "'");
+            }
+        }
     }
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -85,23 +98,6 @@ public class EntityClass extends TypeClass {
 
     @Override public Set<Object> getDirectClassMembers() {
         return new HashSet<>(m_entities);
-    }
-
-    @Override protected void parse(ConfigurationSection section) {
-
-        List<String> entityStrings = section.getStringList("entities");
-        if (entityStrings != null) {
-            Inscription.logger.fine("Found EntityTypes:");
-            for (String entityString : entityStrings) {
-                boolean valid = addEntityType(entityString);
-
-                if (!valid) {
-                    Inscription.logger.warning("'" + entityString + "' is not a valid type for EntityClass '" + getName() + "'");
-                    continue;
-                }
-                Inscription.logger.fine(" - '" + entityString + "'");
-            }
-        }
     }
 
     //----------------------------------------------------------------------------------------------------------------//

@@ -34,7 +34,32 @@ public class BlockClass extends TypeClass {
     }
     private BlockClass(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
-        parse(section);
+
+        List<String> blockDataStrings = section.getStringList("block-data");
+        if (blockDataStrings != null) {
+            Inscription.logger.fine("Found Block Data:");
+            for (String blockDataString : blockDataStrings) {
+                boolean valid = addBlockData(blockDataString);
+                if (!valid) {
+                    Inscription.logger.warning("'" + blockDataString + "' is not a valid type for BlockClass '" + getName() + "'");
+                    continue;
+                }
+                Inscription.logger.fine(" - '" + blockDataString + "'");
+            }
+        }
+
+        // This adds a root based material class that takes the material from the block data.
+        boolean isMaterialClass = section.getBoolean("is-material-class", false);
+        if(isMaterialClass)
+        {
+            MaterialClass materialClass = new MaterialClass(getName());
+            for(MaskedBlockData blockData : m_blockData)
+            {
+                materialClass.addMaterial(blockData.getBlockData().getMaterial());
+            }
+            MaterialClass.handler.register(materialClass);
+        }
+
     }
     //----------------------------------------------------------------------------------------------------------------//
     @Nonnull public Set<MaskedBlockData> getBlockDatas() {
@@ -67,34 +92,6 @@ public class BlockClass extends TypeClass {
         return true;
     }
     //----------------------------------------------------------------------------------------------------------------//
-    @Override protected void parse(ConfigurationSection section) {
-        List<String> blockDataStrings = section.getStringList("block-data");
-        if (blockDataStrings != null) {
-            Inscription.logger.fine("Found Block Data:");
-            for (String blockDataString : blockDataStrings) {
-                boolean valid = addBlockData(blockDataString);
-                if (!valid) {
-                    Inscription.logger.warning("'" + blockDataString + "' is not a valid type for BlockClass '" + getName() + "'");
-                    continue;
-                }
-                Inscription.logger.fine(" - '" + blockDataString + "'");
-            }
-        }
-
-        // This adds a root based material class that takes the material from the block data.
-        boolean isMaterialClass = section.getBoolean("is-material-class", false);
-        if(isMaterialClass)
-        {
-            MaterialClass materialClass = new MaterialClass(getName());
-            for(MaskedBlockData blockData : m_blockData)
-            {
-                materialClass.addMaterial(blockData.getBlockData().getMaterial());
-            }
-            MaterialClass.handler.register(materialClass);
-        }
-
-    }
-
     @Override protected TypeClassHandler<?> getTypeClassManager() {
         return handler;
     }

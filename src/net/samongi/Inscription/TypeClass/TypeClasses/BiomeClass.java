@@ -28,7 +28,19 @@ public class BiomeClass extends TypeClass {
     }
     private BiomeClass(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
-        parse(section);
+
+        List<String> biomeStrings = section.getStringList("biomes");
+        if (!biomeStrings.isEmpty()) {
+            Inscription.logger.fine("Found Biomes:");
+            for (String biomeString : biomeStrings) {
+                boolean valid = addBiome(biomeString);
+                if (!valid) {
+                    Inscription.logger.warning("'" + biomeString + "' is not a valid type for BiomeClass '" + getName() + "'");
+                    continue;
+                }
+                Inscription.logger.fine(" - '" + biomeString + "'");
+            }
+        }
     }
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -53,21 +65,6 @@ public class BiomeClass extends TypeClass {
     }
 
     //----------------------------------------------------------------------------------------------------------------//
-    @Override protected void parse(ConfigurationSection section) {
-        List<String> biomeStrings = section.getStringList("biomes");
-        if (!biomeStrings.isEmpty()) {
-            Inscription.logger.fine("Found Biomes:");
-            for (String biomeString : biomeStrings) {
-                boolean valid = addBiome(biomeString);
-                if (!valid) {
-                    Inscription.logger.warning("'" + biomeString + "' is not a valid type for BiomeClass '" + getName() + "'");
-                    continue;
-                }
-                Inscription.logger.fine(" - '" + biomeString + "'");
-            }
-        }
-    }
-
     @Override protected TypeClassHandler<?> getTypeClassManager() {
         return BiomeClass.handler;
     }
