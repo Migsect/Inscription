@@ -1,5 +1,6 @@
 package net.samongi.Inscription.Recipe;
 
+import net.samongi.Inscription.Experience.ExperienceMap;
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Glyphs.Types.GlyphElement;
 import net.samongi.Inscription.Glyphs.Types.GlyphRarity;
@@ -66,33 +67,18 @@ public class RecipeManager implements Listener {
             return null;
         }
 
-        Map<String, Integer> summedExperience = new HashMap<>();
+        int summedExperience = 0;
         for (Glyph glyph : componentGlyphs) {
-            Map<String, Integer> totalExperience = glyph.getTotalExperience_LEGACY();
-            for (String experienceType : totalExperience.keySet()) {
-                int experience = totalExperience.get(experienceType) / 4;
-                int experienceSum = summedExperience.getOrDefault(experienceType, 0) + experience;
-                summedExperience.put(experienceType, experienceSum);
-                Inscription.logger.finest("Added experience for " + experienceType + " " + experience + " total: " + experienceSum);
-            }
+            summedExperience += glyph.getTotalExperience().getTotal();
         }
+
+        ExperienceMap additionalExperience = target.getTotalExperience().zeros();
+        additionalExperience.distributeExperience(summedExperience / 4);
 
         Glyph nextGlyph = target.clone();
         nextGlyph.setRarity(nextRarity);
-        nextGlyph.setLevel_LEGACY(1);
-        nextGlyph.setExperience_LEGACY(new HashMap<>());
-        Inscription.logger.finest("Glyph Level: " + nextGlyph.getLevel_LEGACY());
-        for (String experienceType : nextGlyph.getRelevantExperienceTypes()) {
+        nextGlyph.addExperience(additionalExperience);
 
-            Inscription.logger.finest(" - " + experienceType + " : " + nextGlyph.getTotalExperience_LEGACY().get(experienceType));
-        }
-        nextGlyph.addExperience_LEGACY(summedExperience);
-        nextGlyph.addExperience_LEGACY(target.getTotalExperience_LEGACY());
-        Inscription.logger.finest("Glyph Level: " + nextGlyph.getLevel_LEGACY());
-        while (nextGlyph.attemptLevelup_LEGACY()) {
-            // Do nothing
-        }
-        Inscription.logger.finest("Glyph Level: " + nextGlyph.getLevel_LEGACY());
         return nextGlyph;
     }
 

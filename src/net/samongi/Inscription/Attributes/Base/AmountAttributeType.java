@@ -3,6 +3,7 @@ package net.samongi.Inscription.Attributes.Base;
 import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.Inscription.Attributes.GeneralAttributeParser;
 import net.samongi.Inscription.Glyphs.Glyph;
+import net.samongi.Inscription.Inscription;
 import org.bukkit.ChatColor;
 
 public abstract class AmountAttributeType extends AttributeType {
@@ -23,11 +24,11 @@ public abstract class AmountAttributeType extends AttributeType {
     }
 
     public int getAmount(Glyph glyph) {
-        int glyph_level = glyph.getLevel_LEGACY();
+        int glyph_level = glyph.getLevel();
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + this.m_rarityMultiplier * rarity_level;
-        double baseAmount = this.m_minAmount + (this.m_maxAmount - this.m_minAmount) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
+        double baseAmount = this.m_minAmount + (this.m_maxAmount - this.m_minAmount) * (glyph_level - 1) / (Inscription.getMaxLevel() - 1);
         return (int)(rarity_multiplier * baseAmount);
     }
 

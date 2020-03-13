@@ -69,11 +69,11 @@ public class ChainBreakAttributeType extends AttributeType {
         return this.maxBlocks;
     }
     public int getAmount(Glyph glyph) {
-        int glyph_level = glyph.getLevel_LEGACY();
+        int glyph_level = glyph.getLevel();
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + this.m_rarityMultiplier * rarity_level;
-        double baseAmount = this.minBlocks + (this.maxBlocks - this.minBlocks) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
+        double baseAmount = this.minBlocks + (this.maxBlocks - this.minBlocks) * (glyph_level - 1) / (Inscription.getMaxLevel() - 1);
         return (int) Math.floor(rarity_multiplier * baseAmount);
     }
 

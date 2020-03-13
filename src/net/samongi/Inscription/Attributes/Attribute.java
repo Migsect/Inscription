@@ -7,10 +7,8 @@ import java.util.Map;
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Player.PlayerData;
 
-public abstract class Attribute implements Serializable {
+public abstract class Attribute {
 
-    // Generated Serialization UID
-    private static final long serialVersionUID = -5994047304332535496L;
 
     private Glyph glyph_container;
     private AttributeType type;
@@ -104,7 +102,7 @@ public abstract class Attribute implements Serializable {
         }
         Map<String, Integer> experienceMap = new HashMap<>();
 
-        int glyphLevel = this.getGlyph().getLevel_LEGACY();
+        int glyphLevel = this.getGlyph().getLevel();
 
         Map<String, Integer> baseExperienceMap = getBaseExperience();
         Map<String, Integer> levelExperienceMap = getLevelExperience();

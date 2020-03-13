@@ -46,11 +46,11 @@ public class DamageAttributeType extends AttributeType {
 
     //----------------------------------------------------------------------------------------------------------------//
     public double getMultiplier(Glyph glyph) {
-        int glyph_level = glyph.getLevel_LEGACY();
+        int glyph_level = glyph.getLevel();
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + this.m_rarityMultiplier * rarity_level;
-        double baseMultiplier = this.m_minDamage + (this.m_maxDamage - this.m_minDamage) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
+        double baseMultiplier = this.m_minDamage + (this.m_maxDamage - this.m_minDamage) * (glyph_level - 1) / (Inscription.getMaxLevel() - 1);
         return rarity_multiplier * baseMultiplier;
     }
     public String getMultiplierString(Glyph glyph) {
@@ -316,11 +316,11 @@ public class DamageAttributeType extends AttributeType {
      * @return A ratio of damage multiplication
      */
     private double getDamage(Glyph glyph) {
-        int glyph_level = glyph.getLevel_LEGACY();
+        int glyph_level = glyph.getLevel();
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + m_rarityMultiplier * rarity_level;
-        double base_damage = m_minDamage + (m_maxDamage - m_minDamage) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
+        double base_damage = m_minDamage + (m_maxDamage - m_minDamage) * (glyph_level - 1) / (Inscription.getMaxLevel() - 1);
         return rarity_multiplier * base_damage;
     }
     /**

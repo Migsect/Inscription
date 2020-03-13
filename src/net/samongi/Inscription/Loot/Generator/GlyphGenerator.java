@@ -62,14 +62,14 @@ public class GlyphGenerator {
         return this.getGlyph(m_minLevel, m_maxLevel);
     }
 
-    public Glyph getGlyph(int min_level, int max_level) {
+    public Glyph getGlyph(int minLevelevel, int maxLevel) {
         Random rand = new Random();
 
         // Creating the new parser
         Glyph glyph = new Glyph();
         glyph.setElement(this.m_elementWeight.getRandom());
         glyph.setRarity(this.m_rarityWeights.getRandom());
-        glyph.setLevel_LEGACY(min_level + rand.nextInt(max_level - min_level + 1));
+
 
         int attribute_count = this.m_attributeCountsWeights.getRandom();
         Set<String> current_attributes = new HashSet<>();
@@ -98,6 +98,9 @@ public class GlyphGenerator {
             // Adding the attribute to the glyph.
             glyph.addAttribute(attribute);
         }
+
+        int level = minLevelevel + rand.nextInt(maxLevel - minLevelevel + 1);
+        glyph.addExperience(glyph.getTotalExperienceForLevel(level));
 
         return glyph;
     }

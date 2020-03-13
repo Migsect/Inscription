@@ -3,6 +3,7 @@ package net.samongi.Inscription.Attributes.Base;
 import net.samongi.Inscription.Attributes.GeneralAttributeParser;
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Attributes.AttributeType;
+import net.samongi.Inscription.Inscription;
 import org.bukkit.ChatColor;
 
 /**
@@ -30,11 +31,11 @@ public abstract class ChanceAttributeType extends AttributeType {
     }
 
     public double getChance(Glyph glyph) {
-        int glyph_level = glyph.getLevel_LEGACY();
+        int glyph_level = glyph.getLevel();
         int rarity_level = glyph.getRarity().getRank();
 
         double rarity_multiplier = 1 + this.m_rarityMultiplier * rarity_level;
-        double base_chance = this.m_minChance + (this.m_maxChance - this.m_minChance) * (glyph_level - 1) / (Glyph.MAX_LEVEL - 1);
+        double base_chance = this.m_minChance + (this.m_maxChance - this.m_minChance) * (glyph_level - 1) / (Inscription.getMaxLevel() - 1);
         return rarity_multiplier * base_chance;
     }
 

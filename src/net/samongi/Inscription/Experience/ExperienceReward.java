@@ -87,12 +87,12 @@ public class ExperienceReward {
         for (String experienceType : scaledRewards.keySet()) {
             int experienceAmount = scaledRewards.get(experienceType);
 
-            boolean experienceDistributed = glyphInventory.distributeExperience(experienceType, experienceAmount);
+            int overflow = glyphInventory.distributeExperience(experienceType, experienceAmount);
 
             // If the experience wasn't actually distributed, we need to trigger an event that the experience overflowed
             // back to the character profile.
-            if (!experienceDistributed) {
-                PlayerExperienceOverflowEvent overflowEvent = new PlayerExperienceOverflowEvent(player, experienceType, experienceAmount);
+            if (overflow > 0) {
+                PlayerExperienceOverflowEvent overflowEvent = new PlayerExperienceOverflowEvent(player, experienceType, overflow);
                 Bukkit.getPluginManager().callEvent(overflowEvent);
 
                 // The amount may have been changed during the event calls.

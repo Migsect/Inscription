@@ -44,29 +44,6 @@ public class ExperienceManager implements ConfigurationParsing, Listener {
     public ExperienceManager() {
     }
 
-    private void handleExperience(@Nonnull Map<String, Integer> experienceMapping, @Nullable Player player) {
-
-        PlayerData data = Inscription.getInstance().getPlayerManager().getData((Player) player);
-        if (data == null) {
-            Inscription.logger.severe("Player data return null on call for: " + player.getName() + ":" + player.getUniqueId());
-            return;
-        }
-
-        for (String experienceType : experienceMapping.keySet()) {
-            int experienceAmount = experienceMapping.get(experienceType);
-            boolean experienceDistributed = data.getGlyphInventory().distributeExperience(experienceType, experienceAmount);
-
-            // If the experience wasn't actually distributed, we need to trigger an event that the experience overflowed
-            // back to the character profile.
-            if (!experienceDistributed) {
-                PlayerExperienceOverflowEvent overflowEvent = new PlayerExperienceOverflowEvent(player, experienceType, experienceAmount);
-                Bukkit.getPluginManager().callEvent(overflowEvent);
-
-                // The amount may have been changed during the event calls.
-                data.addExperience(experienceType, overflowEvent.getAmount());
-            }
-        }
-    }
     // ---------------------------------------------------------------------------------------------------------------//
     public void registerExperienceSource(@Nonnull String configKey, @Nonnull ExperienceSource experienceSource) {
         m_experienceSources.put(configKey, experienceSource);
