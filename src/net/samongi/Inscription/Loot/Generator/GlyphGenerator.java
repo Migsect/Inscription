@@ -78,13 +78,13 @@ public class GlyphGenerator {
             if (attribute_generator == null) {
                 Inscription.logger.warning("Attribute Generator return null - Attributes:");
                 for (AttributeType key : this.m_attributeWeights.keySet()) {
-                    Inscription.logger.warning(" - " + key.getName());
+                    Inscription.logger.warning(" - " + key.getTypeName());
                 }
                 continue;
             }
             Attribute attribute = attribute_generator.generate();
             // Making sure there aren't duplicates of attributes.
-            if (current_attributes.contains(attribute_generator.getName())) {
+            if (current_attributes.contains(attribute_generator.getTypeName())) {
                 i--;
                 if (i < 0) {
                     break;
@@ -94,7 +94,7 @@ public class GlyphGenerator {
             }
             // Adding the attribute to the list of attributes that have already been
             // selected
-            current_attributes.add(attribute_generator.getName());
+            current_attributes.add(attribute_generator.getTypeName());
             // Adding the attribute to the glyph.
             glyph.addAttribute(attribute);
         }
@@ -122,7 +122,7 @@ public class GlyphGenerator {
     }
     public void addAttributeType(AttributeType type, int weight) {
         if (weight <= 0) {
-            Inscription.logger.fine("AttributeType '" + type.getName() + "' attempted to be registered with weight " + weight);
+            Inscription.logger.fine("AttributeType '" + type.getTypeName() + "' attempted to be registered with weight " + weight);
             return;
         }
         this.m_attributeWeights.put(type, weight);
@@ -252,7 +252,7 @@ public class GlyphGenerator {
             int weight = attributes.getInt(k);
             generator.addAttributeType(type, weight);
 
-            Inscription.logger.fine("  Found type to be: '" + type.getName() + "'");
+            Inscription.logger.fine("  Found type to be: '" + type.getTypeName() + "'");
             Inscription.logger.fine("  Found weight to be: '" + weight + "'");
         }
 

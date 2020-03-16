@@ -4,37 +4,50 @@ import java.util.HashMap;
 import java.util.Random;
 
 import net.md_5.bungee.api.ChatColor;
-import net.samongi.Inscription.Attributes.GeneralAttributeParser;
+import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeType;
-import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
-import net.samongi.Inscription.Attributes.Base.ChanceAttributeType;
+import net.samongi.Inscription.Attributes.AttributeTypeFactory;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.inventory.ItemStack;
 
-public class DurabilityAttributeType extends ChanceAttributeType {
+import javax.annotation.Nonnull;
+
+public class DurabilityAttributeType extends NumericalAttributeType {
 
     //--------------------------------------------------------------------------------------------------------------------//
     private static final String TYPE_IDENTIFIER = "DURABILITY";
 
     //--------------------------------------------------------------------------------------------------------------------//
-    private MaterialClass m_toolMaterials = null;
+    private MaterialClass m_targetMaterials = null;
 
-    //--------------------------------------------------------------------------------------------------------------------//
-    protected DurabilityAttributeType(GeneralAttributeParser parser) {
-        super(parser);
+    //----------------------------------------------------------------------------------------------------------------//
+    protected DurabilityAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+        super(section);
+
+        String targetMaterialsString = section.getString("target-materials");
+        if (targetMaterialsString == null) {
+            throw new InvalidConfigurationException("'target-materials' is not defined");
+        }
+
+        m_targetMaterials = MaterialClass.handler.getTypeClass(targetMaterialsString);
+        if (m_targetMaterials == null) {
+            throw new InvalidConfigurationException("'" + targetMaterialsString + "' is not a valid material class.");
+        }
+
+
     }
-
     @Override public Attribute generate() {
         return new Attribute(this) {
 
@@ -47,12 +60,12 @@ public class DurabilityAttributeType extends ChanceAttributeType {
                     return;
                 }
 
-                Inscription.logger.finer("Caching attribute for " + m_typeDescription);
-                Inscription.logger.finer(" - 'm_toolMaterials' is global?: " + m_toolMaterials.isGlobal());
+                Inscription.logger.finer("Caching attribute for " + m_displayName);
+                Inscription.logger.finer(" - 'm_toolMaterials' is global?: " + m_targetMaterials.isGlobal());
 
                 DurabilityAttributeType.Data data = (DurabilityAttributeType.Data) cached_data;
-                double chance = getChance(this.getGlyph());
-                if (m_toolMaterials.isGlobal()) {
+                double chance = getNumber(this.getGlyph());
+                if (m_targetMaterials.isGlobal()) {
                     double currentValue = data.get();
                     /* Multiplicative bonus */
                     double newValue = currentValue + (1 - currentValue) * chance;
@@ -60,7 +73,7 @@ public class DurabilityAttributeType extends ChanceAttributeType {
 
                     Inscription.logger.finer("  +C Added '" + chance + "' bonus " + currentValue + "-->" + newValue);
                 } else {
-                    for (Material t : m_toolMaterials.getMaterials()) {
+                    for (Material t : m_targetMaterials.getMaterials()) {
                         double currentValue = data.getTool(t);
                         /* Multiplicative bonus */
                         double newValue = currentValue + (1 - currentValue) * chance;
@@ -74,10 +87,10 @@ public class DurabilityAttributeType extends ChanceAttributeType {
 
             @Override public String getLoreLine() {
                 String chanceString = getDisplayString(this.getGlyph(), "+", "%");
-                String toolClass = m_toolMaterials.getName();
+                String toolClass = m_targetMaterials.getName();
 
                 String info_line = chanceString + ChatColor.YELLOW + " chance to not use durability using " + ChatColor.BLUE + toolClass;
-                return this.getType().getDescriptionLoreLine() + info_line;
+                return this.getType().getLoreLine() + info_line;
             }
 
         };
@@ -125,44 +138,18 @@ public class DurabilityAttributeType extends ChanceAttributeType {
     }
 
     //--------------------------------------------------------------------------------------------------------------------//
-    public static class Constructor extends AttributeTypeConstructor {
+    public static class Factory extends AttributeTypeFactory {
 
-        @Override public AttributeType construct(ConfigurationSection section) {
-
-            GeneralAttributeParser parser = new GeneralAttributeParser(section, TYPE_IDENTIFIER);
-            if (!parser.checkType()) {
-                return null;
-            }
-            if (!parser.loadInfo()) {
-                return null;
-            }
-
-            DurabilityAttributeType attributeType = new DurabilityAttributeType(parser);
-
-            double minChance = section.getDouble("min-chance");
-            double maxChance = section.getDouble("max-chance");
-            if (minChance > maxChance) {
-                Inscription.logger.warning(section.getName() + " : min chance is bigger than max chance");
-                return null;
-            }
-
-            attributeType.setMin(minChance);
-            attributeType.setMax(maxChance);
-
-            /* Setting all the targeting if there is any */
-            String targetMaterials = section.getString("target-materials");
-            if (targetMaterials != null) {
-                MaterialClass materialClass = MaterialClass.handler.getTypeClass(targetMaterials);
-                if (materialClass == null) {
-                    Inscription.logger.warning("[DurabilityAttributeType] '" + targetMaterials + "' is not a valid material class.");
-                    return null;
-                }
-                attributeType.m_toolMaterials = materialClass;
-            }
-
-            return attributeType;
+        //----------------------------------------------------------------------------------------------------------------//
+        @Nonnull @Override public String getAttributeTypeId() {
+            return TYPE_IDENTIFIER;
+        }
+        //----------------------------------------------------------------------------------------------------------------//
+        @Nonnull @Override public AttributeType construct(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+            return new DurabilityAttributeType(section);
         }
 
+        //----------------------------------------------------------------------------------------------------------------//
         @Override public Listener getListener() {
             return new Listener() {
 
@@ -205,6 +192,8 @@ public class DurabilityAttributeType extends ChanceAttributeType {
                 }
             };
         }
+
+        //----------------------------------------------------------------------------------------------------------------//
     }
 
     //--------------------------------------------------------------------------------------------------------------------//

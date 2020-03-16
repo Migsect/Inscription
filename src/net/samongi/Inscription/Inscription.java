@@ -8,6 +8,7 @@ import net.samongi.Inscription.Commands.CommandGenerate;
 import net.samongi.Inscription.Commands.CommandHelp;
 import net.samongi.Inscription.Commands.CommandInventory;
 import net.samongi.Inscription.Commands.CommandReload;
+import net.samongi.Inscription.Conditions.Types.*;
 import net.samongi.Inscription.Experience.BlockTracker;
 import net.samongi.Inscription.Experience.ExperienceManager;
 import net.samongi.Inscription.Attributes.AttributeManager;
@@ -79,9 +80,10 @@ public class Inscription extends JavaPlugin {
     }
     //----------------------------------------------------------------------------------------------------------------//
     private void setupAttributeManager() {
-        this.m_attributeManager = new AttributeManager();
-        this.createAttributeConstructor();
-        this.m_attributeManager.parse(new File(this.getDataFolder(), ATTRIBUTE_DIRECTORY));
+        m_attributeManager = new AttributeManager();
+        createAttributeConstructor();
+        createConditionParsers();
+        m_attributeManager.parse(new File(this.getDataFolder(), ATTRIBUTE_DIRECTORY));
     }
 
     private void setupExperienceManager() {
@@ -229,14 +231,26 @@ public class Inscription extends JavaPlugin {
         pluginManager.registerEvents(new PlayerListener(), this);
     }
 
-    public void createAttributeConstructor() {
-        m_attributeManager.registerConstructor(new DamageAttributeType.Constructor());
-        m_attributeManager.registerConstructor(new BlockBonusAttributeType.Constructor());
-        m_attributeManager.registerConstructor(new DurabilityAttributeType.Constructor());
-        m_attributeManager.registerConstructor(new ChainBreakAttributeType.Constructor());
-        m_attributeManager.registerConstructor(new ExperienceBonusAttributeType.Constructor());
-        m_attributeManager.registerConstructor(new DamageReductionAttributeType.Constructor());
-        m_attributeManager.registerConstructor(new WaypointAttributeType.Constructor());
+    private void createAttributeConstructor() {
+        m_attributeManager.registerConstructor(new DamageDoneAttributeType.Factory());
+        m_attributeManager.registerConstructor(new BlockBonusAttributeType.Factory());
+        m_attributeManager.registerConstructor(new DurabilityAttributeType.Factory());
+        m_attributeManager.registerConstructor(new ChainBreakAttributeType.Factory());
+        m_attributeManager.registerConstructor(new ExperienceBonusAttributeType.Factory());
+        m_attributeManager.registerConstructor(new DamageReductionAttributeType.Factory());
+        m_attributeManager.registerConstructor(new LifeStealAttributeType.Factory());
+        m_attributeManager.registerConstructor(new WaypointAttributeType.Factory());
+    }
+
+    private void createConditionParsers() {
+        m_attributeManager.registerConditionParser("from-entity", FromEntityCondition::new);
+        m_attributeManager.registerConditionParser("to-entity", ToEntityCondition::new);
+        m_attributeManager.registerConditionParser("to-damage_taken", ToDamageTakenCondition::new);
+        m_attributeManager.registerConditionParser("using-material", UsingMaterialCondition::new);
+        m_attributeManager.registerConditionParser("white-wearing-material", WhileWearingMaterialCondition::new);
+        m_attributeManager.registerConditionParser("to-biome", ToBiomeCondition::new);
+        m_attributeManager.registerConditionParser("in-biome", InBiomeCondition::new);
+        m_attributeManager.registerConditionParser("for-block", ForBlockCondition::new);
     }
 
     //----------------------------------------------------------------------------------------------------------------//

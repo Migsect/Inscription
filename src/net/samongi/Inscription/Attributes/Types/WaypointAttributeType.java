@@ -3,7 +3,7 @@ package net.samongi.Inscription.Attributes.Types;
 import net.md_5.bungee.api.ChatColor;
 import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeType;
-import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
+import net.samongi.Inscription.Attributes.AttributeTypeFactory;
 import net.samongi.Inscription.Attributes.Base.AmountAttributeType;
 import net.samongi.Inscription.Attributes.GeneralAttributeParser;
 import net.samongi.Inscription.Inscription;
@@ -13,8 +13,10 @@ import net.samongi.Inscription.TypeClass.TypeClasses.BiomeClass;
 import net.samongi.SamongiLib.Tuple.Tuple;
 import org.bukkit.block.Biome;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.event.Listener;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 public class WaypointAttributeType extends AmountAttributeType {
@@ -27,8 +29,28 @@ public class WaypointAttributeType extends AmountAttributeType {
     private BiomeClass m_toBiome = null;
 
     //--------------------------------------------------------------------------------------------------------------------//
-    protected WaypointAttributeType(GeneralAttributeParser parser) {
-        super(parser);
+    protected WaypointAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+        super(section);
+
+        String fromBiomeString = section.getString("target-materials");
+        if (fromBiomeString == null) {
+            throw new InvalidConfigurationException("'target-materials' is not defined");
+        }
+
+        String toBiomeString = section.getString("target-blocks");
+        if (toBiomeString == null) {
+            throw new InvalidConfigurationException("'target-blocks' is not defined");
+        }
+
+        m_fromBiome = BiomeClass.handler.getTypeClass(fromBiomeString);
+        if (m_fromBiome == null) {
+            throw new InvalidConfigurationException("'" + fromBiomeString + "' is not a valid biome class.");
+        }
+
+        m_toBiome = BiomeClass.handler.getTypeClass(toBiomeString);
+        if (m_toBiome == null) {
+            throw new InvalidConfigurationException("'" + toBiomeString + "' is not a valid biome class.");
+        }
     }
 
     //--------------------------------------------------------------------------------------------------------------------//
@@ -44,7 +66,7 @@ public class WaypointAttributeType extends AmountAttributeType {
                     return;
                 }
 
-                Inscription.logger.finer("  Caching attribute for " + m_typeDescription);
+                Inscription.logger.finer("  Caching attribute for " + m_displayName);
                 Inscription.logger.finer("    'fromBiome' is global?: " + m_fromBiome.isGlobal());
                 Inscription.logger.finer("    'toBiome' is global?: " + m_toBiome.isGlobal());
 
@@ -80,7 +102,7 @@ public class WaypointAttributeType extends AmountAttributeType {
 
                 }
 
-                Inscription.logger.finer("  Finished caching for " + m_typeDescription);
+                Inscription.logger.finer("  Finished caching for " + m_displayName);
                 playerData.setData(amountData);
             }
 
@@ -92,7 +114,7 @@ public class WaypointAttributeType extends AmountAttributeType {
                 String infoLine =
                     amountString + ChatColor.YELLOW + " distance for warping from " + ChatColor.BLUE + fromClass + ChatColor.YELLOW + " biomes to "
                         + ChatColor.BLUE + toClass + ChatColor.YELLOW + " biomes";
-                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getNameDescriptor() + " - " + ChatColor.RESET + infoLine;
+                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getDisplayName() + " - " + ChatColor.RESET + infoLine;
             }
         };
     }
@@ -139,58 +161,18 @@ public class WaypointAttributeType extends AmountAttributeType {
     }
 
     //--------------------------------------------------------------------------------------------------------------------//
-    public static class Constructor extends AttributeTypeConstructor {
+    public static class Factory extends AttributeTypeFactory {
 
-        @Override public AttributeType construct(ConfigurationSection section) {
+        @Nonnull @Override public String getAttributeTypeId() {
+            return TYPE_IDENTIFIER;
+        }
 
-            GeneralAttributeParser parser = new GeneralAttributeParser(section, TYPE_IDENTIFIER);
-            if (!parser.checkType()) {
-                return null;
-            }
-            if (!parser.loadInfo()) {
-                return null;
-            }
-
-            WaypointAttributeType attributeType = new WaypointAttributeType(parser);
-
-            double minAmount = section.getInt("min-amount");
-            double maxAmount = section.getInt("max-amount");
-            if (minAmount > maxAmount) {
-                Inscription.logger.warning(section.getName() + " : min amount is bigger than max chance");
-                return null;
-            }
-
-            attributeType.setMin(minAmount);
-            attributeType.setMax(maxAmount);
-
-            String fromBiome = section.getString("from-biome-class");
-            if (fromBiome != null) {
-                BiomeClass biomeClass = BiomeClass.handler.getTypeClass(fromBiome);
-                if (biomeClass == null) {
-                    Inscription.logger.warning("[WaypointAttributeType] '" + fromBiome + "' is not a valid biome class.");
-                    return null;
-                }
-                attributeType.m_fromBiome = biomeClass;
-            }
-
-            String toBiome = section.getString("to-biome-class");
-            if (toBiome != null) {
-                BiomeClass biomeClass = BiomeClass.handler.getTypeClass(toBiome);
-                if (biomeClass == null) {
-                    Inscription.logger.warning("[WaypointAttributeType] '" + toBiome + "' is not a valid biome class.");
-                    return null;
-                }
-                attributeType.m_toBiome = biomeClass;
-            }
-
-            return attributeType;
+        @Nonnull @Override public AttributeType construct(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+            return new WaypointAttributeType(section);
         }
 
         @Override public Listener getListener() {
-            return new Listener() {
-
-
-            };
+            return new Listener() {};
         }
     }
 }

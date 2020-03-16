@@ -1,14 +1,15 @@
 package net.samongi.Inscription.Attributes;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import net.md_5.bungee.api.ChatColor;
+import net.samongi.Inscription.Experience.ExperienceMap;
 import net.samongi.Inscription.Glyphs.Glyph;
 
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 
 import javax.annotation.Nonnull;
 
@@ -20,7 +21,7 @@ public abstract class AttributeType {
      * @param section The section to map
      * @return
      */
-    public static Map<String, Integer> getIntMap(ConfigurationSection section) {
+    @Deprecated public static Map<String, Integer> getIntMap(ConfigurationSection section) {
         Map<String, Integer> map = new HashMap<>();
         if (section == null) {
             return map;
@@ -35,30 +36,55 @@ public abstract class AttributeType {
         }
         return map;
     }
+    //--------------------------------------------------------------------------------------------------------------------//
+    private final String m_implementationType;
+    private final String m_typeName;
+    protected final String m_displayName;
 
-    protected final String m_typeName;
-    protected final String m_typeDescription;
+    private double m_experienceRarityMultiplier;
+    private double m_effectRarityMultiplier;
+    private int m_modelIncrement;
 
-    protected double m_rarityMultiplier;
-    protected int m_modelIncrement;
+    private ExperienceMap m_baseExperience;
+    private ExperienceMap m_levelExperience;
 
-    protected Map<String, Integer> m_baseExperience;
-    protected Map<String, Integer> m_levelExperience;
+    //--------------------------------------------------------------------------------------------------------------------//
+    public AttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+        m_implementationType = section.getString("type");
 
-    public AttributeType(@Nonnull String typeName, String description) {
-        m_typeName = typeName;
-        m_typeDescription = description;
+        m_typeName = section.getString("name");
+        if (m_typeName == null) {
+            throw new InvalidConfigurationException("'name' is not defined");
+        }
+
+        m_displayName = section.getString("descriptor", section.getString("display-name"));
+        if (m_displayName == null) {
+            throw new InvalidConfigurationException("'descriptor' is not defined");
+        }
+
+        if (section.isConfigurationSection("rarity-multiplier")) {
+            m_experienceRarityMultiplier = section.getDouble("rarity-multiplier.experience", 1);
+            m_effectRarityMultiplier = section.getDouble("rarity-multiplier.effect", 1);
+        } else {
+            double rarityMultiplier = section.getDouble("rarity-multiplier", 1);
+            m_experienceRarityMultiplier = rarityMultiplier;
+            m_effectRarityMultiplier = rarityMultiplier;
+        }
+
+        ConfigurationSection baseExperienceSection = section.getConfigurationSection("base-experience");
+        ConfigurationSection levelExperienceSection = section.getConfigurationSection("level-experience");
+        if (baseExperienceSection == null) {
+            throw new InvalidConfigurationException("'base-experience' is not defined");
+        }
+        if (levelExperienceSection == null) {
+            throw new InvalidConfigurationException("'level-experience' is not defined");
+        }
+        m_baseExperience = new ExperienceMap(baseExperienceSection);
+        m_levelExperience = new ExperienceMap(levelExperienceSection);
+
+        m_modelIncrement = section.getInt("model-increment", 0);
     }
-
-    public AttributeType(GeneralAttributeParser parser) {
-        m_typeName = parser.getName();
-        m_typeDescription = parser.getDescriptor();
-        m_rarityMultiplier = parser.getRarityMultiplier();
-        m_modelIncrement = parser.getModelIncrement();
-        m_baseExperience = parser.getBaseExperience();
-        m_levelExperience = parser.getLevelExperience();
-    }
-
+    //--------------------------------------------------------------------------------------------------------------------//
     /**
      * Generates an attribute for a glyph.
      * This attribute will have no current glyph set to it and will need to have a
@@ -90,11 +116,16 @@ public abstract class AttributeType {
      */
     public Attribute parse(String line) {
         String reduced = ChatColor.stripColor(line.toLowerCase().trim());
-        if (reduced.startsWith(this.m_typeDescription.toLowerCase())) {
+        if (reduced.startsWith(this.m_displayName.toLowerCase())) {
             return this.generate();
         } else {
             return null;
         }
+    }
+    //--------------------------------------------------------------------------------------------------------------------//
+
+    public String getImplementationType() {
+        return m_implementationType;
     }
 
     /**
@@ -106,7 +137,7 @@ public abstract class AttributeType {
      * @return A type name string, this string should not be handled in a case
      * sensitive manner
      */
-    public String getName() {
+    public String getTypeName() {
         return this.m_typeName;
     }
 
@@ -118,39 +149,40 @@ public abstract class AttributeType {
      * @return A name descriptor, this should be returned all lowercase by
      * contract/
      */
-    public String getNameDescriptor() {
-        return this.m_typeDescription;
+    public String getDisplayName() {
+        return this.m_displayName;
     }
 
-    public String getDescriptionLoreLine() {
-        return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getNameDescriptor() + " - " + ChatColor.RESET;
+    public String getLoreLine() {
+        return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getDisplayName() + " - " + ChatColor.RESET;
     }
 
-    /**
-     * Gets the base experience required for this attribute type
-     *
-     * @return The mapping of experience
-     */
-    public Map<String, Integer> getBaseExperience() {
-        return this.m_baseExperience;
+    //--------------------------------------------------------------------------------------------------------------------//
+    @Deprecated public Map<String, Integer> getBaseExperience_LEGACY() {
+        return m_baseExperience.get();
     }
-    /**
-     * Gets the per level experience required for this attribute type
-     *
-     * @return The mapping of experience
-     */
-    public Map<String, Integer> getLevelExperience() {
-        return this.m_levelExperience;
+    @Deprecated public Map<String, Integer> getLevelExperience_LEGACY() {
+        return m_levelExperience.get();
+    }
+    public ExperienceMap getBaseExperience() {
+        return m_levelExperience;
+    }
+    public ExperienceMap getLevelExperience() {
+        return m_levelExperience;
     }
 
-    /**
-     * Sets the rarity multiplier ratio that the attribute type uses for each
-     * rarity level.
-     *
-     * @param multiplier The multiplier value.
-     */
-    public void setRarityMultiplier(double multiplier) {
-        this.m_rarityMultiplier = multiplier;
+    //--------------------------------------------------------------------------------------------------------------------//
+    @Deprecated public void setRarityMultiplier(double multiplier) {
+        setEffectRarityMultiplier(multiplier);
+        setEffectRarityMultiplier(multiplier);
+    }
+
+    public void setEffectRarityMultiplier(double multiplier) {
+        m_effectRarityMultiplier = multiplier;
+    }
+
+    public void setExperienceRarityMultiplier(double multiplier) {
+        m_experienceRarityMultiplier = multiplier;
     }
 
     /**
@@ -158,14 +190,22 @@ public abstract class AttributeType {
      *
      * @return an amount to mutliply by for rarity
      */
-    public double getRarityMultiplier() {
-        return this.m_rarityMultiplier;
+    public double getEffectRarityMultiplier() {
+        return this.m_experienceRarityMultiplier;
+    }
+    public double getExperienceRarityMultiplier() {
+        return this.m_experienceRarityMultiplier;
     }
 
-    public double calculateRarityMultiplier(Glyph glyph) {
-        return 1 + getRarityMultiplier() * glyph.getRarity().getRank();
+    public double calculateEffectRarityMultiplier(Glyph glyph) {
+        return 1 + getEffectRarityMultiplier() * glyph.getRarity().getRank();
     }
 
+    public double calculateExperienceRarityMultiplier(Glyph glyph) {
+        return 1 + getExperienceRarityMultiplier() * glyph.getRarity().getRank();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------//
     public void setModelIncrement(int m_modelIncrement) {
         this.m_modelIncrement = m_modelIncrement;
     }
@@ -173,4 +213,6 @@ public abstract class AttributeType {
     public int getModelIncrement() {
         return this.m_modelIncrement;
     }
+
+    //--------------------------------------------------------------------------------------------------------------------//
 }

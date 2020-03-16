@@ -1,5 +1,6 @@
 package net.samongi.Inscription.TypeClass.TypeClasses;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,8 +31,8 @@ import javax.annotation.Nonnull;
 public class MaterialClass extends TypeClass {
 
     //----------------------------------------------------------------------------------------------------------------//
-    public static final TypeClassHandler<MaterialClass> handler = new TypeClassHandler<>("material-classes",
-        MaterialClass::new, new MaterialClass("GLOBAL", true));
+    public static final TypeClassHandler<MaterialClass> handler = new TypeClassHandler<>("material-classes", MaterialClass::new,
+        new MaterialClass("GLOBAL", true));
 
     //----------------------------------------------------------------------------------------------------------------//
     private final Set<Material> m_materials = new HashSet<>();
@@ -110,6 +111,8 @@ public class MaterialClass extends TypeClass {
     @Override public Set<Object> getDirectClassMembers() {
         return new HashSet<>(m_materials);
     }
+
+    //----------------------------------------------------------------------------------------------------------------//
 
     //----------------------------------------------------------------------------------------------------------------//
 }

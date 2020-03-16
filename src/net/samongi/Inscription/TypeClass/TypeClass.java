@@ -5,6 +5,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -111,6 +112,18 @@ public abstract class TypeClass {
     }
 
     public abstract Set<Object> getDirectClassMembers();
+
+    //----------------------------------------------------------------------------------------------------------------//
+    @Override public boolean equals(Object obj) {
+        if (obj instanceof TypeClass) {
+            TypeClass otherTypeClass = (TypeClass) obj;
+            return m_name.equals(otherTypeClass.m_name) && m_isGlobal == otherTypeClass.m_isGlobal && m_inherited.equals(otherTypeClass.m_inherited) && getClassMembers().equals(otherTypeClass.getDirectClassMembers());
+        } return false;
+    }
+
+    @Override public int hashCode() {
+        return Arrays.hashCode(new Object[]{m_inherited, m_isGlobal, m_name, getDirectClassMembers()});
+    }
 
     //----------------------------------------------------------------------------------------------------------------//
 

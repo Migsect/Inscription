@@ -3,9 +3,8 @@ package net.samongi.Inscription.Attributes.Types;
 import net.md_5.bungee.api.ChatColor;
 import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeType;
-import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
-import net.samongi.Inscription.Attributes.Base.MultiplierAttributeType;
-import net.samongi.Inscription.Attributes.GeneralAttributeParser;
+import net.samongi.Inscription.Attributes.AttributeTypeFactory;
+import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
@@ -13,6 +12,7 @@ import net.samongi.Inscription.TypeClass.TypeClasses.DamageClass;
 import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -21,22 +21,46 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DamageReductionAttributeType extends MultiplierAttributeType {
+public class DamageReductionAttributeType extends NumericalAttributeType {
 
     private static final String TYPE_IDENTIFIER = "DAMAGE_REDUCTION";
 
     //----------------------------------------------------------------------------------------------------------------//
-    private MaterialClass m_armorMaterials = null;
-    private DamageClass m_damageTypes = null;
+    private MaterialClass m_targetArmorMaterials = null;
+    private DamageClass m_targetDamageTypes = null;
 
     //----------------------------------------------------------------------------------------------------------------//
-    protected DamageReductionAttributeType(GeneralAttributeParser parser) {
-        super(parser);
+    protected DamageReductionAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+        super(section);
+
+        String targetArmorString = section.getString("target-armor");
+        if (targetArmorString == null) {
+            throw new InvalidConfigurationException("'target-armor' is not defined");
+        }
+
+        String targetDamageTypesString = section.getString("target-damage-type");
+        if (targetDamageTypesString == null) {
+            throw new InvalidConfigurationException("'target-damage-type' is not defined");
+        }
+
+        m_targetArmorMaterials = MaterialClass.handler.getTypeClass(targetArmorString);
+        if (m_targetArmorMaterials == null) {
+            throw new InvalidConfigurationException("'" + targetArmorString + "' is not a valid material class.");
+        }
+
+        m_targetDamageTypes = DamageClass.handler.getTypeClass(targetDamageTypesString);
+        if (m_targetDamageTypes == null) {
+            throw new InvalidConfigurationException("'" + targetDamageTypesString + "' is not a valid material class.");
+        }
+
+
     }
-    //----------------------------------------------------------------------------------------------------------------//
+
+        //----------------------------------------------------------------------------------------------------------------//
 
     @Override public Attribute generate() {
         return new Attribute(this) {
@@ -50,21 +74,21 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                     return;
                 }
 
-                Inscription.logger.finer("Caching attribute for " + m_typeDescription);
-                Inscription.logger.finer("  'm_armorMaterials' is global?: " + m_armorMaterials.isGlobal());
-                Inscription.logger.finer("  'm_damageTypes' is global?: " + m_damageTypes.isGlobal());
+                Inscription.logger.finer("Caching attribute for " + m_displayName);
+                Inscription.logger.finer("  'm_armorMaterials' is global?: " + m_targetArmorMaterials.isGlobal());
+                Inscription.logger.finer("  'm_damageTypes' is global?: " + m_targetDamageTypes.isGlobal());
 
                 DamageReductionAttributeType.Data data = (DamageReductionAttributeType.Data) cachedData;
 
-                double multiplier = getMultiplier(this.getGlyph());
-                if (m_armorMaterials.isGlobal() && m_damageTypes.isGlobal()) {
+                double multiplier = getNumber(this.getGlyph());
+                if (m_targetArmorMaterials.isGlobal() && m_targetDamageTypes.isGlobal()) {
 
                     double currentValue = data.get();
                     double newValue = currentValue + (1 - currentValue) * multiplier;
                     data.set(newValue);
                     Inscription.logger.finer("  +C Added '" + multiplier + "' bonus " + currentValue + "->" + newValue);
-                } else if (m_damageTypes.isGlobal()) {
-                    for (Material armorMaterial : m_armorMaterials.getMaterials()) {
+                } else if (m_targetDamageTypes.isGlobal()) {
+                    for (Material armorMaterial : m_targetArmorMaterials.getMaterials()) {
                         double currentValue = data.getArmor(armorMaterial);
                         double newValue = currentValue + (1 - currentValue) * multiplier;
                         data.setArmor(armorMaterial, newValue);
@@ -72,8 +96,8 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                         Inscription.logger
                             .finer("  +C Added '" + multiplier + "' bonus to '" + armorMaterial.toString() + "' " + currentValue + "->" + newValue);
                     }
-                } else if (m_armorMaterials.isGlobal()) {
-                    for (EntityDamageEvent.DamageCause damageType : m_damageTypes.getDamageTypes()) {
+                } else if (m_targetArmorMaterials.isGlobal()) {
+                    for (EntityDamageEvent.DamageCause damageType : m_targetDamageTypes.getDamageTypes()) {
                         double currentValue = data.getDamageType(damageType);
                         double newValue = currentValue + (1 - currentValue) * multiplier;
                         data.setDamageType(damageType, newValue);
@@ -81,8 +105,8 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                         Inscription.logger.finer("  +C Added '" + multiplier + "' bonus to '" + damageType.toString() + "' " + currentValue + "->" + newValue);
                     }
                 } else {
-                    for (Material armorMaterial : m_armorMaterials.getMaterials()) {
-                        for (EntityDamageEvent.DamageCause damageType : m_damageTypes.getDamageTypes()) {
+                    for (Material armorMaterial : m_targetArmorMaterials.getMaterials()) {
+                        for (EntityDamageEvent.DamageCause damageType : m_targetDamageTypes.getDamageTypes()) {
                             double currentValue = data.getArmorDamageType(armorMaterial, damageType);
                             double newValue = currentValue + (1 - currentValue) * multiplier;
                             data.setArmorDamageType(armorMaterial, damageType, newValue);
@@ -95,18 +119,18 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
                 }
 
                 playerData.setData(data); // setting the data again.
-                Inscription.logger.finer("Finished caching for " + m_typeDescription);
+                Inscription.logger.finer("Finished caching for " + m_displayName);
             }
 
             @Override public String getLoreLine() {
                 String multiplierString = getDisplayString(this.getGlyph(), 100, "-", "%");
-                String armorClass = m_armorMaterials.getName();
-                String damageClass = m_damageTypes.getName();
+                String armorClass = m_targetArmorMaterials.getName();
+                String damageClass = m_targetDamageTypes.getName();
 
                 String infoLine =
                     multiplierString + ChatColor.YELLOW + " " + ChatColor.BLUE + damageClass + ChatColor.YELLOW + " damage while wearing " + ChatColor.BLUE
                         + armorClass;
-                return this.getType().getDescriptionLoreLine() + infoLine;
+                return this.getType().getLoreLine() + infoLine;
             }
         };
     }
@@ -170,50 +194,16 @@ public class DamageReductionAttributeType extends MultiplierAttributeType {
     }
 
     //----------------------------------------------------------------------------------------------------------------//
-    public static class Constructor extends AttributeTypeConstructor {
+    public static class Factory extends AttributeTypeFactory {
 
-        @Override public AttributeType construct(ConfigurationSection section) {
-            GeneralAttributeParser parser = new GeneralAttributeParser(section, TYPE_IDENTIFIER);
-            if (!parser.checkType()) {
-                return null;
-            }
-            if (!parser.loadInfo()) {
-                return null;
-            }
+        //------------------------------------------------------------------------------------------------------------//
+        @Nonnull @Override public String getAttributeTypeId() {
+            return TYPE_IDENTIFIER;
+        }
 
-            DamageReductionAttributeType attributeType = new DamageReductionAttributeType(parser);
-
-            double minReduction = section.getDouble("min-reduction");
-            double maxReduction = section.getDouble("max-reduction");
-            if (minReduction > maxReduction) {
-                Inscription.logger.warning(section.getName() + " : min reduction is bigger than max chance");
-                return null;
-            }
-
-            attributeType.setMin(minReduction);
-            attributeType.setMax(maxReduction);
-
-            String targetArmor = section.getString("target-materials");
-            if (targetArmor != null) {
-                MaterialClass materialClass = MaterialClass.handler.getTypeClass(targetArmor);
-                if (materialClass == null) {
-                    Inscription.logger.warning("[DamageReductionAttributeType] '" + targetArmor + "' is not a valid material class.");
-                    return null;
-                }
-                attributeType.m_armorMaterials = materialClass;
-            }
-
-            String targetDamageTypes = section.getString("target-damage");
-            if (targetDamageTypes != null) {
-                DamageClass damageTypeClass = DamageClass.handler.getTypeClass(targetDamageTypes);
-                if (damageTypeClass == null) {
-                    Inscription.logger.warning("[DamageReductionAttributeType] '" + targetDamageTypes + "' is not a valid damage class.");
-                    return null;
-                }
-                attributeType.m_damageTypes = damageTypeClass;
-            }
-
-            return attributeType;
+        //------------------------------------------------------------------------------------------------------------//
+        @Nonnull @Override public AttributeType construct(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+            return new DamageReductionAttributeType(section);
         }
         //------------------------------------------------------------------------------------------------------------//
         @Override public Listener getListener() {

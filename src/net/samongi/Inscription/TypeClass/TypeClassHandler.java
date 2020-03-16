@@ -1,5 +1,7 @@
 package net.samongi.Inscription.TypeClass;
 
+import net.samongi.Inscription.Conditions.Condition;
+import net.samongi.Inscription.Conditions.TypeClassCondition;
 import net.samongi.Inscription.Inscription;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -71,6 +73,16 @@ public class TypeClassHandler<TClass extends TypeClass> {
      */
     public @Nonnull Set<TClass> getInvolved(@Nonnull Object object) {
         return m_invertedClasses.getOrDefault(object, new HashSet<>());
+    }
+
+    public @Nonnull Set<Condition> getInvolvedAsCondition(@Nonnull Object object, TypeClassCondition.TypeClassToConditionConverter converter) {
+        Set<Condition> conditions = new HashSet<>();
+
+        for (TClass tClass : getInvolved(object)) {
+            conditions.add(converter.convert(tClass));
+        }
+
+        return conditions;
     }
 
     public @Nonnull Set<TClass> getContaining(@Nonnull Object classMember, @Nonnull Set<TClass> typeClasses) {

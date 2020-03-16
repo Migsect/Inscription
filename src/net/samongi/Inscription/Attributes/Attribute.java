@@ -1,6 +1,5 @@
 package net.samongi.Inscription.Attributes;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,10 +64,10 @@ public abstract class Attribute {
     public abstract String getLoreLine();
 
     public Map<String, Integer> getBaseExperience() {
-        Map<String, Integer> experienceMap = new HashMap<>(this.getType().getBaseExperience());
+        Map<String, Integer> experienceMap = new HashMap<>(this.getType().getBaseExperience_LEGACY());
 
         int rarityRank = this.getGlyph().getRarity().getRank();
-        double rarityMultiplier = 1 + rarityRank * this.getType().getRarityMultiplier();
+        double rarityMultiplier = 1 + rarityRank * this.getType().getEffectRarityMultiplier();
 
         for (String experienceType : experienceMap.keySet()) {
             int nextValue = (int) (experienceMap.get(experienceType) * rarityMultiplier);
@@ -78,10 +77,10 @@ public abstract class Attribute {
     }
     public Map<String, Integer> getLevelExperience() {
 
-        Map<String, Integer> experienceMap = new HashMap<>(this.getType().getLevelExperience());
+        Map<String, Integer> experienceMap = new HashMap<>(this.getType().getLevelExperience_LEGACY());
 
         int rarityRank = this.getGlyph().getRarity().getRank();
-        double rarityMultiplier = 1 + rarityRank * this.getType().getRarityMultiplier();
+        double rarityMultiplier = 1 + rarityRank * this.getType().getEffectRarityMultiplier();
 
         for (String experienceType : experienceMap.keySet()) {
             int nextValue = (int) (experienceMap.get(experienceType) * rarityMultiplier);
@@ -97,7 +96,7 @@ public abstract class Attribute {
      * @return A Mapping of experience type to the amount of experience.
      */
     public Map<String, Integer> getExperience() {
-        if (this.getType().getBaseExperience() == null) {
+        if (this.getType().getBaseExperience_LEGACY() == null) {
             return new HashMap<String, Integer>();
         }
         Map<String, Integer> experienceMap = new HashMap<>();

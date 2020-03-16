@@ -4,9 +4,19 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class ExperienceMap {
+
+    // ---------------------------------------------------------------------------------------------------------------//
+    public static @Nonnull ExperienceMap parse(@Nullable ConfigurationSection section) {
+        if (section == null) {
+            return new ExperienceMap();
+        }
+
+        return new ExperienceMap(section);
+    }
 
     // ---------------------------------------------------------------------------------------------------------------//
     private final Map<String, Integer> m_experiences;
@@ -15,10 +25,10 @@ public class ExperienceMap {
     public ExperienceMap() {
         m_experiences = new HashMap<>();
     }
-    public ExperienceMap(Map<String, Integer> initializer) {
+    public ExperienceMap(@Nonnull Map<String, Integer> initializer) {
         m_experiences = new HashMap<>(initializer);
     }
-    public ExperienceMap(ConfigurationSection section) {
+    public ExperienceMap(@Nonnull ConfigurationSection section) {
         this();
         for (String key : section.getKeys(false)) {
             set(key, section.getInt(key, 0));

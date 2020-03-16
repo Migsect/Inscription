@@ -3,29 +3,30 @@ package net.samongi.Inscription.Attributes.Types;
 import net.md_5.bungee.api.ChatColor;
 import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeType;
-import net.samongi.Inscription.Attributes.AttributeTypeConstructor;
-import net.samongi.Inscription.Attributes.Base.MultiplierAttributeType;
+import net.samongi.Inscription.Attributes.AttributeTypeFactory;
+import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
 import net.samongi.Inscription.Attributes.GeneralAttributeParser;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerExpChangeEvent;
 
+import javax.annotation.Nonnull;
 import java.util.Random;
 
-public class ExperienceBonusAttributeType extends MultiplierAttributeType {
+public class ExperienceBonusAttributeType extends NumericalAttributeType {
 
     private static final String TYPE_IDENTIFIER = "EXPERIENCE_BONUS";
 
     //--------------------------------------------------------------------------------------------------------------------//
-    protected ExperienceBonusAttributeType(GeneralAttributeParser parser) {
-        super(parser);
+    protected ExperienceBonusAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+        super(section);
     }
-
     //--------------------------------------------------------------------------------------------------------------------//
     @Override public Attribute generate() {
         return new Attribute(this) {
@@ -39,10 +40,10 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
                     return;
                 }
 
-                Inscription.logger.finer("Caching attribute for " + m_typeDescription);
+                Inscription.logger.finer("Caching attribute for " + m_displayName);
                 ExperienceBonusAttributeType.Data data = (ExperienceBonusAttributeType.Data) cached_data;
 
-                double multiplier = getMultiplier(this.getGlyph());
+                double multiplier = getNumber(this.getGlyph());
                 double currentValue = data.get();
                 double newValue = currentValue + multiplier;
 
@@ -50,14 +51,14 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
                 Inscription.logger.finer("  +C Added '" + multiplier + "' bonus " + currentValue + "->" + newValue);
 
                 playerData.setData(data);
-                Inscription.logger.finer("Finished caching for " + m_typeDescription);
+                Inscription.logger.finer("Finished caching for " + m_displayName);
             }
 
             @Override public String getLoreLine() {
                 String chanceString = getDisplayString(this.getGlyph(), "+", "x");
 
                 String infoLine = chanceString + ChatColor.YELLOW + " extra experience.";
-                return this.getType().getDescriptionLoreLine() + infoLine;
+                return this.getType().getLoreLine() + infoLine;
             }
         };
     }
@@ -93,31 +94,14 @@ public class ExperienceBonusAttributeType extends MultiplierAttributeType {
     }
 
     //--------------------------------------------------------------------------------------------------------------------//
-    public static class Constructor extends AttributeTypeConstructor {
+    public static class Factory extends AttributeTypeFactory {
 
-        @Override public AttributeType construct(ConfigurationSection section) {
+        @Nonnull @Override public String getAttributeTypeId() {
+            return TYPE_IDENTIFIER;
+        }
 
-            GeneralAttributeParser parser = new GeneralAttributeParser(section, TYPE_IDENTIFIER);
-            if (!parser.checkType()) {
-                return null;
-            }
-            if (!parser.loadInfo()) {
-                return null;
-            }
-
-            ExperienceBonusAttributeType attributeType = new ExperienceBonusAttributeType(parser);
-
-            double minMultiplier = section.getDouble("min-multiplier");
-            double maxMultiplier = section.getDouble("max-multiplier");
-            if (minMultiplier > maxMultiplier) {
-                Inscription.logger.warning(section.getName() + " : min multiplier is bigger than max chance");
-                return null;
-            }
-
-            attributeType.setMin(minMultiplier);
-            attributeType.setMax(maxMultiplier);
-
-            return attributeType;
+        @Nonnull @Override public AttributeType construct(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+            return new ExperienceBonusAttributeType(section);
         }
         @Override public Listener getListener() {
             return new Listener() {

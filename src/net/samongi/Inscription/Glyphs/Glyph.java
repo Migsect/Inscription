@@ -4,7 +4,6 @@ import java.util.*;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_15_R1.NBTTagCompound;
@@ -23,7 +22,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_15_R1.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.json.simple.JSONObject;
 
 public class Glyph {
 
@@ -402,7 +400,7 @@ public class Glyph {
     public String getDisplayName() {
         String displayName = "" + m_rarity.getColor();
         for (Attribute a : m_attributes)
-            displayName += a.getType().getNameDescriptor() + " ";
+            displayName += a.getType().getDisplayName() + " ";
         displayName += "Glyph";
         return displayName;
     }
@@ -510,7 +508,7 @@ public class Glyph {
     public void printItemStack() {
         String item_name = "" + m_rarity.getColor();
         for (Attribute a : m_attributes)
-            item_name += a.getType().getNameDescriptor() + " ";
+            item_name += a.getType().getDisplayName() + " ";
         item_name += "Glyph";
 
         System.out.println(item_name);
@@ -547,7 +545,7 @@ public class Glyph {
         /* Setting the attributes */
         List<String> attributes = new ArrayList<>();
         for (Attribute a : this.m_attributes) {
-            attributes.add(a.getType().getName());
+            attributes.add(a.getType().getTypeName());
         }
         section.set("attributes", attributes);
         section.set("total-experience", m_totalExperience.toConfigurationSection());

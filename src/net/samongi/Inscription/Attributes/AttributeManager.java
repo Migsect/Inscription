@@ -1,24 +1,29 @@
 package net.samongi.Inscription.Attributes;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+import net.samongi.Inscription.Conditions.Condition;
 import net.samongi.Inscription.Inscription;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 import net.samongi.SamongiLib.Configuration.ConfigurationParsing;
-import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;
 
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.plugin.PluginManager;
+
+import javax.annotation.Nonnull;
 
 public class AttributeManager implements ConfigurationParsing {
 
-    private Map<String, AttributeType> attributes = new HashMap<>();
-    private List<AttributeTypeConstructor> attribute_constructors = new ArrayList<>();
+    //----------------------------------------------------------------------------------------------------------------//
+    private Map<String, AttributeType> m_attributes = new HashMap<>();
+    private Map<String, List<AttributeType>> m_attributeInstances = new HashMap<>();
+    private List<AttributeTypeFactory> m_attributeConstructors = new ArrayList<>();
+
+    private Map<String, Condition.Parser> m_conditionParsers = new HashMap<>();
+
+    //----------------------------------------------------------------------------------------------------------------//
 
     /**
      * Registers the AttributeType with the attribute manager
@@ -27,10 +32,11 @@ public class AttributeManager implements ConfigurationParsing {
      */
     public void register(AttributeType attribute) {
         // Adding the attribute to the mapping
-        this.attributes.put(attribute.getName().toUpperCase().replace(" ", "_"), attribute);
+        m_attributes.put(attribute.getTypeName().toUpperCase().replace(" ", "_"), attribute);
+        addAttributeTypeToImplementionType(attribute.getImplementationType(), attribute);
 
         // Displaying that registration was a success
-        Inscription.logger.info("Registered '" + attribute.getName().toUpperCase().replace(" ", "_") + "'");
+        Inscription.logger.info("Registered '" + attribute.getTypeName().toUpperCase().replace(" ", "_") + "'");
     }
     /**
      * Returns the attribute type based on the string identifier
@@ -39,7 +45,21 @@ public class AttributeManager implements ConfigurationParsing {
      * @return The attribute type if found, otherwise null
      */
     public AttributeType getAttributeType(String s) {
-        return this.attributes.get(s.toUpperCase().replace(" ", "_"));
+        return this.m_attributes.get(s.toUpperCase().replace(" ", "_"));
+    }
+
+    public List<AttributeType> getAttributeTypesOfImplementationType(String implementationType) {
+        if (m_attributeInstances.containsKey(implementationType)) {
+            return m_attributeInstances.get(implementationType);
+
+        }
+        List<AttributeType> newList = new ArrayList<>();
+        m_attributeInstances.put(implementationType, newList);
+        return newList;
+    }
+
+    public void addAttributeTypeToImplementionType(String implementionType, AttributeType attributeType) {
+        getAttributeTypesOfImplementationType(implementionType).add(attributeType);
     }
 
     /**
@@ -50,16 +70,16 @@ public class AttributeManager implements ConfigurationParsing {
      *
      * @param constructor
      */
-    public void registerConstructor(AttributeTypeConstructor constructor) {
-        this.attribute_constructors.add(constructor);
+    public void registerConstructor(AttributeTypeFactory constructor) {
+        this.m_attributeConstructors.add(constructor);
         // Also registering the listener that handles the attribute
         PluginManager pluginManager = Inscription.getInstance().getServer().getPluginManager();
         pluginManager.registerEvents(constructor.getListener(), Inscription.getInstance());
     }
 
     public Attribute parseLoreLine(String line) {
-        for (String key : this.attributes.keySet()) {
-            AttributeType attributeType = this.attributes.get(key);
+        for (String key : this.m_attributes.keySet()) {
+            AttributeType attributeType = this.m_attributes.get(key);
             Attribute result = attributeType.parse(line);
             if (result == null) {
                 continue;
@@ -74,20 +94,20 @@ public class AttributeManager implements ConfigurationParsing {
         ConfigurationSection root = config.getConfig();// .getConfigurationSection("attributes");
 
         Set<String> rootKeys = root.getKeys(false);
-        for (String key : rootKeys) {
-            if (!root.isConfigurationSection(key)) {
-                Inscription.logger.warning("'{0} is not a configuration section'");
+        for (String configKey : rootKeys) {
+            if (!root.isConfigurationSection(configKey)) {
+                Inscription.logger.warning("'" + configKey + "' is not a valid attribute section");
                 continue;
 
             }
 
-            AttributeType type = this.parseSection(root.getConfigurationSection(key));
+            AttributeType type = parseSection(root.getConfigurationSection(configKey), configKey);
             if (type == null) {
-                Inscription.logger.warning("Null section found: '" + key + "'");
+                Inscription.logger.warning("Could not parse attribute section '" + configKey + "'");
                 continue;
             }
 
-            this.register(type);
+            register(type);
         }
 
         return true;
@@ -99,10 +119,16 @@ public class AttributeManager implements ConfigurationParsing {
      * @param section The section of a configuration to parse
      * @return An attribute Type or null if one could not be made.
      */
-    public AttributeType parseSection(ConfigurationSection section) {
-        for (AttributeTypeConstructor constructor : attribute_constructors) {
-            AttributeType type = constructor.construct(section);
-
+    public AttributeType parseSection(ConfigurationSection section, String configKey) {
+        for (AttributeTypeFactory constructor : m_attributeConstructors) {
+            AttributeType type = null;
+            try {
+                type = constructor.checkTypeAndConstruct(section);
+            }
+            catch (InvalidConfigurationException exception) {
+                Inscription.logger.warning("Attribute condifiguration error for key '" + configKey + "': " + exception.getMessage());
+                continue;
+            }
             if (type == null) {
                 continue;
             }
@@ -110,5 +136,29 @@ public class AttributeManager implements ConfigurationParsing {
         }
         return null;
     }
+    //----------------------------------------------------------------------------------------------------------------//
+    public void registerConditionParser(@Nonnull String conditionId, @Nonnull Condition.Parser parser) {
+        m_conditionParsers.put(conditionId, parser);
+    }
 
+    public Set<Condition> parseConditions(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+        Set<Condition> conditions = new HashSet<>();
+
+        Set<String> keys = section.getKeys(false);
+        for (String key : keys) {
+            Condition.Parser parser = m_conditionParsers.get(key);
+            if (parser == null) {
+                throw new InvalidConfigurationException("Condition '" + key + "' does not have a parser defined");
+            }
+
+            ConfigurationSection conditionSection = section.getConfigurationSection(key);
+            if (conditionSection == null) {
+                throw new InvalidConfigurationException("Condition '" + key + "' does not have a valid section");
+            }
+
+            conditions.add(parser.parse(conditionSection));
+        }
+        return conditions;
+    }
+    //----------------------------------------------------------------------------------------------------------------//
 }
