@@ -4,12 +4,10 @@ import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.Inscription.Attributes.AttributeTypeFactory;
 import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
+import net.samongi.Inscription.Conditions.ComparativeCondition;
 import net.samongi.Inscription.Conditions.Condition;
 import net.samongi.Inscription.Conditions.ConditionPermutator;
-import net.samongi.Inscription.Conditions.Types.InBiomeCondition;
-import net.samongi.Inscription.Conditions.Types.ToBiomeCondition;
-import net.samongi.Inscription.Conditions.Types.ToEntityCondition;
-import net.samongi.Inscription.Conditions.Types.UsingMaterialCondition;
+import net.samongi.Inscription.Conditions.Types.*;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.CacheTypes.CompositeCacheData;
@@ -179,16 +177,20 @@ public class LifeStealAttributeType extends NumericalAttributeType {
                     EntityType entityType = entity.getType();
                     Biome entityBiome = entity.getLocation().getBlock().getBiome();
                     Material weaponMaterial = playerDamager.getInventory().getItemInMainHand().getType();
+                    int level = playerDamager.getLevel();
 
                     Set<Condition> toEntityConditions = EntityClass.handler.getInvolvedAsCondition(entityType, (tc) -> new ToEntityCondition((EntityClass) tc));
                     Set<Condition> toBiomeConditions = BiomeClass.handler.getInvolvedAsCondition(entityBiome, (tc) -> new InBiomeCondition((BiomeClass) tc));
                     Set<Condition> usingMaterialConditions = MaterialClass.handler
                         .getInvolvedAsCondition(weaponMaterial, (tc) -> new UsingMaterialCondition((MaterialClass) tc));
+                    Set<Condition> whileLevelConditions = new HashSet<>();
+                    whileLevelConditions.add(new WhileLevelCondition((double)level, ComparativeCondition.Mode.NULL));
 
                     List<Set<Condition>> conditionGroups = new ArrayList<>();
                     conditionGroups.add(toEntityConditions);
                     conditionGroups.add(toBiomeConditions);
                     conditionGroups.add(usingMaterialConditions);
+                    conditionGroups.add(whileLevelConditions);
 
                     double lifestealAggregate = calculateConditionAggregate(conditionGroups, lifestealData);
                     Inscription.logger.finest("[Damage Event] Lifesteal bonus: " + lifestealAggregate);

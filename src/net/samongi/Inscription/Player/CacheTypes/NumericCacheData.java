@@ -2,6 +2,7 @@ package net.samongi.Inscription.Player.CacheTypes;
 
 import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
 import net.samongi.Inscription.Conditions.Condition;
+import net.samongi.Inscription.Conditions.ConditionDatabase;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.SamongiLib.DataStructures.PartialKeyMap;
@@ -14,16 +15,16 @@ public abstract class NumericCacheData implements CacheData {
 
     //----------------------------------------------------------------------------------------------------------------//
     private double m_dataGlobal = 0;
-    private PartialKeyMap<Condition, Double> m_data;
+    private ConditionDatabase m_data;
 
     private BinaryOperator<Double> m_reduceOperator = NumericalAttributeType.ReduceType.ADDITIVE.getReduceOperator();
 
     //----------------------------------------------------------------------------------------------------------------//
     public NumericCacheData() {
-        m_data = new PartialKeyMap<>();
+        m_data = new ConditionDatabase();
     }
     public NumericCacheData(BinaryOperator<Double> reduceOperator) {
-        m_data = new PartialKeyMap<>();
+        m_data = new ConditionDatabase();
         m_reduceOperator = reduceOperator;
     }
 

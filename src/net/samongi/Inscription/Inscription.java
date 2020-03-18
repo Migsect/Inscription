@@ -251,6 +251,7 @@ public class Inscription extends JavaPlugin {
         m_attributeManager.registerConditionParser("to-biome", ToBiomeCondition::new);
         m_attributeManager.registerConditionParser("in-biome", InBiomeCondition::new);
         m_attributeManager.registerConditionParser("for-block", ForBlockCondition::new);
+        m_attributeManager.registerConditionParser("while-level", WhileLevelCondition::new);
     }
 
     //----------------------------------------------------------------------------------------------------------------//
