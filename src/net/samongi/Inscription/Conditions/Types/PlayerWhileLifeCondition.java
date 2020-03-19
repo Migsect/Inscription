@@ -7,29 +7,28 @@ import org.bukkit.configuration.InvalidConfigurationException;
 
 import javax.annotation.Nonnull;
 
-public class WhileLevelCondition extends ComparativeCondition {
-
+public class PlayerWhileLifeCondition extends ComparativeCondition {
     //----------------------------------------------------------------------------------------------------------------//
-    public WhileLevelCondition(@Nonnull Double value, @Nonnull Mode mode) {
+    public PlayerWhileLifeCondition(@Nonnull Double value, @Nonnull Mode mode) {
         super(value, mode);
     }
-    public WhileLevelCondition(ConfigurationSection section) throws InvalidConfigurationException {
+    public PlayerWhileLifeCondition(ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
     }
 
     //----------------------------------------------------------------------------------------------------------------//
     @Override public String getDisplay() {
-        return " while level " + getMode().getDisplay() + " " + ChatColor.BLUE + String.format("%d", (int)Math.floor(getValue()));
+        return " while life " + getMode().getDisplay() + " " + ChatColor.BLUE + String.format("%d", (int)Math.floor(getValue()));
     }
 
     //----------------------------------------------------------------------------------------------------------------//
-    public boolean equals(WhileLevelCondition other) {
+    public boolean equals(PlayerWhileLifeCondition other) {
         return super.equals((ComparativeCondition)other);
     }
 
     @Override public boolean equals(Object obj) {
-        if (obj instanceof WhileLevelCondition) {
-            return equals((WhileLevelCondition) obj);
+        if (obj instanceof PlayerWhileLifeCondition) {
+            return equals((PlayerWhileLifeCondition) obj);
         }
         return false;
     }

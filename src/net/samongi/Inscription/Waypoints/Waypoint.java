@@ -32,6 +32,7 @@ public class Waypoint {
 
     //--------------------------------------------------------------------------------------------------------------------//
     private final Location m_location;
+    private Integer m_cachedSafeDistance = null;
 
     //--------------------------------------------------------------------------------------------------------------------//
     public Waypoint(@Nonnull Location location) {
@@ -154,27 +155,25 @@ public class Waypoint {
         }
     }
 
-    private int getSafeDistance(Player player, Block toBlock) {
+    private void cacheSafeDistance(Player player, Block toBlock) {
         int baseDistance = Inscription.getInstance().getWaypointManager().getBaseDistance();
 
         PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
         CacheData data = playerData.getData(WaypointAttributeType.TYPE_IDENTIFIER);
         if (!(data instanceof WaypointAttributeType.Data)) {
-            return baseDistance;
+            m_cachedSafeDistance = baseDistance;
+            return;
         }
         WaypointAttributeType.Data waypointData = (WaypointAttributeType.Data) data;
 
-        Biome fromBiome = getBlock().getBiome();
-        Biome toBiome = toBlock.getBiome();
+        m_cachedSafeDistance = (int) Math.floor(waypointData.calculateAggregate(player, m_location, toBlock.getLocation()));
 
-        int globalDistance = waypointData.get();
-        int fromDistance = waypointData.get(fromBiome, null);
-        int toDistance = waypointData.get(null, toBiome);
-        int fromToDistance = waypointData.get(fromBiome, toBiome);
-        Inscription.logger.finest(
-            fromBiome + " -> " + toBiome + " Global: " + globalDistance + " From: " + fromDistance + " To: " + toDistance + " FromTo: " + fromToDistance);
-
-        return globalDistance + fromDistance + toDistance + fromToDistance + baseDistance;
+    }
+    private int getSafeDistance(Player player, Block toBlock) {
+        if (m_cachedSafeDistance == null) {
+            cacheSafeDistance(player, toBlock);
+        }
+        return m_cachedSafeDistance;
     }
 
     private int getCost(Location toLocation) {
@@ -361,7 +360,11 @@ public class Waypoint {
         PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
         int slot = 0;
         List<Waypoint> waypoints = playerData.getWaypoints().stream().map((Location location) -> new Waypoint(location)).collect(Collectors.toList());
+        for (Waypoint waypoint : waypoints) {
+            waypoint.cacheSafeDistance(player, getBlock());
+        }
         waypoints.sort((Waypoint a, Waypoint b) -> {
+            Inscription.logger.finest("sort");
             int aSafeDistance = a.getSafeDistance(player, getBlock());
             int bSafeDistance = b.getSafeDistance(player, getBlock());
             int aDistance = a.getDistance(getLocation());

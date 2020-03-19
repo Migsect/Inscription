@@ -6,12 +6,13 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 
-public class ToBiomeCondition extends TypeClassCondition<BiomeClass> {
+public class PlayerInBiomeCondition extends TypeClassCondition<BiomeClass> {
+
     // ---------------------------------------------------------------------------------------------------------------//
-    public ToBiomeCondition(BiomeClass biomes) {
+    public PlayerInBiomeCondition(BiomeClass biomes) {
         super(biomes);
     }
-    public ToBiomeCondition(ConfigurationSection section) throws InvalidConfigurationException {
+    public PlayerInBiomeCondition(ConfigurationSection section) throws InvalidConfigurationException {
         super();
 
         String biomeClassString = section.getString("biome-class");
@@ -29,17 +30,17 @@ public class ToBiomeCondition extends TypeClassCondition<BiomeClass> {
 
     // ---------------------------------------------------------------------------------------------------------------//
     @Override public String getDisplay() {
-        return ChatColor.YELLOW + " to " + ChatColor.BLUE + getTypeClass().getName() + ChatColor.YELLOW + " biomes";
+        return ChatColor.YELLOW + " while you are in " + ChatColor.BLUE + getTypeClass().getName();
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
-    public boolean equals(ToBiomeCondition other) {
+    public boolean equals(PlayerInBiomeCondition other) {
         return getTypeClass().equals(other.getTypeClass());
     }
 
     @Override public boolean equals(Object obj) {
-        if (obj instanceof ToBiomeCondition) {
-            return equals((ToBiomeCondition) obj);
+        if (obj instanceof PlayerInBiomeCondition) {
+            return equals((PlayerInBiomeCondition) obj);
         }
         return false;
     }

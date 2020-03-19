@@ -1,21 +1,18 @@
 package net.samongi.Inscription.Conditions.Types;
 
 import net.samongi.Inscription.Conditions.TypeClassCondition;
-import net.samongi.Inscription.TypeClass.TypeClass;
-import net.samongi.Inscription.TypeClass.TypeClasses.BlockClass;
 import net.samongi.Inscription.TypeClass.TypeClasses.EntityClass;
-import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 
-public class ToEntityCondition extends TypeClassCondition<EntityClass> {
+public class TargetEntityCondition extends TypeClassCondition<EntityClass> {
 
     // ---------------------------------------------------------------------------------------------------------------//
-    public ToEntityCondition(EntityClass entities) {
+    public TargetEntityCondition(EntityClass entities) {
         super(entities);
     }
-    public ToEntityCondition(ConfigurationSection section) throws InvalidConfigurationException {
+    public TargetEntityCondition(ConfigurationSection section) throws InvalidConfigurationException {
         super();
 
         String entityClassString = section.getString("entity-class");
@@ -33,17 +30,17 @@ public class ToEntityCondition extends TypeClassCondition<EntityClass> {
 
     // ---------------------------------------------------------------------------------------------------------------//
     @Override public String getDisplay() {
-        return ChatColor.YELLOW + " to " + ChatColor.BLUE + getTypeClass().getName();
+        return ChatColor.YELLOW + " to " + ChatColor.BLUE + getTypeClass().getName() + ChatColor.YELLOW + " targets";
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
-    public boolean equals(ToEntityCondition other) {
+    public boolean equals(TargetEntityCondition other) {
         return getTypeClass().equals(other.getTypeClass());
     }
 
     @Override public boolean equals(Object obj) {
-        if (obj instanceof ToEntityCondition) {
-            return equals((ToEntityCondition) obj);
+        if (obj instanceof TargetEntityCondition) {
+            return equals((TargetEntityCondition) obj);
         }
         return false;
     }

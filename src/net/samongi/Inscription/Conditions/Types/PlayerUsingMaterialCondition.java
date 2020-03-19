@@ -6,12 +6,13 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 
-public class WhileWearingMaterialCondition extends TypeClassCondition<MaterialClass> {
+public class PlayerUsingMaterialCondition extends TypeClassCondition<MaterialClass> {
+
     // ---------------------------------------------------------------------------------------------------------------//
-    public WhileWearingMaterialCondition(MaterialClass materials) {
+    public PlayerUsingMaterialCondition(MaterialClass materials) {
         super(materials);
     }
-    public WhileWearingMaterialCondition(ConfigurationSection section) throws InvalidConfigurationException {
+    public PlayerUsingMaterialCondition(ConfigurationSection section) throws InvalidConfigurationException {
         super();
 
         String materialClassString = section.getString("material-class");
@@ -26,20 +27,19 @@ public class WhileWearingMaterialCondition extends TypeClassCondition<MaterialCl
 
         m_typeClass = materialClass;
     }
-
     // ---------------------------------------------------------------------------------------------------------------//
     @Override public String getDisplay() {
-        return ChatColor.YELLOW + " using " + ChatColor.BLUE + getTypeClass().getName();
+        return ChatColor.YELLOW + " while you have " + ChatColor.BLUE + getTypeClass().getName() + ChatColor.YELLOW + " equipped";
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
-    public boolean equals(WhileWearingMaterialCondition other) {
+    public boolean equals(PlayerUsingMaterialCondition other) {
         return getTypeClass().equals(other.getTypeClass());
     }
 
     @Override public boolean equals(Object obj) {
-        if (obj instanceof WhileWearingMaterialCondition) {
-            return equals((WhileWearingMaterialCondition) obj);
+        if (obj instanceof PlayerUsingMaterialCondition) {
+            return equals((PlayerUsingMaterialCondition) obj);
         }
         return false;
     }

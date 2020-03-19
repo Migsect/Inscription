@@ -244,14 +244,19 @@ public class Inscription extends JavaPlugin {
 
     private void createConditionParsers() {
         m_attributeManager.registerConditionParser("from-entity", FromEntityCondition::new);
-        m_attributeManager.registerConditionParser("to-entity", ToEntityCondition::new);
         m_attributeManager.registerConditionParser("to-damage_taken", ToDamageTakenCondition::new);
-        m_attributeManager.registerConditionParser("using-material", UsingMaterialCondition::new);
-        m_attributeManager.registerConditionParser("white-wearing-material", WhileWearingMaterialCondition::new);
         m_attributeManager.registerConditionParser("to-biome", ToBiomeCondition::new);
-        m_attributeManager.registerConditionParser("in-biome", InBiomeCondition::new);
         m_attributeManager.registerConditionParser("for-block", ForBlockCondition::new);
-        m_attributeManager.registerConditionParser("while-level", WhileLevelCondition::new);
+        m_attributeManager.registerConditionParser("player-while-level", PlayerWhileLevelCondition::new);
+        m_attributeManager.registerConditionParser("player-while-life", PlayerWhileLifeCondition::new);
+        m_attributeManager.registerConditionParser("player-using-material", PlayerUsingMaterialCondition::new);
+        m_attributeManager.registerConditionParser("player-while-wearing-material", PlayerWhileWearingMaterialCondition::new);
+        m_attributeManager.registerConditionParser("player-in-biome", PlayerInBiomeCondition::new);
+        m_attributeManager.registerConditionParser("target-entity", TargetEntityCondition::new);
+        m_attributeManager.registerConditionParser("target-in-biome", TargetInBiomeCondition::new);
+        m_attributeManager.registerConditionParser("target-using-material", TargetUsingMaterialCondition::new);
+        m_attributeManager.registerConditionParser("from-biome", FromBiomeCondition::new);
+        m_attributeManager.registerConditionParser("to-biome", ToBiomeCondition::new);
     }
 
     //----------------------------------------------------------------------------------------------------------------//

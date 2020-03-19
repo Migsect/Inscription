@@ -2,18 +2,16 @@ package net.samongi.Inscription.Conditions.Types;
 
 import net.samongi.Inscription.Conditions.TypeClassCondition;
 import net.samongi.Inscription.TypeClass.TypeClasses.BiomeClass;
-import net.samongi.Inscription.TypeClass.TypeClasses.EntityClass;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 
-public class InBiomeCondition extends TypeClassCondition<BiomeClass> {
-
+public class FromBiomeCondition extends TypeClassCondition<BiomeClass> {
     // ---------------------------------------------------------------------------------------------------------------//
-    public InBiomeCondition(BiomeClass biomes) {
+    public FromBiomeCondition(BiomeClass biomes) {
         super(biomes);
     }
-    public InBiomeCondition(ConfigurationSection section) throws InvalidConfigurationException {
+    public FromBiomeCondition(ConfigurationSection section) throws InvalidConfigurationException {
         super();
 
         String biomeClassString = section.getString("biome-class");
@@ -31,17 +29,17 @@ public class InBiomeCondition extends TypeClassCondition<BiomeClass> {
 
     // ---------------------------------------------------------------------------------------------------------------//
     @Override public String getDisplay() {
-        return ChatColor.YELLOW + " in " + ChatColor.BLUE + getTypeClass().getName();
+        return ChatColor.YELLOW + " from " + ChatColor.BLUE + getTypeClass().getName() + ChatColor.YELLOW + " biomes";
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
-    public boolean equals(InBiomeCondition other) {
+    public boolean equals(FromBiomeCondition other) {
         return getTypeClass().equals(other.getTypeClass());
     }
 
     @Override public boolean equals(Object obj) {
-        if (obj instanceof InBiomeCondition) {
-            return equals((InBiomeCondition) obj);
+        if (obj instanceof FromBiomeCondition) {
+            return equals((FromBiomeCondition) obj);
         }
         return false;
     }

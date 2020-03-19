@@ -6,8 +6,10 @@ import net.samongi.Inscription.Attributes.AttributeTypeFactory;
 import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
 import net.samongi.Inscription.Conditions.ComparativeCondition;
 import net.samongi.Inscription.Conditions.Condition;
-import net.samongi.Inscription.Conditions.ConditionPermutator;
+import net.samongi.Inscription.Conditions.Helpers.PlayerConditionHelper;
+import net.samongi.Inscription.Conditions.Helpers.TargetEntityConditionHelper;
 import net.samongi.Inscription.Conditions.Types.*;
+import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.CacheTypes.CompositeCacheData;
@@ -16,16 +18,12 @@ import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClass.TypeClasses.BiomeClass;
 import net.samongi.Inscription.TypeClass.TypeClasses.EntityClass;
 import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
-import net.samongi.SamongiLib.DataStructures.PartialKeyMap;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -64,17 +62,17 @@ public class LifeStealAttributeType extends NumericalAttributeType {
             @Override public void cache(PlayerData data) {
                 CacheData cachedData = data.getData(TYPE_IDENTIFIER);
                 if (cachedData == null) {
-                    cachedData = new LifeStealAttributeType.Data();
+                    cachedData = new Data();
                 }
-                if (!(cachedData instanceof LifeStealAttributeType.Data)) {
+                if (!(cachedData instanceof Data)) {
                     Inscription.logger.severe("CachedData with id '" + TYPE_IDENTIFIER + "' is not castable to its type");
                     return;
                 }
-                LifeStealAttributeType.Data castedData = (LifeStealAttributeType.Data) cachedData;
+                Data castedData = (Data) cachedData;
 
                 Inscription.logger.finer("  Caching attribute for " + m_displayName);
                 for (Condition condition : m_conditions) {
-                    Inscription.logger.finer("    Condition " + condition.getClass().getSimpleName());
+                    Inscription.logger.finer("    Condition " + condition.toString());
                 }
 
                 double amount = getNumber(getGlyph());
@@ -84,13 +82,14 @@ public class LifeStealAttributeType extends NumericalAttributeType {
 
                 Inscription.logger.finer("    +C '" + amount + "' reducer '" + reduceType + "'");
                 numericCacheData.add(m_conditions, amount);
-                Inscription.logger.finer("  Finished caching for " + m_displayName);
 
+                Inscription.logger.finer("  Finished caching for " + m_displayName);
                 data.setData(castedData);
             }
 
             @Override public String getLoreLine() {
-                String damageStr = getDisplayString(this.getGlyph(), 100, "+", "%");
+                Glyph glyph = getGlyph();
+                String damageStr = getDisplayString(glyph, 100, isPositive(glyph) ? "+" : "-", "%");
 
                 String idLine = "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getDisplayName() + " - " + ChatColor.RESET;
                 String infoLine = damageStr + ChatColor.YELLOW + " lifesteal";
@@ -112,6 +111,15 @@ public class LifeStealAttributeType extends NumericalAttributeType {
         }
         @Override public String getData() {
             return "";
+        }
+
+        public double calculateAggregate(Player player, Entity target)
+        {
+            List<Set<Condition>> conditionGroups = new ArrayList<>();
+            conditionGroups.addAll(TargetEntityConditionHelper.getConditionsForTargetEntity(target));
+            conditionGroups.addAll(PlayerConditionHelper.getConditionsForPlayer(player));
+
+            return calculateConditionAggregate(conditionGroups, this);
         }
     }
 
@@ -174,26 +182,13 @@ public class LifeStealAttributeType extends NumericalAttributeType {
 
                     Entity entity = event.getEntity();
 
-                    EntityType entityType = entity.getType();
-                    Biome entityBiome = entity.getLocation().getBlock().getBiome();
-                    Material weaponMaterial = playerDamager.getInventory().getItemInMainHand().getType();
-                    int level = playerDamager.getLevel();
-
-                    Set<Condition> toEntityConditions = EntityClass.handler.getInvolvedAsCondition(entityType, (tc) -> new ToEntityCondition((EntityClass) tc));
-                    Set<Condition> toBiomeConditions = BiomeClass.handler.getInvolvedAsCondition(entityBiome, (tc) -> new InBiomeCondition((BiomeClass) tc));
-                    Set<Condition> usingMaterialConditions = MaterialClass.handler
-                        .getInvolvedAsCondition(weaponMaterial, (tc) -> new UsingMaterialCondition((MaterialClass) tc));
-                    Set<Condition> whileLevelConditions = new HashSet<>();
-                    whileLevelConditions.add(new WhileLevelCondition((double)level, ComparativeCondition.Mode.NULL));
-
-                    List<Set<Condition>> conditionGroups = new ArrayList<>();
-                    conditionGroups.add(toEntityConditions);
-                    conditionGroups.add(toBiomeConditions);
-                    conditionGroups.add(usingMaterialConditions);
-                    conditionGroups.add(whileLevelConditions);
-
-                    double lifestealAggregate = calculateConditionAggregate(conditionGroups, lifestealData);
+                    double lifestealAggregate = lifestealData.calculateAggregate(playerDamager, entity);
                     Inscription.logger.finest("[Damage Event] Lifesteal bonus: " + lifestealAggregate);
+
+                    double maxLife = playerDamager.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue();
+                    double newLife = Double.min(maxLife,playerDamager.getHealth() + event.getDamage() * lifestealAggregate);
+                    playerDamager.setHealth(newLife);
+
 
                 }
             };

@@ -6,13 +6,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 
-public class UsingMaterialCondition extends TypeClassCondition<MaterialClass> {
-
+public class PlayerWhileWearingMaterialCondition extends TypeClassCondition<MaterialClass> {
     // ---------------------------------------------------------------------------------------------------------------//
-    public UsingMaterialCondition(MaterialClass materials) {
+    public PlayerWhileWearingMaterialCondition(MaterialClass materials) {
         super(materials);
     }
-    public UsingMaterialCondition(ConfigurationSection section) throws InvalidConfigurationException {
+    public PlayerWhileWearingMaterialCondition(ConfigurationSection section) throws InvalidConfigurationException {
         super();
 
         String materialClassString = section.getString("material-class");
@@ -27,19 +26,20 @@ public class UsingMaterialCondition extends TypeClassCondition<MaterialClass> {
 
         m_typeClass = materialClass;
     }
+
     // ---------------------------------------------------------------------------------------------------------------//
     @Override public String getDisplay() {
-        return ChatColor.YELLOW + " using " + ChatColor.BLUE + getTypeClass().getName();
+        return ChatColor.YELLOW + " while you are wearing " + ChatColor.BLUE + getTypeClass().getName();
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
-    public boolean equals(UsingMaterialCondition other) {
+    public boolean equals(PlayerWhileWearingMaterialCondition other) {
         return getTypeClass().equals(other.getTypeClass());
     }
 
     @Override public boolean equals(Object obj) {
-        if (obj instanceof UsingMaterialCondition) {
-            return equals((UsingMaterialCondition) obj);
+        if (obj instanceof PlayerWhileWearingMaterialCondition) {
+            return equals((PlayerWhileWearingMaterialCondition) obj);
         }
         return false;
     }

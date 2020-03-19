@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
 
 public abstract class NumericalAttributeType extends AttributeType {
 
@@ -66,7 +67,7 @@ public abstract class NumericalAttributeType extends AttributeType {
 
             ConditionPermutator permutator = new ConditionPermutator();
             for (Set<Condition> conditions : conditionGroups) {
-                Inscription.logger.finest("conditions " + conditions);
+                Inscription.logger.finest("conditions " + conditions.stream().map(Condition::toString).collect(Collectors.toList()));
                 permutator.addConditionGroup(conditions);
             }
 
@@ -151,6 +152,10 @@ public abstract class NumericalAttributeType extends AttributeType {
 
     public ReduceType getReduceType() {
         return m_reduceType;
+    }
+
+    public boolean isPositive(Glyph glyph) {
+        return getNumber(glyph) >= 0;
     }
 
     //----------------------------------------------------------------------------------------------------------------//

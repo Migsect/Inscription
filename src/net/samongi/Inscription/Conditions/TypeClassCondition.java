@@ -27,6 +27,9 @@ public abstract class TypeClassCondition<TClass extends TypeClass> implements Co
     @Override public int hashCode() {
         return 31 * m_typeClass.hashCode();
     }
+    @Override public String toString() {
+        return "{" + this.getClass().getSimpleName() + "," + getTypeClass().getTypeName() + "}";
+    }
 
     // ---------------------------------------------------------------------------------------------------------------//
 }

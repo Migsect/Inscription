@@ -32,13 +32,13 @@ public class FromEntityCondition extends TypeClassCondition<EntityClass> {
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
-    public boolean equals(ToEntityCondition other) {
+    public boolean equals(TargetEntityCondition other) {
         return getTypeClass().equals(other.getTypeClass());
     }
 
     @Override public boolean equals(Object obj) {
-        if (obj instanceof ToEntityCondition) {
-            return equals((ToEntityCondition) obj);
+        if (obj instanceof TargetEntityCondition) {
+            return equals((TargetEntityCondition) obj);
         }
         return false;
     }

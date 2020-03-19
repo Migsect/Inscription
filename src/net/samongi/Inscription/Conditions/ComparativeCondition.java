@@ -1,16 +1,11 @@
 package net.samongi.Inscription.Conditions;
 
-import net.samongi.Inscription.Conditions.Types.ToEntityCondition;
-import net.samongi.Inscription.TypeClass.TypeClasses.EntityClass;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.Set;
-import java.util.function.BinaryOperator;
 
 public abstract class ComparativeCondition implements Condition {
 
@@ -119,6 +114,9 @@ public abstract class ComparativeCondition implements Condition {
     }
     @Override public int hashCode() {
         return Arrays.hashCode(new Object[]{m_value, m_mode});
+    }
+    @Override public String toString() {
+        return "{" + this.getClass().getSimpleName() + "," + getMode().toString() + "," + (Math.round(1000 * getValue()) / 1000) + "}";
     }
 
     //----------------------------------------------------------------------------------------------------------------//
