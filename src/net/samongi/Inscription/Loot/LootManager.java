@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.Set;
 
 import net.samongi.Inscription.Experience.BlockTracker;
+import net.samongi.Inscription.Experience.ExperienceMap;
 import net.samongi.Inscription.Experience.PlayerExperienceOverflowEvent;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Glyph;
@@ -18,9 +19,11 @@ import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 
 import net.samongi.SamongiLib.Configuration.ConfigurationParsing;
+import net.samongi.SamongiLib.Tuple.Tuple;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.data.type.Bed;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
@@ -441,17 +444,18 @@ public class LootManager implements Listener, ConfigurationParsing {
                 }
             }
             if (thresholdMet) {
-                GlyphGenerator generator = m_experienceOverflowGenerators.get(index);
-                this.dropGlyph(generator, player.getLocation());
 
-                // Removing the experience (this will put the character into negatives for the type that caused the
-                // overflow for a glyph.
-                for (String key : mapping.keySet()) {
-                    playerData.addExperience(key, -mapping.get(key));
-                }
-                // The experience should be negative or 0 that's currently on the player.
-                event.setAmount(amount + playerData.getExperience(experienceType));
-                break;
+//                GlyphGenerator generator = m_experienceOverflowGenerators.get(index);
+//                this.dropGlyph(generator, player.getLocation());
+//
+//                // Removing the experience (this will put the character into negatives for the type that caused the
+//                // overflow for a glyph.
+//                for (String key : mapping.keySet()) {
+//                    playerData.addExperience(key, -mapping.get(key));
+//                }
+//                // The experience should be negative or 0 that's currently on the player.
+//                event.setAmount(amount + playerData.getExperience(experienceType));
+//                break;
             }
             index++;
         }
@@ -498,7 +502,7 @@ public class LootManager implements Listener, ConfigurationParsing {
 
     }
 
-    private void dropGlyph(@Nonnull GlyphGenerator generator, @Nonnull Location location) {
+    public void dropGlyph(@Nonnull GlyphGenerator generator, @Nonnull Location location) {
 
         ItemStack item = null;
         if (m_dropConsumables) {
@@ -508,6 +512,28 @@ public class LootManager implements Listener, ConfigurationParsing {
             item = glyph.getItemStack();
         }
         location.getWorld().dropItem(location, item);
+    }
+
+    public static class GeneratorExperiencePair
+    {
+        public final GlyphGenerator generator;
+        public final ExperienceMap experience;
+        private GeneratorExperiencePair(GlyphGenerator generator, ExperienceMap experience)
+        {
+            this.generator = generator;
+            this.experience = experience;
+        }
+    }
+    public @Nonnull List<GeneratorExperiencePair> getOverflowGeneratorPairs()
+    {
+        List<GeneratorExperiencePair> pairs = new ArrayList<>();
+        for(int index = 0; index < m_experienceOverflowGenerators.size(); index++)
+        {
+            GlyphGenerator generator = m_experienceOverflowGenerators.get(index);
+            ExperienceMap experience = new ExperienceMap(m_experienceOverflowThresholds.get(index));
+            pairs.add(new GeneratorExperiencePair(generator, experience));
+        }
+        return pairs;
     }
 
 }

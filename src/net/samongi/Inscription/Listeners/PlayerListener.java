@@ -63,16 +63,12 @@ public class PlayerListener implements Listener {
             // Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventory_LEGACY : false");
             return false;
         }
-        boolean result = (clickedMaterial.equals(Material.ENCHANTING_TABLE) || clickedMaterial.equals(Material.LECTERN)) && handMaterial.equals(Material.PAPER);
-
-        // Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventory_LEGACY : " + result);
-        return result;
+        return (clickedMaterial.equals(Material.ENCHANTING_TABLE) || clickedMaterial.equals(Material.LECTERN)) && handMaterial.equals(Material.PAPER);
     }
+
     public boolean checkGlyphInventoryAltar(Block block) {
         Altar altar = Altars.getInscriptionAltar();
-        boolean result = altar.checkPattern(block);
-        // Inscription.logger.finest("[GlyphInventoryEvent] checkGlyphInventoryAltar : " + result);
-        return result;
+        return altar.checkPattern(block);
     }
 
     @EventHandler public void onPlayerInteractEvent(PlayerInteractEvent event) {
@@ -96,11 +92,11 @@ public class PlayerListener implements Listener {
 
         if (checkGlyphInventory_LEGACY(clickedMaterial, handMaterial) || checkGlyphInventoryAltar(clickedBlock)) {
             PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
-            GlyphInventory inventory = data.getGlyphInventory();
+//            GlyphInventory inventory = data.getGlyphInventory();
             BukkitRunnable task = new BukkitRunnable() {
-
                 @Override public void run() {
-                    player.openInventory(inventory.getInventory());
+                    data.getRootMenu(player).open();
+//                    player.openInventory(inventory.getInventory());
                 }
             };
             task.runTask(Inscription.getInstance());

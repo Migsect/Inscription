@@ -13,9 +13,10 @@ import net.samongi.SamongiLib.Tuple.Tuple;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.craftbukkit.libs.jline.internal.Nullable;
+import org.bukkit.entity.Player;
 
 public class PlayerData {
 
@@ -125,6 +126,10 @@ public class PlayerData {
         return this.m_glyphs;
     }
 
+    public @Nullable InscriptionRootMenu getRootMenu(Player viewer) {
+        return new InscriptionRootMenu(viewer, this);
+    }
+
     private Map<String, CacheData> getCachedData() {
         if (this.m_cachedData == null) {
             this.m_cachedData = new HashMap<>();
@@ -173,7 +178,7 @@ public class PlayerData {
 
     public int getExperience(String type) {
 
-        return this.m_experience.get(type);
+        return this.m_experience.getOrDefault(type, 0);
     }
 
     public Map<String, Integer> getExperience() {
