@@ -152,6 +152,41 @@ public class ExperienceMap {
         return experienceMap;
     }
     // ---------------------------------------------------------------------------------------------------------------//
+    public @Nonnull void minInplace(@Nonnull String experienceType, int amount) {
+        int current = get(experienceType);
+        set(experienceType, Math.min(current, amount));
+    }
+
+    public @Nonnull void minInplace(int amount) {
+        for (String experienceType : m_experiences.keySet()) {
+            minInplace(experienceType, amount);
+        }
+    }
+
+    public @Nonnull ExperienceMap min(int amount) {
+        ExperienceMap experienceMap = clone();
+        experienceMap.minInplace(amount);
+        return experienceMap;
+    }
+
+    public @Nonnull void maxInplace(@Nonnull String experienceType, int amount) {
+        int current = get(experienceType);
+        set(experienceType, Math.max(current, amount));
+    }
+
+    public @Nonnull void maxInplace(int amount) {
+        for (String experienceType : m_experiences.keySet()) {
+            maxInplace(experienceType, amount);
+        }
+    }
+
+    public @Nonnull ExperienceMap max(int amount) {
+        ExperienceMap experienceMap = clone();
+        experienceMap.maxInplace(amount);
+        return experienceMap;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------//
     public @Nonnull ExperienceMap ones() {
         ExperienceMap experienceMap = new ExperienceMap();
         for (String experienceType : experienceTypes()) {
@@ -164,6 +199,7 @@ public class ExperienceMap {
         return ones().multiply(0);
     }
 
+    // ---------------------------------------------------------------------------------------------------------------//
     /**
      * Retrieves a random experience from the map and returns it in its own map.
      *

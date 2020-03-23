@@ -30,7 +30,7 @@ public class ToDamageTakenCondition extends TypeClassCondition<DamageClass> {
 
     // ---------------------------------------------------------------------------------------------------------------//
     @Override public String getDisplay() {
-        return ChatColor.YELLOW + " to " + ChatColor.BLUE + getTypeClass().getName() + ChatColor.YELLOW + " taken";
+        return ChatColor.YELLOW + " to " + ChatColor.BLUE + getTypeClass().getName() + ChatColor.YELLOW;
     }
 
     // ---------------------------------------------------------------------------------------------------------------//

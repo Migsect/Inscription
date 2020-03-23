@@ -4,13 +4,20 @@ import java.util.*;
 
 import net.md_5.bungee.api.ChatColor;
 import net.samongi.Inscription.Attributes.Base.AmountAttributeType;
+import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
 import net.samongi.Inscription.Attributes.GeneralAttributeParser;
+import net.samongi.Inscription.Conditions.Condition;
+import net.samongi.Inscription.Conditions.Helpers.BlockConditionHelper;
+import net.samongi.Inscription.Conditions.Helpers.PlayerConditionHelper;
+import net.samongi.Inscription.Conditions.Helpers.TargetEntityConditionHelper;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.Inscription.Attributes.AttributeTypeFactory;
 import net.samongi.Inscription.Player.CacheData;
+import net.samongi.Inscription.Player.CacheTypes.CompositeCacheData;
+import net.samongi.Inscription.Player.CacheTypes.NumericCacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClass.TypeClasses.BlockClass;
 import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
@@ -27,6 +34,7 @@ import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -42,34 +50,15 @@ public class ChainBreakAttributeType extends AmountAttributeType {
     private static final String TYPE_IDENTIFIER = "CHAIN_BREAK";
 
     //----------------------------------------------------------------------------------------------------------------//
-    private int minBlocks;
-    private int maxBlocks;
-
-    private BlockClass m_targetBlocks = null;
-    private MaterialClass m_targetTools = null;
+    Set<Condition> m_conditions = new HashSet<>();
 
     //----------------------------------------------------------------------------------------------------------------//
     protected ChainBreakAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
 
-        String targetToolsString = section.getString("target-materials");
-        if (targetToolsString == null) {
-            throw new InvalidConfigurationException("'target-materials' is not defined");
-        }
-
-        String targetBlocksString = section.getString("target-blocks");
-        if (targetBlocksString == null) {
-            throw new InvalidConfigurationException("'target-blocks' is not defined");
-        }
-
-        m_targetTools = MaterialClass.handler.getTypeClass(targetToolsString);
-        if (m_targetTools == null) {
-            throw new InvalidConfigurationException("'" + targetToolsString + "' is not a valid material class.");
-        }
-
-        m_targetBlocks = BlockClass.handler.getTypeClass(targetBlocksString);
-        if (m_targetBlocks == null) {
-            throw new InvalidConfigurationException("'" + targetBlocksString + "' is not a valid block class.");
+        ConfigurationSection conditionSection = section.getConfigurationSection("conditions");
+        if (conditionSection != null) {
+            m_conditions = Inscription.getInstance().getAttributeManager().parseConditions(conditionSection);
         }
     }
 
@@ -78,146 +67,71 @@ public class ChainBreakAttributeType extends AmountAttributeType {
         return new Attribute(this) {
 
             @Override public void cache(PlayerData playerData) {
-                CacheData cachedData = playerData.getData(TYPE_IDENTIFIER);
-                if (cachedData == null) {
-                    cachedData = new Data();
-                }
-                if (!(cachedData instanceof Data)) {
-                    return;
-                }
-
+                Data castedData = CacheData.getData(Data.class, TYPE_IDENTIFIER, playerData, Data::new);
                 Inscription.logger.finer("  Caching attribute for " + m_displayName);
-                Inscription.logger.finer("    'blockMaterials' is global?: " + m_targetBlocks.isGlobal());
-                Inscription.logger.finer("    'toolMaterials' is global?: " + m_targetTools.isGlobal());
-
-                Data bonusData = (Data) cachedData;
-
-                int amount = getAmount(getGlyph());
-                if (m_targetBlocks.isGlobal() && m_targetTools.isGlobal()) {
-                    int a = bonusData.get();
-                    bonusData.set(a + amount);
-
-                    Inscription.logger.finer("  +C Added '" + amount + "' bonus");
-                } else if (m_targetBlocks.isGlobal()) {
-                    for (Material tool : m_targetTools.getMaterials()) {
-                        int a = bonusData.getTool(tool);
-                        bonusData.setTool(tool, a + amount);
-
-                        Inscription.logger.finer("  +C Added '" + amount + "' bonus to '" + tool.toString() + "'");
-                    }
-                } else if (m_targetTools.isGlobal()) {
-                    for (MaskedBlockData blockData : m_targetBlocks.getBlockDatas()) {
-                        int a = bonusData.getBlock(blockData.getBlockData());
-                        bonusData.setBlock(blockData.getBlockData(), a + amount);
-
-                        Inscription.logger.finer("  +C Added '" + amount + "' bonus to '" + blockData.getBlockData().getAsString(true) + "'");
-                    }
-                } else {
-                    for (Material type : m_targetTools.getMaterials()) {
-                        for (MaskedBlockData blockData : m_targetBlocks.getBlockDatas()) {
-                            int a = bonusData.getToolBlock(type, blockData.getBlockData());
-                            bonusData.setToolBlock(type, blockData.getBlockData(), a + amount);
-
-                            Inscription.logger
-                                .finer("  +C Added '" + amount + "' bonus to '" + type.toString() + "|" + blockData.getBlockData().getAsString(true) + "'");
-                        }
-                    }
+                for (Condition condition : m_conditions) {
+                    Inscription.logger.finer("    Condition " + condition.toString());
                 }
+
+                double amount = getNumber(getGlyph());
+                NumericalAttributeType.ReduceType reduceType = getReduceType();
+                NumericCacheData numericCacheData = castedData.getCacheData(reduceType, () -> new NumericData(reduceType, reduceType.getInitialAggregator()));
+
+                Inscription.logger.finer("    +C '" + amount + "' reducer '" + reduceType + "'");
+                numericCacheData.add(m_conditions, amount);
 
                 Inscription.logger.finer("  Finished caching for " + m_displayName);
-                playerData.setData(bonusData);
-
+                playerData.setData(castedData);
             }
 
             @Override public String getLoreLine() {
-                String amountString = ((ChainBreakAttributeType) this.getType()).getDisplayString(this.getGlyph(), "+", "");
-                String toolClass = m_targetTools.getName();
-                String blockClass = m_targetBlocks.getName();
+                Glyph glyph = getGlyph();
+                String multiplierString = getDisplayString(glyph, isPositive(glyph) ? "+" : "-", "");
 
-                String infoLine =
-                    amountString + ChatColor.YELLOW + " chain breaking for " + ChatColor.BLUE + blockClass + ChatColor.YELLOW + " using " + ChatColor.BLUE
-                        + toolClass;
-                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getDisplayName() + " - " + ChatColor.RESET + infoLine;
+                String infoLine = multiplierString + ChatColor.YELLOW + " chain breaking" + Condition.concatConditionDisplays(m_conditions);
+
+                return getDisplayLineId() + infoLine;
             }
 
         };
     }
 
-    //----------------------------------------------------------------------------------------------------------------//
-    public static class Data implements CacheData {
+    public static class Data extends CompositeCacheData<ReduceType, NumericCacheData> {
 
-        private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
-
-        /* Data members of the data */
-        private int global = 0;
-
-        private HashMap<MaskedBlockData, Integer> blockAmount = new HashMap<>();
-        private HashMap<Material, Integer> toolAmount = new HashMap<>();
-        private HashMap<Material, HashMap<MaskedBlockData, Integer>> toolBlockAmount = new HashMap<>();
-
-        /* Setters */
-        public void set(int amount) {
-            this.global = amount;
-        }
-        public void setBlock(BlockData blockData, int amount) {
-            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
-            this.blockAmount.put(maskedBlockData, amount);
-        }
-        public void setTool(Material material, int amount) {
-            this.toolAmount.put(material, amount);
-        }
-        public void setToolBlock(Material tool, BlockData blockData, int amount) {
-            if (!this.toolBlockAmount.containsKey(tool)) {
-                this.toolBlockAmount.put(tool, new HashMap<>());
-            }
-
-            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
-            HashMap<MaskedBlockData, Integer> blockAmount = this.toolBlockAmount.get(tool);
-            blockAmount.put(maskedBlockData, amount);
-        }
-
-        /* Getters */
-        public int get() {
-            return this.global;
-        }
-        public int getBlock(BlockData blockData) {
-            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
-            return this.blockAmount.getOrDefault(maskedBlockData, 0);
-        }
-        public int getTool(Material material) {
-            return this.toolAmount.getOrDefault(material, 0);
-        }
-        public int getToolBlock(Material tool, BlockData blockData) {
-            if (!this.toolBlockAmount.containsKey(tool)) {
-                return 0;
-            }
-            HashMap<MaskedBlockData, Integer> blockAmount = this.toolBlockAmount.get(tool);
-
-            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
-            return blockAmount.getOrDefault(maskedBlockData, 0);
-        }
-
-        @Override public void clear() {
-            global = 0;
-            blockAmount = new HashMap<>();
-            toolAmount = new HashMap<>();
-            toolBlockAmount = new HashMap<>();
-
-        }
-
+        //----------------------------------------------------------------------------------------------------------------//
         @Override public String getType() {
-            return ChainBreakAttributeType.TYPE_IDENTIFIER;
-        }
+            return TYPE_IDENTIFIER;
 
+        }
         @Override public String getData() {
-            // TODO Human readable data
             return "";
         }
 
+        public double calculateAggregate(Player player, Block block) {
+            Set<Condition> conditionGroups = PlayerConditionHelper.getConditionsForPlayer(player);
+            conditionGroups.addAll(BlockConditionHelper.getConditionsForTargetBlock(block));
+            return calculateConditionAggregate(conditionGroups, this);
+        }
+    }
+
+    public static class NumericData extends NumericCacheData {
+
+        NumericData(ReduceType reduceType, double dataGlobalInitial) {
+            super(reduceType);
+            set(dataGlobalInitial);
+        }
+
+        @Override public String getType() {
+            return TYPE_IDENTIFIER;
+        }
+        @Override public String getData() {
+            return null;
+        }
     }
 
     //----------------------------------------------------------------------------------------------------------------//
     public static class Factory extends AttributeTypeFactory {
+
         //----------------------------------------------------------------------------------------------------------------//
         @Nonnull @Override public String getAttributeTypeId() {
             return TYPE_IDENTIFIER;
@@ -279,13 +193,13 @@ public class ChainBreakAttributeType extends AmountAttributeType {
                         tool = new ItemStack(Material.AIR);
                     }
 
-                    BlockData blockData = block.getBlockData();
-                    Material toolMaterial = tool.getType();
+                    //                    BlockData blockData = block.getBlockData();
+                    //                    Material toolMaterial = tool.getType();
 
-                    int totalBlocks = data.get() + data.getTool(toolMaterial) + data.getBlock(blockData) + data.getToolBlock(toolMaterial, blockData);
+                    int totalBlocks = (int) Math.floor(data.calculateAggregate(player,
+                        block)); //data.get() + data.getTool(toolMaterial) + data.getBlock(blockData) + data.getToolBlock(toolMaterial, blockData);
 
-                    Inscription.logger
-                        .finest("[Break Event] Chain Amount: " + totalBlocks + " (" + blockData.getMaterial() + "/" + blockData.getAsString(true) + ")");
+                    Inscription.logger.finest("[Break Event] Chain Amount: " + totalBlocks);
 
                     /* No need to check for materials if this is less-than-equal to 0 */
                     if (totalBlocks <= 0) {
@@ -356,7 +270,7 @@ public class ChainBreakAttributeType extends AmountAttributeType {
 
                         ItemUtil.damageItem(player, tool);
 
-                        if (tool.getItemMeta() instanceof Damageable) {
+                        if (tool.getItemMeta() instanceof Damageable && tool.getType().getMaxDurability() > 0) {
                             Damageable damageableMeta = (Damageable) tool.getItemMeta();
                             if (damageableMeta.getDamage() >= tool.getType().getMaxDurability()) {
                                 player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));

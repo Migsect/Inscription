@@ -1,6 +1,7 @@
 package net.samongi.Inscription.Conditions.Types;
 
 import net.samongi.Inscription.Conditions.TypeClassCondition;
+import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.TypeClass.TypeClasses.BiomeClass;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
@@ -34,6 +35,7 @@ public class ToBiomeCondition extends TypeClassCondition<BiomeClass> {
 
     // ---------------------------------------------------------------------------------------------------------------//
     public boolean equals(ToBiomeCondition other) {
+        // Inscription.logger.finest(getTypeClass() + " == " + other.getTypeClass() + " = " + getTypeClass().equals(other.getTypeClass()));
         return getTypeClass().equals(other.getTypeClass());
     }
 

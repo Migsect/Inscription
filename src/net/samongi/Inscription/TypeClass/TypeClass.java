@@ -48,13 +48,12 @@ public abstract class TypeClass {
         }
 
         List<String> inheritedClasses = section.getStringList("inherited");
-        if (inheritedClasses != null) {
-            Inscription.logger.fine("Found Inherited:");
-            for (String inheritedClass : inheritedClasses) {
-                Inscription.logger.fine(" - '" + inheritedClass + "'");
-                addInherited(inheritedClass);
-            }
+        Inscription.logger.fine("Found Inherited:");
+        for (String inheritedClass : inheritedClasses) {
+            Inscription.logger.fine(" - '" + inheritedClass + "'");
+            addInherited(inheritedClass);
         }
+
     }
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -117,12 +116,19 @@ public abstract class TypeClass {
     @Override public boolean equals(Object obj) {
         if (obj instanceof TypeClass) {
             TypeClass otherTypeClass = (TypeClass) obj;
-            return m_name.equals(otherTypeClass.m_name) && m_isGlobal == otherTypeClass.m_isGlobal && m_inherited.equals(otherTypeClass.m_inherited) && getClassMembers().equals(otherTypeClass.getDirectClassMembers());
+            boolean globalEquals = m_isGlobal == otherTypeClass.m_isGlobal;
+            boolean nameEquals = m_name.equals(otherTypeClass.m_name);
+            boolean inheritedEquals = m_inherited.equals(otherTypeClass.m_inherited);
+            return globalEquals && nameEquals && inheritedEquals;
         } return false;
     }
 
     @Override public int hashCode() {
         return Arrays.hashCode(new Object[]{m_inherited, m_isGlobal, m_name, getDirectClassMembers()});
+    }
+
+    @Override public String toString() {
+        return "{" + getClass().getSimpleName() + "<" + m_name + ">}";
     }
 
     //----------------------------------------------------------------------------------------------------------------//

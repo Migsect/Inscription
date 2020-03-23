@@ -3,6 +3,7 @@ package net.samongi.Inscription.Attributes;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.md_5.bungee.api.ChatColor;
 import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Player.PlayerData;
 
@@ -54,6 +55,11 @@ public abstract class Attribute {
         return this.type;
     }
 
+
+    protected final String getDisplayLineId()
+    {
+        return "" + ChatColor.YELLOW + ChatColor.ITALIC + getType().getDisplayName() + " - " + ChatColor.RESET;
+    }
     /**
      * Get the line of lore that can be parsed by the glyph's Parser object.
      * By contract when being parsed this should return a glyph that is identical when using

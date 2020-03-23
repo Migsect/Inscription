@@ -19,12 +19,13 @@ public class ConditionDatabase extends PartialKeyMap<Condition, Double> {
 
     @Override public Set<Set<Condition>> getInclusiveKeys(Condition key) {
         if (!(key instanceof ComparativeCondition)) {
+            //Inscription.logger.finest("ConditionDatabase/getInclusiveKeys - direct key lookup:" + key + " -> " + getInclusiveKeysDirect(key));
             return getInclusiveKeysDirect(key);
         }
 
         ComparativeCondition comparativeKey = (ComparativeCondition) key;
         Set<Condition> cachedKeys = getCachedKeys();
-        Set<Set<Condition>> conditionKeys = new HashSet<Set<Condition>>();
+        Set<Set<Condition>> conditionKeys = new HashSet<>();
         for (Condition condition : cachedKeys) {
             // We need to ensure that our classes match while we are doing this search.
             if (!key.getClass().isInstance(condition)) {
@@ -32,25 +33,27 @@ public class ConditionDatabase extends PartialKeyMap<Condition, Double> {
             }
 
             ComparativeCondition otherCondition = (ComparativeCondition) condition;
-            Inscription.logger.finest("  Comparison " + otherCondition.compare(comparativeKey));
+            //Inscription.logger.finest("  Comparison " + otherCondition.compare(comparativeKey));
             if (otherCondition.compare(comparativeKey)) {
                 conditionKeys.addAll(getInclusiveKeysDirect(condition));
-                Inscription.logger.finest("  Keys Added " + getInclusiveKeysDirect(condition).size());
+                //Inscription.logger.finest("  Keys Added " + getInclusiveKeysDirect(condition).size());
             }
         }
 
         return conditionKeys;
     }
 
-    @Override public Set<Set<Condition>> getValidKeys(@Nonnull Collection<Condition> keys) {
+    @Override public @Nonnull Set<Set<Condition>> getValidKeys(@Nonnull Collection<Condition> keys) {
         Set<Set<Condition>> validKeys = new HashSet<>();
         for (Condition key : keys) {
-            // Finding all the key subsets.
+            // We are going to retrieve all the key sets that involve this key.
+            // These will need to be filtered down of course.
             Set<Set<Condition>> involvedKeySets = getInclusiveKeys(key);
             for (Set<Condition> keySet : involvedKeySets) {
                 boolean containsAll = true;
                 for (Condition keySetKey : keySet) {
-                    if (!ComparativeCondition.contains(keySet, keySetKey)) {
+                    // Every key within the key set needs to be contained within the original keys that are provided.
+                    if (!ComparativeCondition.contains(keys, keySetKey)) {
                         containsAll = false;
                         break;
                     }

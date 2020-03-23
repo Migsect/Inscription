@@ -27,59 +27,60 @@ public class PlayerConditionHelper {
         ONLY_WEARING_BOOTS
     }
 
-    public static List<Set<Condition>> getConditionsForPlayer(Player player) {
+    public static Set<Condition> getConditionsForPlayer(Player player) {
         return getConditionsForPlayer(player, new HashSet<>());
     }
 
-    public static List<Set<Condition>> getConditionsForPlayer(Player player, Set<Option> options) {
-        List<Set<Condition>> conditionGroups = new ArrayList<>();
+    public static Set<Condition> getConditionsForPlayer(Player player, Option option) {
+        HashSet<Option> options = new HashSet<>();
+        options.add(option);
+        return getConditionsForPlayer(player, options);
+    }
 
-        Set<Condition> whileLevelConditions = new HashSet<>();
-        whileLevelConditions.add(new PlayerWhileLevelCondition((double) player.getLevel(), ComparativeCondition.Mode.NULL));
-        conditionGroups.add(whileLevelConditions);
 
-        Set<Condition> whileLifeConditions = new HashSet<>();
-        whileLifeConditions.add(new PlayerWhileLifeCondition((double) player.getHealth(), ComparativeCondition.Mode.NULL));
-        conditionGroups.add(whileLifeConditions);
+    public static Set<Condition> getConditionsForPlayer(Player player, Set<Option> options) {
+        Set<Condition> conditionGroups = new HashSet<>();
+
+        conditionGroups.add(new PlayerWhileLevelCondition((double) player.getLevel(), ComparativeCondition.Mode.NULL));
+        conditionGroups.add(new PlayerWhileLifeCondition((double) player.getHealth(), ComparativeCondition.Mode.NULL));
 
         if (!options.contains(Option.NO_LOCATION)) {
             Biome playerBiome = player.getLocation().getBlock().getBiome();
-            conditionGroups.add(BiomeClass.handler.getInvolvedAsCondition(playerBiome, (tc) -> new PlayerInBiomeCondition((BiomeClass) tc)));
+            conditionGroups.addAll(BiomeClass.handler.getInvolvedAsCondition(playerBiome, (tc) -> new PlayerInBiomeCondition((BiomeClass) tc)));
         }
 
         Material mainHandMaterial = Material.AIR;
         ItemStack mainHandItem = player.getInventory().getItemInMainHand();
-        if (mainHandItem != null) {
-            mainHandMaterial =  player.getInventory().getItemInMainHand().getType();
-        }
-        conditionGroups.add(MaterialClass.handler.getInvolvedAsCondition(mainHandMaterial, (tc) -> new PlayerUsingMaterialCondition((MaterialClass) tc)));
+        mainHandMaterial =  player.getInventory().getItemInMainHand().getType();
+
+        conditionGroups.addAll(MaterialClass.handler.getInvolvedAsCondition(mainHandMaterial, (tc) -> new PlayerUsingMaterialCondition((MaterialClass) tc)));
 
         boolean wearingAny =
             !options.contains(Option.ONLY_WEARING_HELMET) && !options.contains(Option.ONLY_WEARING_HELMET) && !options.contains(Option.ONLY_WEARING_HELMET)
                 && !options.contains(Option.ONLY_WEARING_HELMET);
         Set<Condition> wearingConditions = new HashSet<>();
         PlayerInventory playerInventory = player.getInventory();
-        if (wearingAny || options.contains(Option.ONLY_WEARING_HELMET)) {
+        if (playerInventory.getHelmet() != null && (wearingAny || options.contains(Option.ONLY_WEARING_HELMET))) {
             Material armorMaterial = playerInventory.getHelmet().getType();
             wearingConditions
                 .addAll(MaterialClass.handler.getInvolvedAsCondition(armorMaterial, (tc) -> new PlayerWhileWearingMaterialCondition((MaterialClass) tc)));
         }
-        if (wearingAny || options.contains(Option.ONLY_WEARING_CHEST)) {
+        if (playerInventory.getChestplate() != null && (wearingAny || options.contains(Option.ONLY_WEARING_CHEST))) {
             Material armorMaterial = playerInventory.getChestplate().getType();
             wearingConditions
                 .addAll(MaterialClass.handler.getInvolvedAsCondition(armorMaterial, (tc) -> new PlayerWhileWearingMaterialCondition((MaterialClass) tc)));
         }
-        if (wearingAny || options.contains(Option.ONLY_WEARING_LEGS)) {
-            Material armorMaterial = playerInventory.getChestplate().getType();
+        if (playerInventory.getLeggings() != null && (wearingAny || options.contains(Option.ONLY_WEARING_LEGS))) {
+            Material armorMaterial = playerInventory.getLeggings().getType();
             wearingConditions
                 .addAll(MaterialClass.handler.getInvolvedAsCondition(armorMaterial, (tc) -> new PlayerWhileWearingMaterialCondition((MaterialClass) tc)));
         }
-        if (wearingAny || options.contains(Option.ONLY_WEARING_BOOTS)) {
-            Material armorMaterial = playerInventory.getChestplate().getType();
+        if (playerInventory.getBoots() != null && (wearingAny || options.contains(Option.ONLY_WEARING_BOOTS))) {
+            Material armorMaterial = playerInventory.getBoots().getType();
             wearingConditions
                 .addAll(MaterialClass.handler.getInvolvedAsCondition(armorMaterial, (tc) -> new PlayerWhileWearingMaterialCondition((MaterialClass) tc)));
         }
-        conditionGroups.add(wearingConditions);
+        conditionGroups.addAll(wearingConditions);
 
         return conditionGroups;
     }

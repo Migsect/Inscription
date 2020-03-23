@@ -8,6 +8,7 @@ import net.samongi.Inscription.Player.CacheData;
 import net.samongi.SamongiLib.DataStructures.PartialKeyMap;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 
@@ -17,15 +18,15 @@ public abstract class NumericCacheData implements CacheData {
     private double m_dataGlobal = 0;
     private ConditionDatabase m_data;
 
-    private BinaryOperator<Double> m_reduceOperator = NumericalAttributeType.ReduceType.ADDITIVE.getReduceOperator();
+    private NumericalAttributeType.ReduceType m_reduceType = NumericalAttributeType.ReduceType.ADDITIVE;
 
     //----------------------------------------------------------------------------------------------------------------//
     public NumericCacheData() {
         m_data = new ConditionDatabase();
     }
-    public NumericCacheData(BinaryOperator<Double> reduceOperator) {
+    public NumericCacheData(NumericalAttributeType.ReduceType reduceType) {
         m_data = new ConditionDatabase();
-        m_reduceOperator = reduceOperator;
+        m_reduceType = reduceType;
     }
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -40,7 +41,7 @@ public abstract class NumericCacheData implements CacheData {
     }
     public void add(Set<Condition> conditions, double value) {
         double currentValue = get(conditions);
-        set(conditions, m_reduceOperator.apply(currentValue, value));
+        set(conditions, m_reduceType.getReduceOperator().apply(currentValue, value));
     }
 
     public double get() {
@@ -55,12 +56,18 @@ public abstract class NumericCacheData implements CacheData {
 
     public double getReduce(Set<Condition> conditions) {
         double valueSum = m_dataGlobal;
-        Collection<Double> values = m_data.getSubsets(conditions);
-        return m_reduceOperator.apply(m_dataGlobal, values.stream().reduce(0.0, m_reduceOperator));
+        //Inscription.logger.finest("getReduce/getValidConditionKeys: " + getValidConditionKeys(conditions));
+        List<Double> values = m_data.getSubsets(conditions);
+        //Inscription.logger.finest("getReduce values: " + values);
+        return m_reduceType.getReduceOperator().apply(m_dataGlobal, values.stream().reduce(0.0, m_reduceType.getReduceOperator()));
     }
 
     public Set<Set<Condition>> getValidConditionKeys(Collection<Condition> conditions) {
         return m_data.getValidKeys(conditions);
+    }
+
+    public Set<Set<Condition>> keySet() {
+        return m_data.keySet();
     }
 
     //----------------------------------------------------------------------------------------------------------------//

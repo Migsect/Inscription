@@ -81,7 +81,7 @@ public abstract class ComparativeCondition implements Condition {
             throw new InvalidConfigurationException("'" + modeString + "' is not a valid mode");
         }
 
-        if (section.isDouble("value")) {
+        if (!section.isDouble("value")) {
             throw new InvalidConfigurationException("'value' is not defined");
         }
         m_value = section.getDouble("value");

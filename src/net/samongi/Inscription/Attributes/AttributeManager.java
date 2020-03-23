@@ -126,7 +126,7 @@ public class AttributeManager implements ConfigurationParsing {
                 type = constructor.checkTypeAndConstruct(section);
             }
             catch (InvalidConfigurationException exception) {
-                Inscription.logger.warning("Attribute condifiguration error for key '" + configKey + "': " + exception.getMessage());
+                Inscription.logger.warning("Attribute configuration error for key '" + configKey + "': " + exception.getMessage());
                 continue;
             }
             if (type == null) {

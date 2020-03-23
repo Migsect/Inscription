@@ -26,18 +26,18 @@ public class TargetEntityConditionHelper {
         ONLY_WEARING_BOOTS
     }
 
-    public static List<Set<Condition>> getConditionsForTargetEntity(Entity entity) {
+    public static Set<Condition> getConditionsForTargetEntity(Entity entity) {
         return getConditionsForTargetEntity(entity, new HashSet<>());
     }
 
-    public static List<Set<Condition>> getConditionsForTargetEntity(Entity entity, Set<Option> options) {
-        List<Set<Condition>> conditionGroups = new ArrayList<>();
+    public static Set<Condition> getConditionsForTargetEntity(Entity entity, Set<Option> options) {
+        Set<Condition> conditionGroups = new HashSet<>();
 
         EntityType entityType = entity.getType();
-        conditionGroups.add( EntityClass.handler.getInvolvedAsCondition(entityType, (tc) -> new TargetEntityCondition((EntityClass) tc)));
+        conditionGroups.addAll( EntityClass.handler.getInvolvedAsCondition(entityType, (tc) -> new TargetEntityCondition((EntityClass) tc)));
 
         Biome entityBiome = entity.getLocation().getBlock().getBiome();
-        conditionGroups.add( BiomeClass.handler.getInvolvedAsCondition(entityBiome, (tc) -> new TargetInBiomeCondition((BiomeClass) tc)));
+        conditionGroups.addAll( BiomeClass.handler.getInvolvedAsCondition(entityBiome, (tc) -> new TargetInBiomeCondition((BiomeClass) tc)));
 
         return conditionGroups;
     }

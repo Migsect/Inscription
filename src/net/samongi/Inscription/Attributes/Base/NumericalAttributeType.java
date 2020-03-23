@@ -25,13 +25,15 @@ public abstract class NumericalAttributeType extends AttributeType {
     //----------------------------------------------------------------------------------------------------------------//
     public static enum ReduceType {
 
+        PRE_UNION((Double prior, Double incoming) -> prior + incoming - prior * incoming, 0),
         PRE_ADDITIVE(Double::sum, 0),
-        PRE_MULTIPLICATIVE((Double lhs, Double rhs) -> lhs * rhs, 1),
+        PRE_MULTIPLICATIVE((Double prior, Double incoming) -> prior * incoming, 1),
         PRE_MINIMUM(Double::min, Double.MAX_VALUE),
         PRE_MAXIMUM(Double::max, Double.MIN_VALUE),
 
+        UNION((Double prior, Double incoming) -> prior + incoming - prior * incoming, 0),
         ADDITIVE(Double::sum, 0),
-        MULTIPLICATIVE((Double lhs, Double rhs) -> lhs * rhs, 1),
+        MULTIPLICATIVE((Double prior, Double incoming) -> prior * incoming, 1),
         MINIMUM(Double::min, Double.MAX_VALUE),
         MAXIMUM(Double::max, Double.MIN_VALUE);
 
@@ -56,41 +58,31 @@ public abstract class NumericalAttributeType extends AttributeType {
         }
         //----------------------------------------------------------------------------------------------------------------//
     }
-
-    public static double calculateConditionAggregate(Collection<Set<Condition>> conditionGroups, CompositeCacheData<ReduceType, NumericCacheData> cacheData) {
+    public static double calculateConditionAggregate(Set<Condition> conditions, CompositeCacheData<ReduceType, NumericCacheData> cacheData) {
         Double aggregate = null;
         for (ReduceType reduceType : ReduceType.values()) {
             NumericCacheData numericData = cacheData.getCacheData(reduceType);
             if (numericData == null) {
                 continue;
             }
-
-            ConditionPermutator permutator = new ConditionPermutator();
-            for (Set<Condition> conditions : conditionGroups) {
-                Inscription.logger.finest("conditions " + conditions.stream().map(Condition::toString).collect(Collectors.toList()));
-                permutator.addConditionGroup(conditions);
-            }
+            // Inscription.logger.finest(reduceType + " : " + conditions);
+            //            for (Set<Condition> conditionsSet : numericData.keySet()) {
+            //                Inscription.logger.finest("..." + conditionsSet.toString() + " -> " + numericData.get(conditionsSet));
+            //            }
 
             double subAggregate = numericData.get();
-            Set<Set<Condition>> validConditionSets = new HashSet<>();
-            while (permutator.hasNext()) {
-                Set<Condition> conditionSet = permutator.next();
-                validConditionSets.addAll(numericData.getValidConditionKeys(conditionSet));
-            }
-            for (Set<Condition> conditionSet : validConditionSets) {
-                double amount = numericData.get(conditionSet);
-                Inscription.logger.finest(conditionSet + " : " + amount);
-                subAggregate = reduceType.exectute(subAggregate, amount);
-            }
+            double amount = numericData.getReduce(conditions);
+            // Inscription.logger.finest(conditions + " : " + amount);
+            subAggregate = reduceType.exectute(subAggregate, amount);
 
             if (aggregate == null) {
                 aggregate = subAggregate;
             } else {
                 aggregate = reduceType.exectute(aggregate, subAggregate);
             }
-
         }
-        return aggregate;
+        // Inscription.logger.finest("NumericalAttributeType::calculateConditionAggregate aggregate: " + aggregate);
+        return (aggregate == null) ? 0 : aggregate;
     }
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -160,13 +152,13 @@ public abstract class NumericalAttributeType extends AttributeType {
 
     //----------------------------------------------------------------------------------------------------------------//
 
-    private String getNumberString(Glyph glyph, double multiplier) {
+    protected String getNumberString(Glyph glyph, double multiplier) {
         return String.format("%.1f", multiplier * this.getNumber(glyph));
     }
-    private String getMinNumberString(Glyph glyph, double multiplier) {
+    protected String getMinNumberString(Glyph glyph, double multiplier) {
         return String.format("%.1f", multiplier * this.m_minNumber * calculateEffectRarityMultiplier(glyph));
     }
-    private String getMaxNumberString(Glyph glyph, double multiplier) {
+    protected String getMaxNumberString(Glyph glyph, double multiplier) {
         return String.format("%.1f", multiplier * this.m_maxNumber * calculateEffectRarityMultiplier(glyph));
     }
     public String getDisplayString(Glyph glyph, double multiplier) {

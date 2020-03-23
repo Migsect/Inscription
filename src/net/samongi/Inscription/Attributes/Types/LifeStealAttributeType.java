@@ -59,8 +59,8 @@ public class LifeStealAttributeType extends NumericalAttributeType {
     @Override public Attribute generate() {
         return new Attribute(this) {
 
-            @Override public void cache(PlayerData data) {
-                CacheData cachedData = data.getData(TYPE_IDENTIFIER);
+            @Override public void cache(PlayerData playerData) {
+                CacheData cachedData = playerData.getData(TYPE_IDENTIFIER);
                 if (cachedData == null) {
                     cachedData = new Data();
                 }
@@ -78,13 +78,13 @@ public class LifeStealAttributeType extends NumericalAttributeType {
                 double amount = getNumber(getGlyph());
                 NumericalAttributeType.ReduceType reduceType = getReduceType();
                 NumericCacheData numericCacheData = castedData
-                    .getCacheData(reduceType, () -> new NumericData(reduceType.getReduceOperator(), reduceType.getInitialAggregator()));
+                    .getCacheData(reduceType, () -> new NumericData(reduceType, reduceType.getInitialAggregator()));
 
                 Inscription.logger.finer("    +C '" + amount + "' reducer '" + reduceType + "'");
                 numericCacheData.add(m_conditions, amount);
 
                 Inscription.logger.finer("  Finished caching for " + m_displayName);
-                data.setData(castedData);
+                playerData.setData(castedData);
             }
 
             @Override public String getLoreLine() {
@@ -115,7 +115,8 @@ public class LifeStealAttributeType extends NumericalAttributeType {
 
         public double calculateAggregate(Player player, Entity target)
         {
-            List<Set<Condition>> conditionGroups = new ArrayList<>();
+            Set<Condition> conditionGroups = new HashSet<>();
+
             conditionGroups.addAll(TargetEntityConditionHelper.getConditionsForTargetEntity(target));
             conditionGroups.addAll(PlayerConditionHelper.getConditionsForPlayer(player));
 
@@ -125,8 +126,8 @@ public class LifeStealAttributeType extends NumericalAttributeType {
 
     public static class NumericData extends NumericCacheData {
 
-        NumericData(BinaryOperator<Double> reduceOperator, double dataGlobalInitial) {
-            super(reduceOperator);
+        NumericData(ReduceType reduceType, double dataGlobalInitial) {
+            super(reduceType);
             set(dataGlobalInitial);
         }
 

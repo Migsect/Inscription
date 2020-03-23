@@ -90,9 +90,7 @@ public class Waypoint {
 
     private @Nonnull Set<BiomeClass> getBiomeClasses() {
         Biome biome = getBlock().getBiome();
-        Inscription.logger.finest("Biome: " + biome);
         Set<BiomeClass> biomes = BiomeClass.handler.getTypeClasses();
-        Inscription.logger.finest("BiomeClass Amount: " + biomes.size());
         Set<BiomeClass> validBiomes = new HashSet<>(BiomeClass.handler.getContaining(biome, biomes));
         validBiomes.remove(BiomeClass.handler.getTypeClass("GLOBAL"));
         return validBiomes;
@@ -159,6 +157,7 @@ public class Waypoint {
         int baseDistance = Inscription.getInstance().getWaypointManager().getBaseDistance();
 
         PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
+
         CacheData data = playerData.getData(WaypointAttributeType.TYPE_IDENTIFIER);
         if (!(data instanceof WaypointAttributeType.Data)) {
             m_cachedSafeDistance = baseDistance;
@@ -166,13 +165,19 @@ public class Waypoint {
         }
         WaypointAttributeType.Data waypointData = (WaypointAttributeType.Data) data;
 
-        m_cachedSafeDistance = (int) Math.floor(waypointData.calculateAggregate(player, m_location, toBlock.getLocation()));
+        double aggregate = waypointData.calculateAggregate(player, m_location, toBlock.getLocation());
+        //Inscription.logger.finer("Waypoint::cacheSafeDistance aggregate: " + aggregate);
+        m_cachedSafeDistance = (int) Math.floor(baseDistance + aggregate);
 
     }
     private int getSafeDistance(Player player, Block toBlock) {
         if (m_cachedSafeDistance == null) {
+            long startTime = System.currentTimeMillis();
             cacheSafeDistance(player, toBlock);
+            long endTime = System.currentTimeMillis();
+            //Inscription.logger.finer("Waypoint::cacheSafeDistance timing: " + (endTime - startTime) + "ms");
         }
+        // Inscription.logger.finer("Waypoint::getSafeDistance m_cachedSafeDistance: " + m_cachedSafeDistance);
         return m_cachedSafeDistance;
     }
 
@@ -364,7 +369,6 @@ public class Waypoint {
             waypoint.cacheSafeDistance(player, getBlock());
         }
         waypoints.sort((Waypoint a, Waypoint b) -> {
-            Inscription.logger.finest("sort");
             int aSafeDistance = a.getSafeDistance(player, getBlock());
             int bSafeDistance = b.getSafeDistance(player, getBlock());
             int aDistance = a.getDistance(getLocation());
@@ -381,7 +385,7 @@ public class Waypoint {
         });
 
         for (Waypoint waypoint : waypoints) {
-            int safeDistance = getSafeDistance(player, waypoint.getBlock());
+            int safeDistance = waypoint.getSafeDistance(player, getBlock());
 
             ItemStack menuIcon = waypoint.getItemIcon(player, m_location, safeDistance);
             boolean validWaypoint = waypoint.isValidAltar();

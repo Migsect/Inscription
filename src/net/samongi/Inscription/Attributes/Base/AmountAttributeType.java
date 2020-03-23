@@ -22,14 +22,14 @@ public abstract class AmountAttributeType extends NumericalAttributeType {
         return (int) getNumber(glyph);
     }
 
-    private String getNumberString(Glyph glyph, double multiplier) {
-        return String.format("%d", multiplier * this.getNumber(glyph));
+    @Override protected String getNumberString(Glyph glyph, double multiplier) {
+        return String.format("%d", (int)(multiplier * this.getNumber(glyph)));
     }
-    private String getMinNumberString(Glyph glyph, double multiplier) {
+    @Override protected String getMinNumberString(Glyph glyph, double multiplier) {
         return String.format("%d", (int)(multiplier * getMin() * calculateEffectRarityMultiplier(glyph)));
     }
-    private String getMaxNumberString(Glyph glyph, double multiplier) {
-        return String.format("%d", multiplier * getMax() * calculateEffectRarityMultiplier(glyph));
+    @Override protected String getMaxNumberString(Glyph glyph, double multiplier) {
+        return String.format("%d", (int)(multiplier * getMax() * calculateEffectRarityMultiplier(glyph)));
     }
 
     //----------------------------------------------------------------------------------------------------------------//

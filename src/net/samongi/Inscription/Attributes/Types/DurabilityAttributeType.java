@@ -1,15 +1,22 @@
 package net.samongi.Inscription.Attributes.Types;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 import net.md_5.bungee.api.ChatColor;
 import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
+import net.samongi.Inscription.Conditions.Condition;
+import net.samongi.Inscription.Conditions.Helpers.PlayerConditionHelper;
+import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.Inscription.Attributes.AttributeTypeFactory;
 import net.samongi.Inscription.Player.CacheData;
+import net.samongi.Inscription.Player.CacheTypes.CompositeCacheData;
+import net.samongi.Inscription.Player.CacheTypes.NumericCacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
 
@@ -30,112 +37,158 @@ public class DurabilityAttributeType extends NumericalAttributeType {
     private static final String TYPE_IDENTIFIER = "DURABILITY";
 
     //--------------------------------------------------------------------------------------------------------------------//
-    private MaterialClass m_targetMaterials = null;
+    private Set<Condition> m_conditions = new HashSet<>();
 
     //----------------------------------------------------------------------------------------------------------------//
     protected DurabilityAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
 
-        String targetMaterialsString = section.getString("target-materials");
-        if (targetMaterialsString == null) {
-            throw new InvalidConfigurationException("'target-materials' is not defined");
+        ConfigurationSection conditionSection = section.getConfigurationSection("conditions");
+        if (conditionSection != null) {
+            m_conditions = Inscription.getInstance().getAttributeManager().parseConditions(conditionSection);
         }
-
-        m_targetMaterials = MaterialClass.handler.getTypeClass(targetMaterialsString);
-        if (m_targetMaterials == null) {
-            throw new InvalidConfigurationException("'" + targetMaterialsString + "' is not a valid material class.");
-        }
-
-
     }
+
+    //----------------------------------------------------------------------------------------------------------------//
     @Override public Attribute generate() {
         return new Attribute(this) {
 
             @Override public void cache(PlayerData playerData) {
-                CacheData cached_data = playerData.getData(DurabilityAttributeType.TYPE_IDENTIFIER);
-                if (cached_data == null) {
-                    cached_data = new DurabilityAttributeType.Data();
-                }
-                if (!(cached_data instanceof DurabilityAttributeType.Data)) {
-                    return;
+                Data castedData = CacheData.getData(Data.class, TYPE_IDENTIFIER, playerData, Data::new);
+                Inscription.logger.finer("  Caching attribute for " + m_displayName);
+                for (Condition condition : m_conditions) {
+                    Inscription.logger.finer("    Condition " + condition.toString());
                 }
 
-                Inscription.logger.finer("Caching attribute for " + m_displayName);
-                Inscription.logger.finer(" - 'm_toolMaterials' is global?: " + m_targetMaterials.isGlobal());
+                double amount = getNumber(getGlyph());
+                NumericalAttributeType.ReduceType reduceType = getReduceType();
+                NumericCacheData numericCacheData = castedData
+                    .getCacheData(reduceType, () -> new NumericData(reduceType, reduceType.getInitialAggregator()));
 
-                DurabilityAttributeType.Data data = (DurabilityAttributeType.Data) cached_data;
-                double chance = getNumber(this.getGlyph());
-                if (m_targetMaterials.isGlobal()) {
-                    double currentValue = data.get();
-                    /* Multiplicative bonus */
-                    double newValue = currentValue + (1 - currentValue) * chance;
-                    data.set(newValue > 1 ? 1 : newValue);
+                Inscription.logger.finer("    +C '" + amount + "' reducer '" + reduceType + "'");
+                numericCacheData.add(m_conditions, amount);
 
-                    Inscription.logger.finer("  +C Added '" + chance + "' bonus " + currentValue + "-->" + newValue);
-                } else {
-                    for (Material t : m_targetMaterials.getMaterials()) {
-                        double currentValue = data.getTool(t);
-                        /* Multiplicative bonus */
-                        double newValue = currentValue + (1 - currentValue) * chance;
-                        data.setTool(t, newValue > 1 ? 1 : newValue);
-
-                        Inscription.logger.finer("  +C Added '" + chance + "' bonus to '" + t.toString() + "' " + currentValue + "->" + newValue);
-                    }
-                }
-                playerData.setData(data);
+                Inscription.logger.finer("  Finished caching for " + m_displayName);
+                playerData.setData(castedData);
+//                CacheData cached_data = playerData.getData(DurabilityAttributeType.TYPE_IDENTIFIER);
+//                if (cached_data == null) {
+//                    cached_data = new DurabilityAttributeType.Data();
+//                }
+//                if (!(cached_data instanceof DurabilityAttributeType.Data)) {
+//                    return;
+//                }
+//
+//                Inscription.logger.finer("Caching attribute for " + m_displayName);
+//                Inscription.logger.finer(" - 'm_toolMaterials' is global?: " + m_targetMaterials.isGlobal());
+//
+//                DurabilityAttributeType.Data data = (DurabilityAttributeType.Data) cached_data;
+//                double chance = getNumber(this.getGlyph());
+//                if (m_targetMaterials.isGlobal()) {
+//                    double currentValue = data.get();
+//                    /* Multiplicative bonus */
+//                    double newValue = currentValue + (1 - currentValue) * chance;
+//                    data.set(newValue > 1 ? 1 : newValue);
+//
+//                    Inscription.logger.finer("  +C Added '" + chance + "' bonus " + currentValue + "-->" + newValue);
+//                } else {
+//                    for (Material t : m_targetMaterials.getMaterials()) {
+//                        double currentValue = data.getTool(t);
+//                        /* Multiplicative bonus */
+//                        double newValue = currentValue + (1 - currentValue) * chance;
+//                        data.setTool(t, newValue > 1 ? 1 : newValue);
+//
+//                        Inscription.logger.finer("  +C Added '" + chance + "' bonus to '" + t.toString() + "' " + currentValue + "->" + newValue);
+//                    }
+//                }
+//                playerData.setData(data);
             }
 
             @Override public String getLoreLine() {
-                String chanceString = getDisplayString(this.getGlyph(), "+", "%");
-                String toolClass = m_targetMaterials.getName();
+                Glyph glyph = getGlyph();
+                String multiplierString = getDisplayString(glyph, 100, isPositive(glyph) ? "+" : "-", "%");
 
-                String info_line = chanceString + ChatColor.YELLOW + " chance to not use durability using " + ChatColor.BLUE + toolClass;
-                return this.getType().getLoreLine() + info_line;
+                String infoLine = multiplierString + ChatColor.YELLOW + " chance to not use durability" + Condition.concatConditionDisplays(m_conditions);
+
+                return getDisplayLineId() + infoLine;
             }
 
         };
     }
     //--------------------------------------------------------------------------------------------------------------------//
-    public static class Data implements CacheData {
+//    public static class Data implements CacheData {
+//
+//        /* Data members of the the data */
+//        private double global = 0.0;
+//        private HashMap<Material, Double> tool_chance = new HashMap<>();
+//
+//        /* *** Setters *** */
+//        public void set(Double amount) {
+//            this.global = amount;
+//        }
+//        public void setTool(Material mat, double amount) {
+//            this.tool_chance.put(mat, amount);
+//        }
+//
+//        /* *** Getters *** */
+//        public double get() {
+//            return this.global;
+//        }
+//        public double getTool(Material mat) {
+//            if (!this.tool_chance.containsKey(mat)) {
+//                return 0;
+//            }
+//            return this.tool_chance.get(mat);
+//        }
+//
+//        @Override public void clear() {
+//            this.global = 0.0;
+//            this.tool_chance = new HashMap<>();
+//        }
+//
+//        @Override public String getType() {
+//            return TYPE_IDENTIFIER;
+//        }
+//
+//        @Override public String getData() {
+//            // TODO This returns the data as a string
+//            return "";
+//        }
+//
+//    }
 
-        /* Data members of the the data */
-        private double global = 0.0;
-        private HashMap<Material, Double> tool_chance = new HashMap<>();
+    public static class Data extends CompositeCacheData<ReduceType, NumericCacheData> {
 
-        /* *** Setters *** */
-        public void set(Double amount) {
-            this.global = amount;
-        }
-        public void setTool(Material mat, double amount) {
-            this.tool_chance.put(mat, amount);
-        }
+        //----------------------------------------------------------------------------------------------------------------//
+        @Override public String getType() {
+            return TYPE_IDENTIFIER;
 
-        /* *** Getters *** */
-        public double get() {
-            return this.global;
         }
-        public double getTool(Material mat) {
-            if (!this.tool_chance.containsKey(mat)) {
-                return 0;
-            }
-            return this.tool_chance.get(mat);
+        @Override public String getData() {
+            return "";
         }
 
-        @Override public void clear() {
-            this.global = 0.0;
-            this.tool_chance = new HashMap<>();
+        public double calculateAggregate(Player player)
+        {
+            Set<Condition> conditionGroups = PlayerConditionHelper.getConditionsForPlayer(player);
+            return calculateConditionAggregate(conditionGroups, this);
+        }
+    }
+
+    public static class NumericData extends NumericCacheData {
+
+        NumericData(ReduceType reduceType, double dataGlobalInitial) {
+            super(reduceType);
+            set(dataGlobalInitial);
         }
 
         @Override public String getType() {
             return TYPE_IDENTIFIER;
         }
-
         @Override public String getData() {
-            // TODO This returns the data as a string
-            return "";
+            return null;
         }
-
     }
+
 
     //--------------------------------------------------------------------------------------------------------------------//
     public static class Factory extends AttributeTypeFactory {
@@ -174,8 +227,7 @@ public class DurabilityAttributeType extends NumericalAttributeType {
                      * to be between 0 and 1. The chances are multiplicative and as such
                      * makes it hard to reach 100% chance.
                      */
-                    double noDurabilityChance = data.get();
-                    noDurabilityChance += (1 - noDurabilityChance) * data.getTool(toolMaterial);
+                    double noDurabilityChance = data.calculateAggregate(player);
 
                     Inscription.logger.finest("[PlayerItemDamageEvent] No Durability Chance: " + noDurabilityChance);
 

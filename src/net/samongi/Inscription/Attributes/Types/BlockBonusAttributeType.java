@@ -1,18 +1,22 @@
 package net.samongi.Inscription.Attributes.Types;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Random;
+import java.util.*;
 
 import net.md_5.bungee.api.ChatColor;
 import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
 import net.samongi.Inscription.Attributes.GeneralAttributeParser;
+import net.samongi.Inscription.Conditions.Condition;
+import net.samongi.Inscription.Conditions.Helpers.BlockConditionHelper;
+import net.samongi.Inscription.Conditions.Helpers.PlayerConditionHelper;
 import net.samongi.Inscription.Experience.BlockTracker;
+import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.Inscription.Attributes.AttributeTypeFactory;
 import net.samongi.Inscription.Player.CacheData;
+import net.samongi.Inscription.Player.CacheTypes.CompositeCacheData;
+import net.samongi.Inscription.Player.CacheTypes.NumericCacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClass.TypeClasses.BlockClass;
 import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
@@ -38,32 +42,36 @@ public class BlockBonusAttributeType extends NumericalAttributeType {
     private static final String TYPE_IDENTIFIER = "BLOCK_BONUS";
 
     //----------------------------------------------------------------------------------------------------------------//
-    private BlockClass m_targetBlocks;
-    private MaterialClass m_targetTools;
+    private Set<Condition> m_conditions = new HashSet<>();
 
     //----------------------------------------------------------------------------------------------------------------//
     protected BlockBonusAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
 
-        String targetToolsString = section.getString("target-materials");
-        if (targetToolsString == null) {
-            throw new InvalidConfigurationException("'target-materials' is not defined");
+        ConfigurationSection conditionSection = section.getConfigurationSection("conditions");
+        if (conditionSection != null) {
+            m_conditions = Inscription.getInstance().getAttributeManager().parseConditions(conditionSection);
         }
-
-        String targetBlocksString = section.getString("target-blocks");
-        if (targetBlocksString == null) {
-            throw new InvalidConfigurationException("'target-blocks' is not defined");
-        }
-
-        m_targetTools = MaterialClass.handler.getTypeClass(targetToolsString);
-        if (m_targetTools == null) {
-            throw new InvalidConfigurationException("'" + targetToolsString + "' is not a valid material class.");
-        }
-
-        m_targetBlocks = BlockClass.handler.getTypeClass(targetBlocksString);
-        if (m_targetBlocks == null) {
-            throw new InvalidConfigurationException("'" + targetBlocksString + "' is not a valid block class.");
-        }
+//
+//        String targetToolsString = section.getString("target-materials");
+//        if (targetToolsString == null) {
+//            throw new InvalidConfigurationException("'target-materials' is not defined");
+//        }
+//
+//        String targetBlocksString = section.getString("target-blocks");
+//        if (targetBlocksString == null) {
+//            throw new InvalidConfigurationException("'target-blocks' is not defined");
+//        }
+//
+//        m_targetTools = MaterialClass.handler.getTypeClass(targetToolsString);
+//        if (m_targetTools == null) {
+//            throw new InvalidConfigurationException("'" + targetToolsString + "' is not a valid material class.");
+//        }
+//
+//        m_targetBlocks = BlockClass.handler.getTypeClass(targetBlocksString);
+//        if (m_targetBlocks == null) {
+//            throw new InvalidConfigurationException("'" + targetBlocksString + "' is not a valid block class.");
+//        }
 
     }
 
@@ -71,133 +79,137 @@ public class BlockBonusAttributeType extends NumericalAttributeType {
     @Override public Attribute generate() {
         return new Attribute(this) {
 
-            @Override public void cache(PlayerData data) {
-                CacheData cached_data = data.getData(BlockBonusAttributeType.TYPE_IDENTIFIER);
-                if (cached_data == null) {
-                    cached_data = new BlockBonusAttributeType.Data();
-                }
-                if (!(cached_data instanceof BlockBonusAttributeType.Data)) {
-                    return;
-                }
-
+            @Override public void cache(PlayerData playerData) {
+                Data castedData = CacheData.getData(Data.class, TYPE_IDENTIFIER, playerData, Data::new);
                 Inscription.logger.finer("  Caching attribute for " + m_displayName);
-                Inscription.logger.finer("    'block_materials' is global?: " + m_targetBlocks.isGlobal());
-                Inscription.logger.finer("    'tool_materials' is global?: " + m_targetTools.isGlobal());
-
-                BlockBonusAttributeType.Data bonusData = (BlockBonusAttributeType.Data) cached_data;
-                double chance = getNumber(this.getGlyph());
-                if (m_targetBlocks.isGlobal() && m_targetTools.isGlobal()) {
-                    double c = bonusData.get();
-                    bonusData.set(c + chance);
-
-                    Inscription.logger.finer("  +C Added '" + chance + "' bonus");
-                } else if (m_targetBlocks.isGlobal()) {
-                    for (Material toolMaterial : m_targetTools.getMaterials()) {
-                        double c = bonusData.getTool(toolMaterial);
-                        bonusData.setTool(toolMaterial, c + chance);
-
-                        Inscription.logger.finer("  +C Added '" + chance + "' bonus to '" + toolMaterial.toString() + "'");
-                    }
-                } else if (m_targetTools.isGlobal()) {
-                    for (MaskedBlockData blockData : m_targetBlocks.getBlockDatas()) {
-                        double c = bonusData.getBlock(blockData.getBlockData());
-                        bonusData.setBlock(blockData.getBlockData(), c + chance);
-
-                        Inscription.logger.finer("  +C Added '" + chance + "' bonus to '" + blockData.getBlockData().getAsString(true) + "'");
-                    }
-                } else {
-                    for (Material toolMaterial : m_targetTools.getMaterials())
-                        for (MaskedBlockData blockData : m_targetBlocks.getBlockDatas()) {
-                            double c = bonusData.getToolBlock(toolMaterial, blockData.getBlockData());
-                            bonusData.setToolBlock(toolMaterial, blockData.getBlockData(), c + chance);
-
-                            Inscription.logger.finer(
-                                "  +C Added '" + chance + "' bonus to '" + toolMaterial.toString() + "|" + blockData.getBlockData().getAsString(true) + "'");
-                        }
+                for (Condition condition : m_conditions) {
+                    Inscription.logger.finer("    Condition " + condition.toString());
                 }
+
+                double amount = getNumber(getGlyph());
+                NumericalAttributeType.ReduceType reduceType = getReduceType();
+                NumericCacheData numericCacheData = castedData.getCacheData(reduceType, () -> new NumericData(reduceType, reduceType.getInitialAggregator()));
+
+                Inscription.logger.finer("    +C '" + amount + "' reducer '" + reduceType + "'");
+                numericCacheData.add(m_conditions, amount);
+
                 Inscription.logger.finer("  Finished caching for " + m_displayName);
-                data.setData(bonusData); // setting the data again.
+                playerData.setData(castedData);
             }
 
             @Override public String getLoreLine() {
-                String chanceString = getDisplayString(this.getGlyph(), 100, "+", "%");
-                String tool_class = m_targetTools.getName();
-                String block_class = m_targetBlocks.getName();
+                Glyph glyph = getGlyph();
+                String multiplierString = getDisplayString(glyph, 100, isPositive(glyph) ? "+" : "-", "%");
 
-                String info_line = chanceString + ChatColor.YELLOW + " chance for extra drop on " + ChatColor.BLUE + block_class + ChatColor.YELLOW + " using "
-                    + ChatColor.BLUE + tool_class;
-                return "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getDisplayName() + " - " + ChatColor.RESET + info_line;
+                String infoLine = multiplierString + ChatColor.YELLOW + " chance for an extra drop" + Condition.concatConditionDisplays(m_conditions);
+
+                return getDisplayLineId() + infoLine;
             }
         };
     }
 
-    public static class Data implements CacheData {
+    //----------------------------------------------------------------------------------------------------------------//
+    public static class Data extends CompositeCacheData<ReduceType, NumericCacheData> {
 
-        private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
-
-        /* Data members of the data */
-        private double global = 0.0;
-        private HashMap<MaskedBlockData, Double> block_bonus = new HashMap<>();
-        private HashMap<Material, Double> tool_bonus = new HashMap<>();
-        private HashMap<Material, HashMap<MaskedBlockData, Double>> tool_block_bonus = new HashMap<>();
-
-        // Setters
-        public void set(Double amount) {
-            this.global = amount;
-        }
-        public void setBlock(BlockData blockData, double amount) {
-            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
-            this.block_bonus.put(maskedBlockData, amount);
-        }
-        public void setTool(Material mat, double amount) {
-            this.tool_bonus.put(mat, amount);
-        }
-        public void setToolBlock(Material toolMaterial, BlockData blockData, double amount) {
-            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
-            if (!this.tool_block_bonus.containsKey(toolMaterial)) {
-                this.tool_block_bonus.put(toolMaterial, new HashMap<>());
-            }
-            HashMap<MaskedBlockData, Double> block_bonus = this.tool_block_bonus.get(toolMaterial);
-            block_bonus.put(maskedBlockData, amount);
-        }
-
-        // Getters
-        public double get() {
-            return this.global;
-        }
-        public double getBlock(BlockData blockData) {
-            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
-            return this.block_bonus.getOrDefault(maskedBlockData, 0.0);
-        }
-        public double getTool(Material material) {
-            return this.tool_bonus.getOrDefault(material, 0.0);
-        }
-        public double getToolBlock(Material tool, BlockData blockData) {
-            if (!this.tool_block_bonus.containsKey(tool)) {
-                return 0;
-            }
-            HashMap<MaskedBlockData, Double> block_bonus = this.tool_block_bonus.get(tool);
-
-            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
-            return block_bonus.getOrDefault(maskedBlockData, 0.0);
-        }
-
-        @Override public void clear() {
-            this.global = 0.0;
-            this.tool_bonus = new HashMap<>();
-            this.block_bonus = new HashMap<>();
-            this.tool_block_bonus = new HashMap<>();
+        //----------------------------------------------------------------------------------------------------------------//
+        @Override public String getType() {
+            return TYPE_IDENTIFIER;
 
         }
+        @Override public String getData() {
+            return "";
+        }
+
+        public double calculateAggregate(Player player, Block block)
+        {
+            Set<Condition> conditionGroups = PlayerConditionHelper.getConditionsForPlayer(player);
+            conditionGroups.addAll(BlockConditionHelper.getConditionsForTargetBlock(block));
+            return calculateConditionAggregate(conditionGroups, this);
+        }
+    }
+
+    public static class NumericData extends NumericCacheData {
+
+        NumericData(ReduceType reduceType, double dataGlobalInitial) {
+            super(reduceType);
+            set(dataGlobalInitial);
+        }
+
         @Override public String getType() {
             return TYPE_IDENTIFIER;
         }
         @Override public String getData() {
-            // TODO This returns the data as a string
-            return "";
+            return null;
         }
-    } // endef
+    }
 
+    //    public static class Data implements CacheData {
+//
+//        private final static MaskedBlockData.Mask[] BLOCKDATA_MASKS = new MaskedBlockData.Mask[]{MaskedBlockData.Mask.MATERIAL, MaskedBlockData.Mask.AGEABLE};
+//
+//        /* Data members of the data */
+//        private double global = 0.0;
+//        private HashMap<MaskedBlockData, Double> block_bonus = new HashMap<>();
+//        private HashMap<Material, Double> tool_bonus = new HashMap<>();
+//        private HashMap<Material, HashMap<MaskedBlockData, Double>> tool_block_bonus = new HashMap<>();
+//
+//        // Setters
+//        public void set(Double amount) {
+//            this.global = amount;
+//        }
+//        public void setBlock(BlockData blockData, double amount) {
+//            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
+//            this.block_bonus.put(maskedBlockData, amount);
+//        }
+//        public void setTool(Material mat, double amount) {
+//            this.tool_bonus.put(mat, amount);
+//        }
+//        public void setToolBlock(Material toolMaterial, BlockData blockData, double amount) {
+//            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
+//            if (!this.tool_block_bonus.containsKey(toolMaterial)) {
+//                this.tool_block_bonus.put(toolMaterial, new HashMap<>());
+//            }
+//            HashMap<MaskedBlockData, Double> block_bonus = this.tool_block_bonus.get(toolMaterial);
+//            block_bonus.put(maskedBlockData, amount);
+//        }
+//
+//        // Getters
+//        public double get() {
+//            return this.global;
+//        }
+//        public double getBlock(BlockData blockData) {
+//            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
+//            return this.block_bonus.getOrDefault(maskedBlockData, 0.0);
+//        }
+//        public double getTool(Material material) {
+//            return this.tool_bonus.getOrDefault(material, 0.0);
+//        }
+//        public double getToolBlock(Material tool, BlockData blockData) {
+//            if (!this.tool_block_bonus.containsKey(tool)) {
+//                return 0;
+//            }
+//            HashMap<MaskedBlockData, Double> block_bonus = this.tool_block_bonus.get(tool);
+//
+//            MaskedBlockData maskedBlockData = new MaskedBlockData(blockData, BLOCKDATA_MASKS);
+//            return block_bonus.getOrDefault(maskedBlockData, 0.0);
+//        }
+//
+//        @Override public void clear() {
+//            this.global = 0.0;
+//            this.tool_bonus = new HashMap<>();
+//            this.block_bonus = new HashMap<>();
+//            this.tool_block_bonus = new HashMap<>();
+//
+//        }
+//        @Override public String getType() {
+//            return TYPE_IDENTIFIER;
+//        }
+//        @Override public String getData() {
+//            // TODO This returns the data as a string
+//            return "";
+//        }
+//    } // endef
+    //----------------------------------------------------------------------------------------------------------------//
     public static class Factory extends AttributeTypeFactory {
 
         @Override public @Nonnull String getAttributeTypeId() {
@@ -232,17 +244,17 @@ public class BlockBonusAttributeType extends NumericalAttributeType {
                         return;
                     }
 
-                    BlockData blockData = block.getBlockData();
-                    Material toolMaterial = tool.getType();
+//                    BlockData blockData = block.getBlockData();
+//                    Material toolMaterial = tool.getType();
 
                     Collection<ItemStack> dropables = block.getDrops(tool);
 
-                    double block_bonus = bonus_data.get();
-                    block_bonus += bonus_data.getTool(toolMaterial);
-                    block_bonus += bonus_data.getBlock(blockData);
-                    block_bonus += bonus_data.getToolBlock(toolMaterial, blockData);
+                    double block_bonus = bonus_data.calculateAggregate(player, block);
+//                    block_bonus += bonus_data.getTool(toolMaterial);
+//                    block_bonus += bonus_data.getBlock(blockData);
+//                    block_bonus += bonus_data.getToolBlock(toolMaterial, blockData);
 
-                    Inscription.logger.finest("[Break Event] '" + blockData.getAsString(true) + "' Bonus Chance: " + block_bonus);
+                    Inscription.logger.finest("[Break Event] Bonus Chance: " + block_bonus);
 
                     Location loc = block.getLocation();
 
@@ -269,4 +281,6 @@ public class BlockBonusAttributeType extends NumericalAttributeType {
             };
         }
     } // Endef Constructor
+
+    //----------------------------------------------------------------------------------------------------------------//
 }

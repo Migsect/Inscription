@@ -4,6 +4,7 @@ import net.samongi.Inscription.Player.CacheData;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 public abstract class CompositeCacheData<Key, CData extends CacheData> implements CacheData {
@@ -33,6 +34,10 @@ public abstract class CompositeCacheData<Key, CData extends CacheData> implement
 
     public void setCacheData(Key key, CData value) {
         m_cacheDatas.put(key, value);
+    }
+
+    public Set<Key> keySet() {
+        return m_cacheDatas.keySet();
     }
 
     //----------------------------------------------------------------------------------------------------------------//

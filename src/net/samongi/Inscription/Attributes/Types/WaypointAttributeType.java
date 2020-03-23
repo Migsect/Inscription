@@ -46,25 +46,6 @@ public class WaypointAttributeType extends AmountAttributeType {
     protected WaypointAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
 
-        //        String fromBiomeString = section.getString("target-materials");
-        //        if (fromBiomeString == null) {
-        //            throw new InvalidConfigurationException("'target-materials' is not defined");
-        //        }
-        //
-        //        String toBiomeString = section.getString("target-blocks");
-        //        if (toBiomeString == null) {
-        //            throw new InvalidConfigurationException("'target-blocks' is not defined");
-        //        }
-        //
-        //        m_fromBiome = BiomeClass.handler.getTypeClass(fromBiomeString);
-        //        if (m_fromBiome == null) {
-        //            throw new InvalidConfigurationException("'" + fromBiomeString + "' is not a valid biome class.");
-        //        }
-        //
-        //        m_toBiome = BiomeClass.handler.getTypeClass(toBiomeString);
-        //        if (m_toBiome == null) {
-        //            throw new InvalidConfigurationException("'" + toBiomeString + "' is not a valid biome class.");
-        //        }
         ConfigurationSection conditionSection = section.getConfigurationSection("conditions");
         if (conditionSection != null) {
             m_conditions = Inscription.getInstance().getAttributeManager().parseConditions(conditionSection);
@@ -78,9 +59,9 @@ public class WaypointAttributeType extends AmountAttributeType {
             @Override public void cache(PlayerData playerData) {
                 CacheData cachedData = playerData.getData(TYPE_IDENTIFIER);
                 if (cachedData == null) {
-                    cachedData = new WaypointAttributeType.Data();
+                    cachedData = new Data();
                 }
-                if (!(cachedData instanceof WaypointAttributeType.Data)) {
+                if (!(cachedData instanceof Data)) {
                     Inscription.logger.severe("CachedData with id '" + TYPE_IDENTIFIER + "' is not castable to its type");
                     return;
                 }
@@ -94,39 +75,10 @@ public class WaypointAttributeType extends AmountAttributeType {
                 double amount = getNumber(getGlyph());
                 NumericalAttributeType.ReduceType reduceType = getReduceType();
                 NumericCacheData numericCacheData = castedData
-                    .getCacheData(reduceType, () -> new NumericData(reduceType.getReduceOperator(), reduceType.getInitialAggregator()));
+                    .getCacheData(reduceType, () -> new NumericData(reduceType, reduceType.getInitialAggregator()));
 
                 Inscription.logger.finer("    +C '" + amount + "' reducer '" + reduceType + "'");
                 numericCacheData.add(m_conditions, amount);
-                //                int addedAmount = getAmount(this.getGlyph());
-                //                if (m_fromBiome.isGlobal() && m_toBiome.isGlobal()) {
-                //                    int currentAmount = amountData.get();
-                //                    amountData.set(currentAmount + addedAmount);
-                //                    Inscription.logger.finer("  +C Added '" + addedAmount + "' bonus");
-                //
-                //                } else if (m_fromBiome.isGlobal()) {
-                //                    for (Biome toBiome : m_toBiome.getBiomes()) {
-                //                        int currentAmount = amountData.get(null, toBiome);
-                //                        amountData.set(null, toBiome, currentAmount + addedAmount);
-                //                        Inscription.logger.finer("  +C Added '" + addedAmount + "' bonus to toBiome:'" + toBiome.toString() + "'");
-                //                    }
-                //
-                //                } else if (m_toBiome.isGlobal()) {
-                //                    for (Biome fromBiome : m_fromBiome.getBiomes()) {
-                //                        int currentAmount = amountData.get(fromBiome, null);
-                //                        amountData.set(fromBiome, null, currentAmount + addedAmount);
-                //                        Inscription.logger.finer("  +C Added '" + addedAmount + "' bonus to fromBiome:'" + fromBiome.toString() + "'");
-                //                    }
-                //                } else {
-                //                    for (Biome toBiome : m_toBiome.getBiomes())
-                //                        for (Biome fromBiome : m_fromBiome.getBiomes()) {
-                //                            int currentAmount = amountData.get(fromBiome, toBiome);
-                //                            amountData.set(fromBiome, toBiome, currentAmount + addedAmount);
-                //                            Inscription.logger.finer(
-                //                                "  +C Added '" + addedAmount + "' bonus to fromBiome:'" + fromBiome.toString() + "'|toBiome:'" + fromBiome.toString() + "'");
-                //                        }
-                //
-                //                }
 
                 Inscription.logger.finer("  Finished caching for " + m_displayName);
                 playerData.setData(cachedData);
@@ -147,47 +99,6 @@ public class WaypointAttributeType extends AmountAttributeType {
         };
     }
 
-    //--------------------------------------------------------------------------------------------------------------------//
-    //    public static class Data implements CacheData {
-    //
-    //        /* Data members of the the data */
-    //        private int m_globalWaypointAmount = 0;
-    //        private Map<Tuple, Integer> m_speciedWaypointAmounts = new HashMap<>();
-    //
-    //        // Setters
-    //        public void set(int amount) {
-    //            this.m_globalWaypointAmount = amount;
-    //        }
-    //        public void set(Biome fromBiome, Biome toBiome, int amount) {
-    //            Tuple key = new Tuple(fromBiome, toBiome);
-    //            m_speciedWaypointAmounts.put(key, amount);
-    //        }
-    //
-    //        // Getters
-    //        public int get() {
-    //            return this.m_globalWaypointAmount;
-    //        }
-    //        public int get(Biome fromBiome, Biome toBiome) {
-    //            Tuple key = new Tuple(fromBiome, toBiome);
-    //            int value = m_speciedWaypointAmounts.getOrDefault(key, 0);
-    //            return value;
-    //        }
-    //
-    //        @Override public void clear() {
-    //            m_globalWaypointAmount = 0;
-    //            m_speciedWaypointAmounts.clear();
-    //        }
-    //
-    //        @Override public String getType() {
-    //            return TYPE_IDENTIFIER;
-    //        }
-    //
-    //        @Override public String getData() {
-    //            // TODO This returns the data as a string
-    //            return "";
-    //        }
-    //    }
-
     public static class Data extends CompositeCacheData<ReduceType, NumericCacheData> {
 
         //----------------------------------------------------------------------------------------------------------------//
@@ -200,17 +111,19 @@ public class WaypointAttributeType extends AmountAttributeType {
         }
 
         public double calculateAggregate(Player player, Location from, Location to) {
-            List<Set<Condition>> conditionGroups = PlayerConditionHelper.getConditionsForPlayer(player);
-            conditionGroups.add(BiomeClass.handler.getInvolvedAsCondition(from.getBlock().getBiome(), (tc) -> new FromBiomeCondition((BiomeClass) tc)));
-            conditionGroups.add(BiomeClass.handler.getInvolvedAsCondition(to.getBlock().getBiome(), (tc) -> new ToBiomeCondition((BiomeClass) tc)));
+            Set<Condition> conditionGroups = PlayerConditionHelper.getConditionsForPlayer(player);
+
+            conditionGroups.addAll(BiomeClass.handler.getInvolvedAsCondition(from.getBlock().getBiome(), (tc) -> new FromBiomeCondition((BiomeClass) tc)));
+            conditionGroups.addAll(BiomeClass.handler.getInvolvedAsCondition(to.getBlock().getBiome(), (tc) -> new ToBiomeCondition((BiomeClass) tc)));
+
             return calculateConditionAggregate(conditionGroups, this);
         }
     }
 
     public static class NumericData extends NumericCacheData {
 
-        NumericData(BinaryOperator<Double> reduceOperator, double dataGlobalInitial) {
-            super(reduceOperator);
+        NumericData(ReduceType reduceType, double dataGlobalInitial) {
+            super(reduceType);
             set(dataGlobalInitial);
         }
 

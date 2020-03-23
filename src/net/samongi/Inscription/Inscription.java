@@ -244,7 +244,7 @@ public class Inscription extends JavaPlugin {
 
     private void createConditionParsers() {
         m_attributeManager.registerConditionParser("from-entity", FromEntityCondition::new);
-        m_attributeManager.registerConditionParser("to-damage_taken", ToDamageTakenCondition::new);
+        m_attributeManager.registerConditionParser("to-damage-taken", ToDamageTakenCondition::new);
         m_attributeManager.registerConditionParser("to-biome", ToBiomeCondition::new);
         m_attributeManager.registerConditionParser("for-block", ForBlockCondition::new);
         m_attributeManager.registerConditionParser("player-while-level", PlayerWhileLevelCondition::new);

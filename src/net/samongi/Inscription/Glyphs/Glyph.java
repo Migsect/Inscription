@@ -15,7 +15,7 @@ import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeManager;
 import net.samongi.Inscription.Attributes.AttributeType;
 
-import net.samongi.SamongiLib.Text.TextUtils;
+import net.samongi.SamongiLib.Utilities.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -310,7 +310,7 @@ public class Glyph {
         ExperienceMap remainingExperienceToMax = getTotalExperienceForLevel(Inscription.getMaxLevel()).subtract(m_totalExperience);
         ExperienceMap overflowExperience = new ExperienceMap();
         if (experience.subtract(remainingExperienceToMax).getTotal() > 0 && !force) {
-            overflowExperience = experience.subtract(remainingExperienceToMax);
+            overflowExperience = experience.subtract(remainingExperienceToMax).max(0);
         }
 
         m_totalExperience.addInplace(experience.subtract(overflowExperience));
@@ -413,7 +413,7 @@ public class Glyph {
     public List<String> getAttributeLines() {
         List<String> lines = new ArrayList<>();
         for (Attribute attribute : this.m_attributes) {
-            lines.addAll(TextUtils.wrapText(attribute.getLoreLine(), 60, 2));
+            lines.addAll(TextUtil.wrapText(attribute.getLoreLine(), 60, 2));
         }
         return lines;
     }

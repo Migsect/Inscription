@@ -23,7 +23,7 @@ public class BiomeClass extends TypeClass {
     private final Set<Biome> m_biomes = new HashSet<>();
 
     //----------------------------------------------------------------------------------------------------------------//
-    private BiomeClass(String name, boolean isGlobal) {
+    public BiomeClass(String name, boolean isGlobal) {
         super(name, isGlobal);
     }
     private BiomeClass(ConfigurationSection section) throws InvalidConfigurationException {
@@ -60,7 +60,6 @@ public class BiomeClass extends TypeClass {
     }
 
     public void addBiome(@Nonnull Biome biome) {
-        Inscription.logger.finest("Biomes " + m_biomes + " Biome " + biome);
         m_biomes.add(biome);
     }
 
