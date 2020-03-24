@@ -19,6 +19,7 @@ import net.samongi.Inscription.Loot.Generator.GeneratorManager;
 import net.samongi.Inscription.Listeners.PlayerListener;
 import net.samongi.Inscription.Loot.LootManager;
 import net.samongi.Inscription.Player.PlayerManager;
+import net.samongi.Inscription.Player.Ticks.PlayerTickTask;
 import net.samongi.Inscription.Recipe.RecipeManager;
 import net.samongi.Inscription.TypeClass.TypeClasses.*;
 import net.samongi.Inscription.TypeClass.TypeClassManager;
@@ -72,6 +73,8 @@ public class Inscription extends JavaPlugin {
     private GlyphTypesManager m_glyphTypesManager = null;
     private RecipeManager m_recipeManager = null;
     private WaypointManager m_waypointManager = null;
+
+    private PlayerTickTask m_playerTickTask = null;
 
     //----------------------------------------------------------------------------------------------------------------//
     public Inscription() {
@@ -170,6 +173,7 @@ public class Inscription extends JavaPlugin {
 
         readConfig();
         setupBlockTracker();
+        startTickScheduler();
 
         setupGlyphTypesManager();
         setupTypeClassManager();
@@ -190,6 +194,7 @@ public class Inscription extends JavaPlugin {
             getPlayerManager().unloadPlayer(p);
         }
         tearDownBlockTracker();
+        stopTickScheduler();
     }
 
     //----------------------------------------------------------------------------------------------------------------//
@@ -217,6 +222,16 @@ public class Inscription extends JavaPlugin {
         m_blockTracker.saveAllChunkRegions();
     }
 
+    private void startTickScheduler() {
+        m_playerTickTask = new PlayerTickTask();
+        m_playerTickTask.runTaskTimer(this, 1, 1);
+    }
+    private void stopTickScheduler() {
+        if (m_playerTickTask != null) {
+            m_playerTickTask.cancel();
+        }
+    }
+
     private void createCommands() {
         m_commandHandler = new CommandHandler(this);
         m_commandHandler.registerCommand(new CommandHelp("inscription", m_commandHandler));
@@ -240,6 +255,7 @@ public class Inscription extends JavaPlugin {
         m_attributeManager.registerConstructor(new DamageReductionAttributeType.Factory());
         m_attributeManager.registerConstructor(new LifeStealAttributeType.Factory());
         m_attributeManager.registerConstructor(new WaypointAttributeType.Factory());
+        m_attributeManager.registerConstructor(new DarkDetectionAttributeType.Factory());
     }
 
     private void createConditionParsers() {
@@ -290,4 +306,8 @@ public class Inscription extends JavaPlugin {
     public WaypointManager getWaypointManager() {
         return m_waypointManager;
     }
+
+    //----------------------------------------------------------------------------------------------------------------//
+
+    //----------------------------------------------------------------------------------------------------------------//
 }
