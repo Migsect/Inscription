@@ -19,11 +19,9 @@ import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 
 import net.samongi.SamongiLib.Configuration.ConfigurationParsing;
-import net.samongi.SamongiLib.Tuple.Tuple;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.data.type.Bed;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
@@ -376,8 +374,9 @@ public class LootManager implements Listener, ConfigurationParsing {
 
     @EventHandler public void onPlayerInteractEvent(PlayerInteractEvent event) {
         EquipmentSlot usedSlot = event.getHand();
-        if ((event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null) ||
-            event.useItemInHand() == Event.Result.DENY || usedSlot == EquipmentSlot.OFF_HAND) {
+        if ((event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null) || event.useItemInHand() == Event.Result.DENY
+            || usedSlot == EquipmentSlot.OFF_HAND)
+        {
             return;
         }
         Player player = event.getPlayer();
@@ -428,7 +427,7 @@ public class LootManager implements Listener, ConfigurationParsing {
         Inscription.logger.finest("[PlayerExperienceOverflowEvent] '" + experienceType + "' : " + amount);
         PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
 
-        Map<String, Integer> futureExperienceMapping = new HashMap<>(playerData.getExperience());
+        Map<String, Integer> futureExperienceMapping = new HashMap<>(playerData.getExperience_LEGACY());
         // Updating the current experience to reflect what it may become.
         futureExperienceMapping.put(experienceType, futureExperienceMapping.getOrDefault(experienceType, 0) + amount);
 
@@ -445,17 +444,17 @@ public class LootManager implements Listener, ConfigurationParsing {
             }
             if (thresholdMet) {
 
-//                GlyphGenerator generator = m_experienceOverflowGenerators.get(index);
-//                this.dropGlyph(generator, player.getLocation());
-//
-//                // Removing the experience (this will put the character into negatives for the type that caused the
-//                // overflow for a glyph.
-//                for (String key : mapping.keySet()) {
-//                    playerData.addExperience(key, -mapping.get(key));
-//                }
-//                // The experience should be negative or 0 that's currently on the player.
-//                event.setAmount(amount + playerData.getExperience(experienceType));
-//                break;
+                //                GlyphGenerator generator = m_experienceOverflowGenerators.get(index);
+                //                this.dropGlyph(generator, player.getLocation());
+                //
+                //                // Removing the experience (this will put the character into negatives for the type that caused the
+                //                // overflow for a glyph.
+                //                for (String key : mapping.keySet()) {
+                //                    playerData.addExperience(key, -mapping.get(key));
+                //                }
+                //                // The experience should be negative or 0 that's currently on the player.
+                //                event.setAmount(amount + playerData.getExperience(experienceType));
+                //                break;
             }
             index++;
         }
@@ -493,12 +492,14 @@ public class LootManager implements Listener, ConfigurationParsing {
         if (generatorLineSplit.length < 3) { // Invalid if we don't have three things.
             return null;
         }
-        String generatorDisplay = "";
+        StringBuilder generatorDisplay = new StringBuilder();
         for (int split = 1; split < generatorLineSplit.length - 1; split++) {
-            generatorDisplay += generatorLineSplit[split];
+            if (split != 1) {
+                generatorDisplay.append(" ");
+            }
+            generatorDisplay.append(generatorLineSplit[split]);
         }
-
-        return Inscription.getInstance().getGeneratorManager().getGeneratorByName(generatorDisplay);
+        return Inscription.getInstance().getGeneratorManager().getGeneratorByName(generatorDisplay.toString());
 
     }
 
@@ -514,21 +515,18 @@ public class LootManager implements Listener, ConfigurationParsing {
         location.getWorld().dropItem(location, item);
     }
 
-    public static class GeneratorExperiencePair
-    {
+    public static class GeneratorExperiencePair {
+
         public final GlyphGenerator generator;
         public final ExperienceMap experience;
-        private GeneratorExperiencePair(GlyphGenerator generator, ExperienceMap experience)
-        {
+        private GeneratorExperiencePair(GlyphGenerator generator, ExperienceMap experience) {
             this.generator = generator;
             this.experience = experience;
         }
     }
-    public @Nonnull List<GeneratorExperiencePair> getOverflowGeneratorPairs()
-    {
+    public @Nonnull List<GeneratorExperiencePair> getOverflowGeneratorPairs() {
         List<GeneratorExperiencePair> pairs = new ArrayList<>();
-        for(int index = 0; index < m_experienceOverflowGenerators.size(); index++)
-        {
+        for (int index = 0; index < m_experienceOverflowGenerators.size(); index++) {
             GlyphGenerator generator = m_experienceOverflowGenerators.get(index);
             ExperienceMap experience = new ExperienceMap(m_experienceOverflowThresholds.get(index));
             pairs.add(new GeneratorExperiencePair(generator, experience));

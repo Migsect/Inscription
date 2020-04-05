@@ -23,7 +23,6 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.w3c.dom.Text;
 
 public class GlyphInventory {
 
@@ -32,9 +31,6 @@ public class GlyphInventory {
     private static final int ROW_NUNMBER = 5;
 
     // ---------------------------------------------------------------------------------------------------------------//
-    public static int getMaxGlyphSlots() {
-        return ROW_LENGTH * ROW_NUNMBER;
-    }
 
     // Storing glyph inventories for listener referencing
     private static Map<Inventory, GlyphInventory> glyph_inventories = new HashMap<>();
@@ -82,59 +78,55 @@ public class GlyphInventory {
         int slot = event.getSlot(); // the clicked slot.
 
         // Canceling the event if the slot is locked
-        if (glyphInventory.isLocked(slot)) {
+        if (!glyphInventory.isUnlocked(slot)) {
             event.setCancelled(true);
         }
 
         // Paying for the slot if the player who clicked it has enough experience.
-        if (event.getClick().isLeftClick() && event.getClick().isShiftClick() && glyphInventory.isLocked(slot)) {
-            if (player.getLevel() >= glyphInventory.m_unlockedSlots) {
-                player.setLevel(player.getLevel() - glyphInventory.m_unlockedSlots);
-                glyphInventory.setLocked(slot, false);
-                glyphInventory.populateLockedSlots(inventory);
+        if (event.getClick().isLeftClick() && event.getClick().isShiftClick() && !glyphInventory.isUnlocked(slot)) {
+            PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
+            assert playerData != null;
+
+            ExperienceMap playerExperience = playerData.getExperience();
+            ExperienceMap slotExperienceCost = glyphInventory.getSlotCost(slot);
+            if (playerExperience.greaterThanEquals(slotExperienceCost)) {
+                playerData.addExperience(slotExperienceCost.negate());
             }
+
+            glyphInventory.setUnlocked(slot, true);
+            glyphInventory.populateLockedSlots(inventory);
         }
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
 
-    // Inventory caching
-    private transient Inventory inventory = null;
-
-    // Indexing of glyphs
     private HashMap<Integer, Glyph> m_glyphs = new HashMap<>();
-    private UUID g_owner = null;
 
-    private int m_unlockedSlots = 0;
-    private Boolean[] m_lockedSlots = new Boolean[getMaxGlyphSlots()];
+    private final Player m_owner;
+
+    private Set<Integer> m_unlockedSlots = new HashSet<>();
+
+    // A caching of the slot costs such that they don't need to be recalculated often.
+    private List<ExperienceMap> m_slotCosts = null;
+
+    // Inventory caching
+    private Inventory inventory = null;
+
+    private int m_columns = ROW_LENGTH;
+    private int m_rows = ROW_NUNMBER;
 
     // ---------------------------------------------------------------------------------------------------------------//
     public GlyphInventory(Player owner) {
-        this.g_owner = owner.getUniqueId();
-        for (int i = 0; i < getMaxGlyphSlots(); i++)
-            m_lockedSlots[i] = true;
+        m_owner = owner;
+        m_rows = Inscription.getInstance().getConfig().getInt("glyph-inventory.rows", ROW_NUNMBER);
     }
-    public GlyphInventory(UUID owner) {
-        this.g_owner = owner;
-        for (int i = 0; i < getMaxGlyphSlots(); i++) {
-            m_lockedSlots[i] = true;
-        }
-    }
-    public GlyphInventory(UUID owner, ConfigurationSection section) throws InvalidConfigurationException {
-        this.g_owner = owner;
 
-        /* Setting the locked slots */
-        for (int i = 0; i < getMaxGlyphSlots(); i++) {
-            m_lockedSlots[i] = true;
-        }
+    public GlyphInventory(Player owner, ConfigurationSection section) throws InvalidConfigurationException {
+        this(owner);
+
         List<Integer> unlockedSlotsSection = section.getIntegerList("unlocked-slots");
-        if (unlockedSlotsSection == null) {
-            throw new InvalidConfigurationException("No 'unlocked-slots' key");
-        }
-        for (int i : unlockedSlotsSection) {
-            this.m_lockedSlots[i] = false;
-            this.m_unlockedSlots++;
-        }
+        m_unlockedSlots.addAll(unlockedSlotsSection);
+        Inscription.logger.finest("Found unlocked slots: " + m_unlockedSlots);
 
         /* Setting the glyphs */
         ConfigurationSection glyphsSection = section.getConfigurationSection("glyphs");
@@ -161,24 +153,24 @@ public class GlyphInventory {
                 Inscription.logger.severe("Glyph was null while constructing GlyphInventory for '" + owner + "'");
                 continue;
             }
-            this.m_glyphs.put(slot, glyph);
+            m_glyphs.put(slot, glyph);
+            Inscription.logger.finest("Loaded glyph with slot: " + slot);
 
         }
 
     }
     // ---------------------------------------------------------------------------------------------------------------//
 
-    public void setLocked(int slot, boolean is_locked) {
-        this.m_lockedSlots[slot] = is_locked;
-        this.m_unlockedSlots = 0;
-        for (int i = 0; i < getMaxGlyphSlots(); i++) {
-            if (m_lockedSlots[i] == false) {
-                this.m_unlockedSlots++;
-            }
+    public void setUnlocked(int slot, boolean unlockedState) {
+        if (unlockedState) {
+            m_unlockedSlots.add(slot);
+        } else {
+            m_unlockedSlots.remove(slot);
         }
     }
-    public boolean isLocked(int slot) {
-        return this.m_lockedSlots[slot];
+
+    public boolean isUnlocked(int slot) {
+        return m_unlockedSlots.contains(slot);
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
@@ -189,24 +181,21 @@ public class GlyphInventory {
      *
      * @return UUID of the owner, otherwise null
      */
-    public UUID getOwner() {
-        return this.g_owner;
+    public Player getOwner() {
+        return m_owner;
     }
+
     /**
-     * Sets the owner of this glyph inventory
+     * Returns a seed for unique per-player randomness.
      *
-     * @param owner
+     * @return A number to act as a random number generator seed.
      */
-    public void setOwner(UUID owner) {
-        this.g_owner = owner;
+    public int getSeed() {
+        return m_owner.getUniqueId().hashCode();
     }
-    /**
-     * Sets the owner of this glyph inventory
-     *
-     * @param owner
-     */
-    public void setOwner(Player owner) {
-        this.g_owner = owner.getUniqueId();
+
+    public int getMaxGlyphSlots() {
+        return m_rows * m_columns;
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
@@ -220,48 +209,97 @@ public class GlyphInventory {
      * @return An inventory object
      */
     public Inventory getInventory() {
-        if (this.inventory == null || this.inventory.getViewers().size() == 0) {
-            this.inventory = Bukkit.getServer().createInventory(null, GlyphInventory.getMaxGlyphSlots(), ChatColor.BLUE + "Glyph Inventory");
+        if (inventory == null || inventory.getViewers().size() == 0) {
+            inventory = Bukkit.getServer().createInventory(null, getMaxGlyphSlots(), ChatColor.BLUE + "Glyph Inventory");
             Inscription.logger.finest("Glyphs lazy: " + m_glyphs);
             for (int index : m_glyphs.keySet()) {
                 Glyph glyph = m_glyphs.get(index);
                 if (glyph == null) {
-                    Inscription.logger.severe("Found null glyph during getInventory for '" + g_owner + "'");
+                    Inscription.logger.severe("Found null glyph during getInventory for '" + m_owner + "'");
                     continue;
                 }
-                this.inventory.setItem(index, glyph.getItemStack());
+                inventory.setItem(index, glyph.getItemStack());
             }
             GlyphInventory.glyph_inventories.put(inventory, this);
         }
-        this.populateLockedSlots(inventory);
-        return this.inventory;
+        populateLockedSlots(inventory);
+        return inventory;
     }
+
+    private void populateSlotCosts() {
+        if (m_slotCosts != null) {
+            return;
+        }
+
+        Random random = new Random(getSeed());
+
+        m_slotCosts = new ArrayList<>();
+
+        List<String> experienceTypes = Inscription.getInstance().getConfig().getStringList("glyph-inventory.experience-types");
+        int unlockCostBase = Inscription.getInstance().getConfig().getInt("glyph-inventory.unlock-cost-base");
+        double unlockCostMultiplier = Inscription.getInstance().getConfig().getDouble("glyph-inventory.unlock-cost-increase");
+
+        // Shuffle the experience types to ensure they are added randomly.
+        Collections.shuffle(experienceTypes, random);
+
+        int experienceStep = 0;
+        int totalCosts = getMaxGlyphSlots();
+        while (m_slotCosts.size() < totalCosts) {
+            int unlockCost = (int) Math.floor(unlockCostBase * Math.pow(unlockCostMultiplier, experienceStep));
+            for (String experienceType : experienceTypes) {
+                ExperienceMap experienceMap = new ExperienceMap();
+                experienceMap.set(experienceType, unlockCost);
+
+                m_slotCosts.add(experienceMap);
+                if (m_slotCosts.size() >= totalCosts) {
+                    break;
+                }
+            }
+            experienceStep++;
+        }
+
+        // Shuffle the slot costs such that they are arranged randomly.
+        Collections.shuffle(m_slotCosts, random);
+
+    }
+
+    private ExperienceMap getSlotCost(int slot) {
+        populateSlotCosts();
+        return m_slotCosts.get(slot);
+    }
+
     private void populateLockedSlots(Inventory inventory) {
-        for (int i = 0; i < getMaxGlyphSlots(); i++) {
-            boolean lock_state = this.m_lockedSlots[i];
-            if (!lock_state) // if lock_state is false
-            {
-                ItemStack item = inventory.getItem(i);
-                if (item == null) {
+        for (int slot = 0; slot < getMaxGlyphSlots(); slot++) {
+            if (isUnlocked(slot)) {
+                ItemStack item = inventory.getItem(slot);
+                if (item == null || !item.getType().equals(Material.GRAY_STAINED_GLASS_PANE)) {
                     continue;
                 }
-                if (!item.getType().equals(Material.GRAY_STAINED_GLASS)) {
-                    continue;
-                }
-                inventory.clear(i);
+                inventory.clear(slot);
                 continue;
             }
-            ItemStack lock_item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE, 1);
+            populateSlotCosts();
+            ExperienceMap experienceCost = m_slotCosts.get(slot);
+            PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(m_owner);
 
-            ItemMeta im = lock_item.getItemMeta();
-            im.setDisplayName(ChatColor.BOLD + "" + ChatColor.GREEN + "Unlock Glyph Slot");
+            ItemStack lockedSlotItem = new ItemStack(Material.GRAY_STAINED_GLASS_PANE, 1);
+            ItemMeta itemMeta = lockedSlotItem.getItemMeta();
+            if (itemMeta == null) {
+                continue;
+            }
+
+            itemMeta.setDisplayName(ChatColor.BOLD + "" + ChatColor.GREEN + "Locked Glyph Slot");
+
             List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.WHITE + "Use " + ChatColor.YELLOW + this.m_unlockedSlots + " Levels" + ChatColor.WHITE + " to unlock this slot.");
-            lore.add(ChatColor.AQUA + "Shift-Left Click" + ChatColor.WHITE + " to pay the Levels");
-            im.setLore(lore);
+            lore.add("");
+            lore.add(ChatColor.YELLOW + "Experience Cost:");
+            lore.addAll(experienceCost.toCostLore(playerData, 2));
+            lore.add("");
+            lore.add(ChatColor.AQUA + "Shift-Left Click" + ChatColor.YELLOW + " to pay the cost to unlock.");
+            itemMeta.setLore(lore);
 
-            lock_item.setItemMeta(im);
-            inventory.setItem(i, lock_item);
+            lockedSlotItem.setItemMeta(itemMeta);
+            inventory.setItem(slot, lockedSlotItem);
 
         }
     }
@@ -270,19 +308,12 @@ public class GlyphInventory {
     public ConfigurationSection getAsConfigurationSection() {
         ConfigurationSection section = new YamlConfiguration();
 
-        /* Getting all the slots that are locked */
-        List<Integer> unlockedSlots = new ArrayList<>();
-        for (int i = 0; i < this.m_lockedSlots.length; i++) {
-            if (!this.m_lockedSlots[i]) {
-                unlockedSlots.add(i);
-            }
-        }
-        section.set("unlocked-slots", unlockedSlots);
+        section.set("unlocked-slots", new ArrayList<>(m_unlockedSlots));
 
         /* Setting all the glyphs */
         ConfigurationSection glyphs = new YamlConfiguration();
-        for (Integer key : this.m_glyphs.keySet()) {
-            Glyph glyph = this.m_glyphs.get(key);
+        for (Integer key : m_glyphs.keySet()) {
+            Glyph glyph = m_glyphs.get(key);
             glyphs.set("" + key, glyph.getAsConfigurationSection());
         }
         section.set("glyphs", glyphs);
@@ -306,17 +337,17 @@ public class GlyphInventory {
      * @param player    The player that caused the sync
      */
     public void sync(Inventory inventory, Player player) {
-        if (!inventory.equals(this.inventory)) {
+        if (!inventory.equals(inventory)) {
             return;
         }
 
         // Parsing all the glyphs
-        for (int index = 0; index < GlyphInventory.getMaxGlyphSlots(); index++) {
-            ItemStack item = inventory.getItem(index);
+        for (int slot = 0; slot < getMaxGlyphSlots(); slot++) {
+            ItemStack item = inventory.getItem(slot);
             Glyph glyph = Glyph.getGlyph(item);
 
             if (glyph != null) {
-                this.m_glyphs.put(index, glyph);
+                m_glyphs.put(slot, glyph);
                 if (item.getAmount() > 1) {
                     int drop_amount = item.getAmount() - 1;
                     ItemStack drop_item = item.clone();
@@ -324,21 +355,21 @@ public class GlyphInventory {
                     player.getWorld().dropItem(player.getLocation(), drop_item);
                     item.setAmount(1);
                 }
-            } else if (!this.isLocked(index)) {
-                this.m_glyphs.remove(index);
+            } else if (isUnlocked(slot)) {
+                m_glyphs.remove(slot);
                 if (item != null) {
                     player.getWorld().dropItem(player.getLocation(), item);
-                    inventory.clear(index);
+                    inventory.clear(slot);
                 }
             }
         }
 
-        PlayerData data = Inscription.getInstance().getPlayerManager().getData(this.g_owner);
+        PlayerData data = Inscription.getInstance().getPlayerManager().getData(m_owner);
         if (data == null) {
             return;
         }
         Inscription.logger.fine("Caching Glyphs for Glyph Inventory of: " + data.getPlayerName());
-        this.cacheGlyphs(data);
+        cacheGlyphs(data);
     }
 
     /**
@@ -349,7 +380,7 @@ public class GlyphInventory {
      */
     public void cacheGlyphs(PlayerData data) {
         data.clearCachedData();
-        for (Glyph glyph : this.m_glyphs.values()) {
+        for (Glyph glyph : m_glyphs.values()) {
             if (glyph == null) {
                 Inscription.logger.severe("Found glyph data to be null when caching player data: '" + data.getPlayerName() + "'");
                 continue;
@@ -374,7 +405,7 @@ public class GlyphInventory {
      * @return A list of glyphs
      */
     public List<Glyph> getGlyphs() {
-        return new ArrayList<>(this.m_glyphs.values());
+        return new ArrayList<>(m_glyphs.values());
     }
 
     // ---------------------------------------------------------------------------------------------------------------//
@@ -395,7 +426,7 @@ public class GlyphInventory {
 
         // We are going to get a list of all the glyphs
         List<Glyph> glyphGroup = new ArrayList<>();
-        for (Glyph glyph : this.m_glyphs.values()) {
+        for (Glyph glyph : m_glyphs.values()) {
             if (!glyph.getRelevantExperienceTypes().contains(experienceType) || glyph.isMaxLevel()) {
                 continue;
             }
@@ -441,15 +472,14 @@ public class GlyphInventory {
             if (glyph.getLevel() == priorLevel) {
                 continue;
             }
-            Player owner = Bukkit.getPlayer(this.g_owner);
-            owner.sendMessage(ChatColor.YELLOW + "Congratulations!");
+            m_owner.sendMessage(ChatColor.YELLOW + "Congratulations!");
 
             TextComponent glyphMessage = glyph.getTextComponent();
             glyphMessage.addExtra(
                 ChatColor.YELLOW + " has leveled up to " + ChatColor.GREEN + "Level " + glyph.getLevel() + ChatColor.WHITE + " from " + ChatColor.GREEN
                     + "Level " + priorLevel);
-            owner.spigot().sendMessage(glyphMessage);
-            owner.playSound(owner.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, (float) 0.5, 1);
+            m_owner.spigot().sendMessage(glyphMessage);
+            m_owner.playSound(m_owner.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, (float) 0.5, 1);
         }
         // If we have any left over, then we need to return that.
         return experiencePool;

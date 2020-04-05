@@ -65,23 +65,14 @@ public abstract class NumericalAttributeType extends AttributeType {
             if (numericData == null) {
                 continue;
             }
-            // Inscription.logger.finest(reduceType + " : " + conditions);
-            //            for (Set<Condition> conditionsSet : numericData.keySet()) {
-            //                Inscription.logger.finest("..." + conditionsSet.toString() + " -> " + numericData.get(conditionsSet));
-            //            }
-
-            double subAggregate = numericData.get();
             double amount = numericData.getReduce(conditions);
-            // Inscription.logger.finest(conditions + " : " + amount);
-            subAggregate = reduceType.exectute(subAggregate, amount);
 
             if (aggregate == null) {
-                aggregate = subAggregate;
+                aggregate = amount;
             } else {
-                aggregate = reduceType.exectute(aggregate, subAggregate);
+                aggregate = reduceType.exectute(aggregate, amount);
             }
         }
-        // Inscription.logger.finest("NumericalAttributeType::calculateConditionAggregate aggregate: " + aggregate);
         return (aggregate == null) ? 0 : aggregate;
     }
 

@@ -268,9 +268,10 @@ public class ChainBreakAttributeType extends AmountAttributeType {
                         // Remove the location from the set to allow it to be triggered again
                         usedLocations.remove(location);
 
-                        ItemUtil.damageItem(player, tool);
 
                         if (tool.getItemMeta() instanceof Damageable && tool.getType().getMaxDurability() > 0) {
+                            ItemUtil.damageItem(player, tool);
+
                             Damageable damageableMeta = (Damageable) tool.getItemMeta();
                             if (damageableMeta.getDamage() >= tool.getType().getMaxDurability()) {
                                 player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));

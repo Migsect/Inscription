@@ -4,7 +4,6 @@ import net.samongi.Inscription.Experience.ExperienceMap;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Loot.Generator.GlyphGenerator;
 import net.samongi.Inscription.Loot.LootManager;
-import net.samongi.SamongiLib.Menu.ButtomAction.ButtonAction;
 import net.samongi.SamongiLib.Menu.InventoryMenu;
 import net.samongi.SamongiLib.Utilities.TextUtil;
 import org.bukkit.ChatColor;
@@ -46,7 +45,7 @@ public class InscriptionRootMenu {
 
         List<String> lore = new ArrayList<>();
         lore.add("");
-        Map<String, Integer> overflowExperience = m_subjectData.getExperience();
+        Map<String, Integer> overflowExperience = m_subjectData.getExperience_LEGACY();
         for (String key : overflowExperience.keySet()) {
             String line = ChatColor.YELLOW + key + ": " + ChatColor.BLUE + overflowExperience.get(key);
             lore.add(line);
@@ -127,13 +126,11 @@ public class InscriptionRootMenu {
             lore.add(ChatColor.GREEN + "Click to purchase");
             lore.add("");
             lore.add(ChatColor.YELLOW + "Experience Cost:");
+            lore.addAll(experience.toCostLore(m_subjectData, 2));
 
             boolean canPurchase = true;
             for (String type : experience.experienceTypes()) {
-                boolean meetsRequirement = m_subjectData.getExperience(type) > experience.get(type);
-                ChatColor balanceColor = meetsRequirement ? ChatColor.DARK_GREEN : ChatColor.DARK_RED;
-                lore.add("  " + ChatColor.YELLOW + type + ": " + ChatColor.BLUE + experience.get(type) + ChatColor.DARK_GRAY + " (currently have " + balanceColor
-                    + m_subjectData.getExperience(type) + ChatColor.DARK_GRAY + ")");
+                boolean meetsRequirement = m_subjectData.getExperience_LEGACY(type) > experience.get(type);
                 if (!meetsRequirement) {
                     canPurchase = false;
                 }

@@ -39,7 +39,7 @@ public class DarkDetectionAttributeType extends AmountAttributeType {
     //----------------------------------------------------------------------------------------------------------------//
     private static final String TYPE_IDENTIFIER = "DARK_DETECTION";
 
-    private static final int LIGHT_LEVEL = 8;
+    private static final int LIGHT_LEVEL = 7;
     private static final double DENSITY = 1.0;
     private static final int MAX_RADIUS = 30;
 
@@ -178,7 +178,10 @@ public class DarkDetectionAttributeType extends AmountAttributeType {
                                 Location location = new Location(playerWorld, playerX + xRelative, playerY + yRelative, playerZ + zRelative);
 
                                 Block block = location.getBlock();
-                                if (!block.isEmpty() || block.getLightLevel() > LIGHT_LEVEL) {
+
+                                boolean isBlockLit = block.getLightFromBlocks() > LIGHT_LEVEL;
+                                boolean isSkyLit = block.getLightFromSky() > LIGHT_LEVEL;
+                                if (!block.isEmpty() || isBlockLit) {
                                     continue;
                                 }
 
@@ -186,7 +189,8 @@ public class DarkDetectionAttributeType extends AmountAttributeType {
                                 if (!BlockUtil.checkSpawnSurface(lowerBlock)) {
                                     continue;
                                 }
-                                player.spawnParticle(Particle.TOWN_AURA, location.getX() + 0.5, location.getY() + 0.5, location.getZ() + 0.5, 3, 0.25, 0.25, 0.25);
+                                Particle.DustOptions color = new Particle.DustOptions(isSkyLit ? Color.FUCHSIA : Color.PURPLE, 1);
+                                player.spawnParticle(Particle.REDSTONE, location.getX() + 0.5, location.getY() + 0.5, location.getZ() + 0.5, 3, 0.25, 0.25, 0.25, color);
                             }
                         }
                     }

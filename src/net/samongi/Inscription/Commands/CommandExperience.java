@@ -31,7 +31,7 @@ public class CommandExperience extends BaseCommand {
     {
         Player player = (Player) sender;
         PlayerData data = Inscription.getInstance().getPlayerManager().getData(player);
-        Map<String, Integer> experience = data.getExperience();
+        Map<String, Integer> experience = data.getExperience_LEGACY();
         if (experience == null) {
             player.sendMessage(ChatColor.RED + "Experience data could not be found...");
             return true;

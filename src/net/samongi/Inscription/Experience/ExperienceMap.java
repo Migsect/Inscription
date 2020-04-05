@@ -1,5 +1,8 @@
 package net.samongi.Inscription.Experience;
 
+import net.samongi.Inscription.Player.PlayerData;
+import org.apache.commons.lang.StringUtils;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -186,6 +189,15 @@ public class ExperienceMap {
         return experienceMap;
     }
 
+    public boolean greaterThanEquals(ExperienceMap other) {
+        for (String experienceType : other.experienceTypes()) {
+            if (get(experienceType) < other.get(experienceType)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // ---------------------------------------------------------------------------------------------------------------//
     public @Nonnull ExperienceMap ones() {
         ExperienceMap experienceMap = new ExperienceMap();
@@ -215,6 +227,10 @@ public class ExperienceMap {
     }
 
     public void distributeExperience(int amount) {
+        if (size() == 0) {
+            return;
+        }
+
         addInplace(amount / size());
 
         int remainder = amount % size();
@@ -261,6 +277,41 @@ public class ExperienceMap {
             section.set(key, m_experiences.get(key));
         }
         return section;
+    }
+
+    public List<String> toLore() {
+        return toLore(0);
+    }
+    public List<String> toLore(int indent) {
+        String indentString = StringUtils.repeat(" ", indent);
+        List<String> lore = new ArrayList<>();
+
+        for (String experienceType : experienceTypes()) {
+            int experienceAmount = get(experienceType);
+            lore.add(indentString + ChatColor.GOLD + experienceType + ": " + ChatColor.BLUE + experienceAmount);
+        }
+
+        return lore;
+    }
+
+    public List<String> toCostLore(PlayerData playerData) {
+        return toCostLore(playerData, 0);
+    }
+    public List<String> toCostLore(PlayerData playerData, int indent) {
+        String indentString = StringUtils.repeat(" ", indent);
+        List<String> lore = new ArrayList<>();
+
+        for (String experienceType : experienceTypes()) {
+            int experienceAmount = get(experienceType);
+            int playerAmount = playerData.getExperience_LEGACY(experienceType);
+            boolean meetsRequirement = playerData.getExperience_LEGACY(experienceType) > experienceAmount;
+            ChatColor balanceColor = meetsRequirement ? ChatColor.DARK_GREEN : ChatColor.DARK_RED;
+
+            lore.add(indentString + ChatColor.GOLD + experienceType + ": " + ChatColor.BLUE + experienceAmount + ChatColor.DARK_GRAY + " (currently have "
+                + balanceColor + playerAmount + ChatColor.DARK_GRAY + ")");
+        }
+        return lore;
+
     }
 
     // ---------------------------------------------------------------------------------------------------------------//

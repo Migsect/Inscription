@@ -39,6 +39,11 @@ public class ExperienceBonusAttributeType extends NumericalAttributeType {
     //--------------------------------------------------------------------------------------------------------------------//
     protected ExperienceBonusAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
+
+        ConfigurationSection conditionSection = section.getConfigurationSection("conditions");
+        if (conditionSection != null) {
+            m_conditions = Inscription.getInstance().getAttributeManager().parseConditions(conditionSection);
+        }
     }
     //--------------------------------------------------------------------------------------------------------------------//
     @Override public Attribute generate() {
@@ -63,26 +68,6 @@ public class ExperienceBonusAttributeType extends NumericalAttributeType {
                 Inscription.logger.finer("  Finished caching for " + m_displayName);
                 playerData.setData(castedData);
 
-                //                CacheData cached_data = playerData.getData(ExperienceBonusAttributeType.TYPE_IDENTIFIER);
-//                if (cached_data == null) {
-//                    cached_data = new ExperienceBonusAttributeType.Data();
-//                }
-//                if (!(cached_data instanceof ExperienceBonusAttributeType.Data)) {
-//                    return;
-//                }
-//
-//                Inscription.logger.finer("Caching attribute for " + m_displayName);
-//                ExperienceBonusAttributeType.Data data = (ExperienceBonusAttributeType.Data) cached_data;
-//
-//                double multiplier = getNumber(this.getGlyph());
-//                double currentValue = data.get();
-//                double newValue = currentValue + multiplier;
-//
-//                data.set(newValue > 1 ? 1 : newValue);
-//                Inscription.logger.finer("  +C Added '" + multiplier + "' bonus " + currentValue + "->" + newValue);
-//
-//                playerData.setData(data);
-//                Inscription.logger.finer("Finished caching for " + m_displayName);
             }
 
             @Override public String getLoreLine() {
@@ -149,7 +134,7 @@ public class ExperienceBonusAttributeType extends NumericalAttributeType {
                     PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
 
                     CacheData cacheData = playerData.getData(TYPE_IDENTIFIER);
-                    if (!(cacheData instanceof ExperienceBonusAttributeType.Data)) {
+                    if (!(cacheData instanceof Data)) {
                         return;
                     }
                     Data data = (Data) cacheData;
@@ -165,7 +150,7 @@ public class ExperienceBonusAttributeType extends NumericalAttributeType {
                     }
                     event.setAmount((int) multipliedExperience);
                     Inscription.logger.finest(
-                        "" + "[PlayerExpChangeEvent] Extra Experience: " + experienceMultiplier + " " + experience
+                        "[PlayerExpChangeEvent] Extra Experience: " + experienceMultiplier + " " + experience
                             + " -> " + multipliedExperience);
                 }
             };

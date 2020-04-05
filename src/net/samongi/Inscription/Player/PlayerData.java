@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import net.samongi.Inscription.Experience.ExperienceMap;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Waypoints.Waypoint;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
@@ -18,6 +19,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.libs.jline.internal.Nullable;
 import org.bukkit.entity.Player;
 
+import javax.annotation.Nonnull;
+
 public class PlayerData {
 
     //--------------------------------------------------------------------------------------------------------------------//
@@ -29,7 +32,7 @@ public class PlayerData {
     /**
      * Tracks the amount of excess experience the player has.
      */
-    private HashMap<String, Integer> m_experience = new HashMap<>();
+    private ExperienceMap m_experience = new ExperienceMap();
 
     private final UUID player_UUID;
     private String player_name = "NO NAME SET";
@@ -44,7 +47,7 @@ public class PlayerData {
     public PlayerData(UUID player_UUID) {
         this.player_UUID = player_UUID;
         this.player_name = Bukkit.getPlayer(player_UUID).getName();
-        this.m_glyphs = new GlyphInventory(player_UUID);
+        this.m_glyphs = new GlyphInventory(Bukkit.getPlayer(player_UUID));
     }
 
     public PlayerData(ConfigFile file) throws InvalidConfigurationException {
@@ -83,7 +86,7 @@ public class PlayerData {
 
         /* Setting up the glyph Inventory */
         ConfigurationSection glyphsSection = section.getConfigurationSection("glyphs");
-        this.m_glyphs = new GlyphInventory(this.player_UUID, glyphsSection);
+        this.m_glyphs = new GlyphInventory(Bukkit.getPlayer(player_UUID), glyphsSection);
 
     }
     /**
@@ -114,6 +117,8 @@ public class PlayerData {
         return this.player_name;
     }
 
+    // ---------------------------------------------------------------------------------------------------------------//
+
     /**
      * Returns the player's Glyph Inventory
      * The glyph inventory will be unique to this player.
@@ -129,6 +134,8 @@ public class PlayerData {
     public @Nullable InscriptionRootMenu getRootMenu(Player viewer) {
         return new InscriptionRootMenu(viewer, this);
     }
+
+    // ---------------------------------------------------------------------------------------------------------------//
 
     private Map<String, CacheData> getCachedData() {
         if (this.m_cachedData == null) {
@@ -168,22 +175,34 @@ public class PlayerData {
         return this.getCachedData().containsKey(type.toUpperCase());
     }
 
+    // ---------------------------------------------------------------------------------------------------------------//
+
     public void setExperience(String type, int amount) {
-        this.m_experience.put(type, amount);
+        m_experience.set(type, amount);
     }
 
     public void addExperience(String type, int amount) {
-        this.m_experience.put(type, this.m_experience.getOrDefault(type, 0) + amount);
+        m_experience.addInplace(type, amount);
     }
 
-    public int getExperience(String type) {
-
-        return this.m_experience.getOrDefault(type, 0);
+    public void addExperience(ExperienceMap experience)
+    {
+        m_experience.addInplace(experience);
     }
 
-    public Map<String, Integer> getExperience() {
-        return this.m_experience;
+    @Deprecated public int getExperience_LEGACY(String type) {
+
+        return m_experience.get(type);
     }
+
+    @Deprecated public Map<String, Integer> getExperience_LEGACY() {
+        return m_experience.get();
+    }
+    public @Nonnull ExperienceMap getExperience() {
+        return m_experience.clone();
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------//
 
     public List<Location> getWaypoints() {
         return m_waypoints;
@@ -303,7 +322,7 @@ public class PlayerData {
     //--------------------------------------------------------------------------------------------------------------------//
     public ConfigurationSection serializeExperienceSection() {
         ConfigurationSection section = new YamlConfiguration();
-        for (String key : m_experience.keySet()) {
+        for (String key : m_experience.experienceTypes()) {
             Integer value = m_experience.get(key);
             section.set(key, value);
         }
@@ -314,7 +333,7 @@ public class PlayerData {
 
         for (String key : section.getKeys(false)) {
             int value = section.getInt(key);
-            m_experience.put(key, value);
+            m_experience.set(key, value);
         }
     }
     //--------------------------------------------------------------------------------------------------------------------//

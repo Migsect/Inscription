@@ -63,7 +63,7 @@ public class PlayerManager implements Listener {
     }
 
     //----------------------------------------------------------------------------------------------------------------//
-    @Nonnull public PlayerData getData(@Nonnull Player player) {
+    @Nullable public PlayerData getData(@Nonnull Player player) {
 
         return this.getData(player.getUniqueId());
     }

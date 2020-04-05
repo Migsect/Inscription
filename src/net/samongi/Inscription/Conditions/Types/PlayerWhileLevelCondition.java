@@ -19,8 +19,8 @@ public class PlayerWhileLevelCondition extends ComparativeCondition {
 
     //----------------------------------------------------------------------------------------------------------------//
     @Override public String getDisplay() {
-        // " while your life {is at least} X"
-        return " while your life " + getMode().getDisplay() + " " + ChatColor.BLUE + String.format("%d", (int)Math.floor(getValue()));
+        // " while your level {is at least} X"
+        return " while your level " + getMode().getDisplay() + " " + ChatColor.BLUE + String.format("%d", (int)Math.floor(getValue()));
     }
 
     //----------------------------------------------------------------------------------------------------------------//
