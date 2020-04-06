@@ -166,7 +166,6 @@ public class Waypoint {
         WaypointAttributeType.Data waypointData = (WaypointAttributeType.Data) data;
 
         double aggregate = waypointData.calculateAggregate(player, m_location, toBlock.getLocation());
-        //Inscription.logger.finer("Waypoint::cacheSafeDistance aggregate: " + aggregate);
         m_cachedSafeDistance = (int) Math.floor(baseDistance + aggregate);
 
     }

@@ -6,10 +6,8 @@ import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.Inscription.Attributes.AttributeTypeFactory;
 import net.samongi.Inscription.Attributes.Base.AmountAttributeType;
 import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
-import net.samongi.Inscription.Attributes.GeneralAttributeParser;
 import net.samongi.Inscription.Conditions.Condition;
 import net.samongi.Inscription.Conditions.Helpers.PlayerConditionHelper;
-import net.samongi.Inscription.Conditions.Helpers.TargetEntityConditionHelper;
 import net.samongi.Inscription.Conditions.Types.FromBiomeCondition;
 import net.samongi.Inscription.Conditions.Types.ToBiomeCondition;
 import net.samongi.Inscription.Glyphs.Glyph;
@@ -19,29 +17,25 @@ import net.samongi.Inscription.Player.CacheTypes.CompositeCacheData;
 import net.samongi.Inscription.Player.CacheTypes.NumericCacheData;
 import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.Inscription.TypeClass.TypeClasses.BiomeClass;
-import net.samongi.SamongiLib.Tuple.Tuple;
 import org.bukkit.Location;
-import org.bukkit.block.Biome;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
 import javax.annotation.Nonnull;
-import java.util.*;
-import java.util.function.BinaryOperator;
+import java.util.HashSet;
+import java.util.Set;
 
-public class WaypointAttributeType extends AmountAttributeType {
-
+public class VillagerScanAttributeType extends AmountAttributeType {
     //--------------------------------------------------------------------------------------------------------------------//
-    public static final String TYPE_IDENTIFIER = "WAYPOINT";
+    public static final String TYPE_IDENTIFIER = "VILLAGER_SCAN";
 
     //--------------------------------------------------------------------------------------------------------------------//
     private Set<Condition> m_conditions = new HashSet<>();
 
     //--------------------------------------------------------------------------------------------------------------------//
-    protected WaypointAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+    protected VillagerScanAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
 
         ConfigurationSection conditionSection = section.getConfigurationSection("conditions");
@@ -57,13 +51,13 @@ public class WaypointAttributeType extends AmountAttributeType {
             @Override public void cache(PlayerData playerData) {
                 CacheData cachedData = playerData.getData(TYPE_IDENTIFIER);
                 if (cachedData == null) {
-                    cachedData = new Data();
+                    cachedData = new VillagerScanAttributeType.Data();
                 }
-                if (!(cachedData instanceof Data)) {
+                if (!(cachedData instanceof VillagerScanAttributeType.Data)) {
                     Inscription.logger.severe("CachedData with id '" + TYPE_IDENTIFIER + "' is not castable to its type");
                     return;
                 }
-                Data castedData = (Data) cachedData;
+                VillagerScanAttributeType.Data castedData = (VillagerScanAttributeType.Data) cachedData;
 
                 Inscription.logger.finer("  Caching attribute for " + m_displayName);
                 for (Condition condition : m_conditions) {
@@ -73,7 +67,7 @@ public class WaypointAttributeType extends AmountAttributeType {
                 double amount = getNumber(getGlyph());
                 NumericalAttributeType.ReduceType reduceType = getReduceType();
                 NumericCacheData numericCacheData = castedData
-                    .getCacheData(reduceType, () -> new NumericData(reduceType, reduceType.getInitialAggregator()));
+                    .getCacheData(reduceType, () -> new VillagerScanAttributeType.NumericData(reduceType, reduceType.getInitialAggregator()));
 
                 Inscription.logger.finer("    +C '" + amount + "' reducer '" + reduceType + "'");
                 numericCacheData.add(m_conditions, amount);
@@ -87,7 +81,7 @@ public class WaypointAttributeType extends AmountAttributeType {
                 String amountString = getDisplayString(glyph, isPositive(glyph) ? "+" : "-", "m");
 
                 String idLine = "" + ChatColor.YELLOW + ChatColor.ITALIC + this.getType().getDisplayName() + " - " + ChatColor.RESET;
-                String infoLine = amountString + ChatColor.YELLOW + " distance for waypoints";
+                String infoLine = amountString + ChatColor.YELLOW + " range for the villager scan ability";
                 for (Condition condition : m_conditions) {
                     infoLine += condition.getDisplay();
                 }
@@ -97,7 +91,7 @@ public class WaypointAttributeType extends AmountAttributeType {
         };
     }
 
-    public static class Data extends CompositeCacheData<ReduceType, NumericCacheData> {
+    public static class Data extends CompositeCacheData<NumericalAttributeType.ReduceType, NumericCacheData> {
 
         //----------------------------------------------------------------------------------------------------------------//
         @Override public String getType() {
@@ -108,11 +102,8 @@ public class WaypointAttributeType extends AmountAttributeType {
             return "";
         }
 
-        public double calculateAggregate(Player player, Location from, Location to) {
+        public double calculateAggregate(Player player) {
             Set<Condition> conditionGroups = PlayerConditionHelper.getConditionsForPlayer(player);
-
-            conditionGroups.addAll(BiomeClass.handler.getInvolvedAsCondition(from.getBlock().getBiome(), (tc) -> new FromBiomeCondition((BiomeClass) tc)));
-            conditionGroups.addAll(BiomeClass.handler.getInvolvedAsCondition(to.getBlock().getBiome(), (tc) -> new ToBiomeCondition((BiomeClass) tc)));
 
             return calculateConditionAggregate(conditionGroups, this);
         }
@@ -120,7 +111,7 @@ public class WaypointAttributeType extends AmountAttributeType {
 
     public static class NumericData extends NumericCacheData {
 
-        NumericData(ReduceType reduceType, double dataGlobalInitial) {
+        NumericData(NumericalAttributeType.ReduceType reduceType, double dataGlobalInitial) {
             super(reduceType);
             set(dataGlobalInitial);
         }
@@ -141,7 +132,7 @@ public class WaypointAttributeType extends AmountAttributeType {
         }
 
         @Nonnull @Override public AttributeType construct(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
-            return new WaypointAttributeType(section);
+            return new VillagerScanAttributeType(section);
         }
 
         @Override public Listener getListener() {

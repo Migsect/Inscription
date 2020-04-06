@@ -1,14 +1,19 @@
-package net.samongi.Inscription.Player;
+package net.samongi.Inscription.Menu;
 
+import net.samongi.Inscription.Ability.AbilityHandler;
+import net.samongi.Inscription.Ability.AbilityManager;
 import net.samongi.Inscription.Experience.ExperienceMap;
 import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Loot.Generator.GlyphGenerator;
 import net.samongi.Inscription.Loot.LootManager;
+import net.samongi.Inscription.Player.PlayerData;
 import net.samongi.SamongiLib.Menu.InventoryMenu;
 import net.samongi.SamongiLib.Utilities.TextUtil;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -53,7 +58,7 @@ public class InscriptionRootMenu {
         lore.add("");
 
         String helpLine =
-            "" + ChatColor.ITALIC + ChatColor.DARK_GRAY + "Overflow experience is gathered when one does not have a valid glyph equipped for that experience. "
+            "" + ChatColor.ITALIC + ChatColor.GRAY + "Overflow experience is gathered when one does not have a valid glyph equipped for that experience. "
                 + "This experience can be used to acquire undiscovered glyphs.";
         lore.addAll(TextUtil.wrapText(helpLine, 60, 0));
 
@@ -62,6 +67,7 @@ public class InscriptionRootMenu {
         return item;
     }
 
+    //----------------------------------------------------------------------------------------------------------------//
     private ItemStack getGlyphInventoryItem() {
         ItemStack item = new ItemStack(Material.CHEST);
         ItemMeta itemMeta = item.getItemMeta();
@@ -74,7 +80,7 @@ public class InscriptionRootMenu {
         String actionLine = ChatColor.YELLOW + "Click to open the glyph inventory.";
         lore.add(actionLine);
         lore.add("");
-        String helpLine = "" + ChatColor.ITALIC + ChatColor.DARK_GRAY
+        String helpLine = "" + ChatColor.ITALIC + ChatColor.GRAY
             + "Glyphs added into the glyph inventory become activated and will benefit you in addition to being eligible to receive experience from actions you performed.";
         lore.addAll(TextUtil.wrapText(helpLine, 60, 0));
 
@@ -83,18 +89,19 @@ public class InscriptionRootMenu {
         return item;
     }
 
+    //----------------------------------------------------------------------------------------------------------------//
     private ItemStack getGlyphShopItem() {
         ItemStack item = new ItemStack(Material.WRITABLE_BOOK);
         ItemMeta itemMeta = item.getItemMeta();
         assert itemMeta != null;
 
-        itemMeta.setDisplayName(ChatColor.GREEN + "Glyph Discovery");
+        itemMeta.setDisplayName(ChatColor.GREEN + "Glyph Generation");
         List<String> lore = new ArrayList<>();
         lore.add("");
-        String actionLine = ChatColor.YELLOW + "Click to open the glyph discovery menu.";
+        String actionLine = ChatColor.YELLOW + "Click to open the glyph discovery interface.";
         lore.add(actionLine);
         lore.add("");
-        String helpLine = "" + ChatColor.ITALIC + ChatColor.DARK_GRAY
+        String helpLine = "" + ChatColor.ITALIC + ChatColor.GRAY
             + "Overflow experience can be used to make undiscovered glyphs which can then be used to create random glyphs.";
         lore.addAll(TextUtil.wrapText(helpLine, 60, 0));
 
@@ -121,7 +128,7 @@ public class InscriptionRootMenu {
             List<String> lore = itemMeta.getLore();
             assert lore != null;
             lore.add("");
-            lore.add(ChatColor.DARK_GRAY + "---- ---- ---- ---- ---- ----");
+            lore.add(ChatColor.GRAY + "---- ---- ---- ---- ---- ----");
             lore.add("");
             lore.add(ChatColor.GREEN + "Click to purchase");
             lore.add("");
@@ -162,15 +169,101 @@ public class InscriptionRootMenu {
         return menu;
     }
 
+    //----------------------------------------------------------------------------------------------------------------//
+    public ItemStack getTomeItem() {
+        ItemStack item = new ItemStack(Material.ENCHANTED_BOOK);
+        ItemMeta itemMeta = item.getItemMeta();
+        assert itemMeta != null;
+
+        itemMeta.setDisplayName(ChatColor.GREEN + "Tome Scribing");
+        List<String> lore = new ArrayList<>();
+        lore.add("");
+        String actionLine = ChatColor.YELLOW + "Click to open the tome scribing interface.";
+        lore.add(actionLine);
+        lore.add("");
+        String helpLine = "" + ChatColor.ITALIC + ChatColor.GRAY + "Use books to create tomes that activate various glyph empowered abilities.";
+        lore.addAll(TextUtil.wrapText(helpLine, 60, 0));
+
+        itemMeta.setLore(lore);
+        item.setItemMeta(itemMeta);
+        return item;
+    }
+
+    public InventoryMenu getTomeMenu() {
+        String title = ChatColor.DARK_PURPLE + "Tome Scribing";
+        InventoryMenu menu = new InventoryMenu(m_viewingPlayer, 6, title);
+
+        AbilityManager abilityManager = Inscription.getInstance().getActionManager();
+        List<AbilityHandler> abilityHandlers = abilityManager.getActionHandlers();
+        for (int index = 0; index < abilityHandlers.size(); index++) {
+            AbilityHandler abilityHandler = abilityHandlers.get(index);
+            ItemStack actionItem = abilityHandler.getItemstack();
+
+            ItemMeta itemMeta = actionItem.getItemMeta();
+            List<String> lore = itemMeta.getLore();
+            lore.add(ChatColor.GRAY + "");
+            lore.add(ChatColor.GRAY + "---- ---- ---- ---- ---- ----");
+            lore.add(ChatColor.GRAY + "");
+            lore.add(ChatColor.GREEN + "Click to purchase");
+            lore.add("");
+            lore.add(ChatColor.YELLOW + "Material Cost:");
+
+            String cleanMaterial = TextUtil.capitalize(Material.BOOK.toString().toLowerCase().replace('_', ' '), " ");
+            lore.add("  " + ChatColor.BLUE + "1" + ChatColor.YELLOW + " x " + ChatColor.GOLD + cleanMaterial);
+
+            itemMeta.setLore(lore);
+            actionItem.setItemMeta(itemMeta);
+
+            menu.setItem(index, actionItem);
+
+            Location playerLocation = m_viewingPlayer.getLocation();
+
+            boolean canMake = m_viewingPlayer.getInventory().containsAtLeast(new ItemStack(Material.BOOK), 1);
+            if (canMake) {
+                menu.addClickAction(index, () -> {
+                    Inventory inventory = m_viewingPlayer.getInventory();
+                    boolean paid = false;
+                    for (int slot = 0; slot < inventory.getMaxStackSize(); slot++) {
+                        ItemStack item = inventory.getItem(slot);
+                        if (item.getType() == Material.BOOK) {
+                            if (item.getAmount() > 1) {
+                                item.setAmount(item.getAmount() - 1);
+                                paid = true;
+                                break;
+                            } else {
+                                inventory.setItem(slot, new ItemStack(Material.AIR));
+                                paid = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!paid) {
+                        m_viewingPlayer.sendMessage(ChatColor.RED + "You didn't have enough materials to make this tome!");
+                        return;
+                    }
+                    playerLocation.getWorld().dropItem(playerLocation, abilityHandler.getItemstack());
+                });
+            }
+        }
+
+        return menu;
+    }
+
+    //----------------------------------------------------------------------------------------------------------------//
     public InventoryMenu getMenu() {
         String title = ChatColor.LIGHT_PURPLE + m_subjectData.getPlayerName() + "'s " + TITLE;
         InventoryMenu rootMenu = new InventoryMenu(m_viewingPlayer, ROWS, title);
 
         rootMenu.setItem(26, getOverflowExperienceItem());
+
         rootMenu.setItem(0, getGlyphInventoryItem());
         rootMenu.addClickAction(0, () -> m_viewingPlayer.openInventory(m_subjectData.getGlyphInventory().getInventory()));
+
         rootMenu.setItem(1, getGlyphShopItem());
         rootMenu.addClickAction(1, () -> getGlyphShopMenu().openMenu());
+
+        rootMenu.setItem(2, getTomeItem());
+        rootMenu.addClickAction(2, () -> getTomeMenu().openMenu());
 
         return rootMenu;
     }

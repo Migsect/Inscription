@@ -3,6 +3,8 @@ package net.samongi.Inscription;
 import java.io.File;
 import java.util.logging.Level;
 
+import net.samongi.Inscription.Ability.AbilityManager;
+import net.samongi.Inscription.Ability.Abilities.VillagerScanAbility;
 import net.samongi.Inscription.Commands.CommandExperience;
 import net.samongi.Inscription.Commands.CommandGenerate;
 import net.samongi.Inscription.Commands.CommandHelp;
@@ -73,6 +75,7 @@ public class Inscription extends JavaPlugin {
     private GlyphTypesManager m_glyphTypesManager = null;
     private RecipeManager m_recipeManager = null;
     private WaypointManager m_waypointManager = null;
+    private AbilityManager m_abilityManager = null;
 
     private PlayerTickTask m_playerTickTask = null;
 
@@ -161,6 +164,13 @@ public class Inscription extends JavaPlugin {
         m_waypointManager = new WaypointManager();
         getServer().getPluginManager().registerEvents(m_waypointManager, this);
     }
+
+    private void setupActionManager() {
+        m_abilityManager = new AbilityManager();
+        m_abilityManager.registerActionHandler(new VillagerScanAbility());
+        getServer().getPluginManager().registerEvents(m_abilityManager, this);
+    }
+
     //----------------------------------------------------------------------------------------------------------------//
     @Override public void onEnable() {
         /* Configuration handling */
@@ -184,6 +194,7 @@ public class Inscription extends JavaPlugin {
         setupPlayerManager();
         setupRecipeManager();
         setupWaypointManager();
+        setupActionManager();
 
         createListeners();
         createCommands();
@@ -256,6 +267,7 @@ public class Inscription extends JavaPlugin {
         m_attributeManager.registerConstructor(new LifeStealAttributeType.Factory());
         m_attributeManager.registerConstructor(new WaypointAttributeType.Factory());
         m_attributeManager.registerConstructor(new DarkDetectionAttributeType.Factory());
+        m_attributeManager.registerConstructor(new VillagerScanAttributeType.Factory());
     }
 
     private void createConditionParsers() {
@@ -305,6 +317,9 @@ public class Inscription extends JavaPlugin {
     }
     public WaypointManager getWaypointManager() {
         return m_waypointManager;
+    }
+    public AbilityManager getActionManager() {
+        return m_abilityManager;
     }
 
     //----------------------------------------------------------------------------------------------------------------//

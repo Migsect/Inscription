@@ -6,6 +6,7 @@ import java.util.*;
 
 import net.samongi.Inscription.Experience.ExperienceMap;
 import net.samongi.Inscription.Inscription;
+import net.samongi.Inscription.Menu.InscriptionRootMenu;
 import net.samongi.Inscription.Waypoints.Waypoint;
 import net.samongi.SamongiLib.Configuration.ConfigFile;
 import net.samongi.SamongiLib.Exceptions.InvalidConfigurationException;

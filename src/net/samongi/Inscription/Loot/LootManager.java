@@ -22,6 +22,7 @@ import net.samongi.SamongiLib.Configuration.ConfigurationParsing;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
@@ -374,11 +375,14 @@ public class LootManager implements Listener, ConfigurationParsing {
 
     @EventHandler public void onPlayerInteractEvent(PlayerInteractEvent event) {
         EquipmentSlot usedSlot = event.getHand();
-        if ((event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock() != null) || event.useItemInHand() == Event.Result.DENY
+        Action action = event.getAction();
+        Block block = event.getClickedBlock();
+        if ((action == Action.RIGHT_CLICK_BLOCK && block != null && block.getType().isInteractable()) || event.useItemInHand() == Event.Result.DENY
             || usedSlot == EquipmentSlot.OFF_HAND)
         {
             return;
         }
+
         Player player = event.getPlayer();
         ItemStack itemUsed = null;
         if (usedSlot == EquipmentSlot.OFF_HAND) {
