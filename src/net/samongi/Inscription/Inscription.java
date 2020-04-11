@@ -268,6 +268,7 @@ public class Inscription extends JavaPlugin {
         m_attributeManager.registerConstructor(new WaypointAttributeType.Factory());
         m_attributeManager.registerConstructor(new DarkDetectionAttributeType.Factory());
         m_attributeManager.registerConstructor(new VillagerScanAttributeType.Factory());
+        m_attributeManager.registerConstructor(new PlantingAttributeType.Factory());
     }
 
     private void createConditionParsers() {

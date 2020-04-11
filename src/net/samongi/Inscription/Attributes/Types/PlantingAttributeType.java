@@ -1,59 +1,50 @@
 package net.samongi.Inscription.Attributes.Types;
 
-import java.util.*;
-
 import net.md_5.bungee.api.ChatColor;
-import net.samongi.Inscription.Attributes.Base.AmountAttributeType;
-import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
-import net.samongi.Inscription.Attributes.GeneralAttributeParser;
-import net.samongi.Inscription.Conditions.Condition;
-import net.samongi.Inscription.Conditions.Helpers.BlockConditionHelper;
-import net.samongi.Inscription.Conditions.Helpers.PlayerConditionHelper;
-import net.samongi.Inscription.Conditions.Helpers.TargetEntityConditionHelper;
-import net.samongi.Inscription.Inscription;
-import net.samongi.Inscription.Glyphs.Glyph;
 import net.samongi.Inscription.Attributes.Attribute;
 import net.samongi.Inscription.Attributes.AttributeType;
 import net.samongi.Inscription.Attributes.AttributeTypeFactory;
+import net.samongi.Inscription.Attributes.Base.AmountAttributeType;
+import net.samongi.Inscription.Attributes.Base.NumericalAttributeType;
+import net.samongi.Inscription.Conditions.Condition;
+import net.samongi.Inscription.Conditions.Helpers.PlayerConditionHelper;
+import net.samongi.Inscription.Glyphs.Glyph;
+import net.samongi.Inscription.Inscription;
 import net.samongi.Inscription.Player.CacheData;
 import net.samongi.Inscription.Player.CacheTypes.CompositeCacheData;
 import net.samongi.Inscription.Player.CacheTypes.NumericCacheData;
 import net.samongi.Inscription.Player.PlayerData;
-import net.samongi.Inscription.TypeClass.TypeClasses.BlockClass;
-import net.samongi.Inscription.TypeClass.TypeClasses.MaterialClass;
-
-import net.samongi.SamongiLib.Items.ItemUtil;
-import net.samongi.SamongiLib.Items.MaskedBlockData;
+import net.samongi.SamongiLib.Blocks.BlockUtil;
 import net.samongi.SamongiLib.Vector.SamIntVector;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.Ageable;
-import org.bukkit.block.data.BlockData;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.PlayerInventory;
 
 import javax.annotation.Nonnull;
+import java.util.*;
 
-public class ChainBreakAttributeType extends AmountAttributeType {
+public class PlantingAttributeType extends AmountAttributeType {
 
     //----------------------------------------------------------------------------------------------------------------//
-    private static final String TYPE_IDENTIFIER = "CHAIN_BREAK";
+    private static final String TYPE_IDENTIFIER = "PLANTING";
 
     //----------------------------------------------------------------------------------------------------------------//
     Set<Condition> m_conditions = new HashSet<>();
 
     //----------------------------------------------------------------------------------------------------------------//
-    protected ChainBreakAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
+    protected PlantingAttributeType(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
         super(section);
 
         ConfigurationSection conditionSection = section.getConfigurationSection("conditions");
@@ -88,7 +79,7 @@ public class ChainBreakAttributeType extends AmountAttributeType {
                 Glyph glyph = getGlyph();
                 String multiplierString = getDisplayString(glyph, isPositive(glyph) ? "+" : "-", "");
 
-                String infoLine = multiplierString + ChatColor.YELLOW + " chain breaking" + Condition.concatConditionDisplays(m_conditions);
+                String infoLine = multiplierString + ChatColor.YELLOW + " area planting" + Condition.concatConditionDisplays(m_conditions);
 
                 return getDisplayLineId() + infoLine;
             }
@@ -107,9 +98,8 @@ public class ChainBreakAttributeType extends AmountAttributeType {
             return "";
         }
 
-        public double calculateAggregate(Player player, Block block) {
+        public double calculateAggregate(Player player) {
             Set<Condition> conditionGroups = PlayerConditionHelper.getConditionsForPlayer(player);
-            conditionGroups.addAll(BlockConditionHelper.getConditionsForTargetBlock(block));
             return calculateConditionAggregate(conditionGroups, this);
         }
     }
@@ -140,7 +130,7 @@ public class ChainBreakAttributeType extends AmountAttributeType {
         //----------------------------------------------------------------------------------------------------------------//
         @Nonnull @Override public AttributeType construct(@Nonnull ConfigurationSection section) throws InvalidConfigurationException {
 
-            return new ChainBreakAttributeType(section);
+            return new PlantingAttributeType(section);
         }
 
         //----------------------------------------------------------------------------------------------------------------//
@@ -149,27 +139,12 @@ public class ChainBreakAttributeType extends AmountAttributeType {
 
                 private Set<Location> usedLocations = new HashSet<>();
 
-                private boolean isSimilarData(@Nonnull Block blockA, @Nonnull Block blockB) {
-                    BlockData blockDataA = blockA.getBlockData();
-                    BlockData blockDataB = blockB.getBlockData();
+                @EventHandler void onBlockPlaceEvent(BlockPlaceEvent event) {
+                    Block block = event.getBlock();
+                    // TODO Maybe handle blockFaces in a special way to be able to handle odd crops like cocoa beans
+                    // BlockFace blockFace = BlockUtil.calculateRelativeFace(block, event.getBlockAgainst());
 
-                    if (blockDataA.getMaterial() != blockDataB.getMaterial()) {
-                        return false;
-                    }
-                    // Checking to see if the blocks hold the same age (for crops mostly)
-                    if (blockDataA instanceof Ageable && blockDataB instanceof Ageable) {
-                        Ageable ageableDataA = (Ageable) blockDataA;
-                        Ageable ageableDataB = (Ageable) blockDataB;
-                        if (ageableDataA.getAge() != ageableDataB.getAge()) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-
-                @EventHandler public void onBlockBreak(BlockBreakEvent event) {
-                    /*Making sure we don't respond to self made events (determined by the block location)*/
-                    if (usedLocations.contains(event.getBlock().getLocation()) || event.isCancelled()) {
+                    if (usedLocations.contains(block.getLocation()) || event.isCancelled()) {
                         return;
                     }
 
@@ -181,51 +156,62 @@ public class ChainBreakAttributeType extends AmountAttributeType {
                     }
 
                     PlayerData playerData = Inscription.getInstance().getPlayerManager().getData(player);
-                    CacheData cacheData = playerData.getData(ChainBreakAttributeType.TYPE_IDENTIFIER);
-                    if (!(cacheData instanceof ChainBreakAttributeType.Data)) {
+                    assert playerData != null;
+                    CacheData cacheData = playerData.getData(TYPE_IDENTIFIER);
+                    if (!(cacheData instanceof Data)) {
                         return;
                     }
-                    ChainBreakAttributeType.Data data = (ChainBreakAttributeType.Data) cacheData;
+                    Data data = (Data) cacheData;
 
-                    Block block = event.getBlock();
-                    ItemStack tool = player.getInventory().getItemInMainHand();
-                    if (tool == null) {
-                        tool = new ItemStack(Material.AIR);
-                    }
+                    int totalBlocks = (int) Math.floor(data.calculateAggregate(player));
 
-                    int totalBlocks = (int) Math.floor(data.calculateAggregate(player, block));
-
-                    Inscription.logger.finest("[Break Event] Chain Amount: " + totalBlocks);
-
-                    /* No need to check for materials if this is less-than-equal to 0 */
+                    /* No need to check for materials if this is not positive */
                     if (totalBlocks <= 0) {
                         return;
                     }
 
+                    Material placeMaterial = event.getBlock().getType();
+                    Material itemMaterial = event.getItemInHand().getType();
 
-                    /* Setting up the search's data structures */
+                    int totalItems = 0;
+                    PlayerInventory playerInventory = player.getInventory();
+                    for (int slot = 0; slot < playerInventory.getSize(); slot++) {
+                        ItemStack item = playerInventory.getItem(slot);
+                        if (item != null && item.getType() == itemMaterial) {
+                            totalItems += item.getAmount();
+                        }
+                    }
+
+                    // Subtracting one item because it'll be used for the normal block place.
+                    int placeLimit = Math.min(totalItems - 1, totalBlocks);
+
+                    Inscription.logger.finest("[Place Block Event] Planting Amount: " + placeLimit);
+                    if (placeLimit <= 0) {
+                        return;
+                    }
+
                     Set<Location> markedLocations = new LinkedHashSet<>();
                     Queue<Block> blockQueue = new LinkedList<>();
 
                     /* Seeding the queue */
-                    blockQueue.add(block);
+                    Block farmlandBlock = block.getRelative(BlockFace.DOWN);
+                    // We aren't adding the original block to marked locations because it's already placed as of this event.
+                    blockQueue.add(farmlandBlock);
+                    Material farmlandType = farmlandBlock.getType();
 
-                    /* Loop while we have a queue or we haven't out grown our quota */
-                    while (markedLocations.size() <= totalBlocks && blockQueue.size() > 0) {
-                        Inscription.logger.finest("Marked Size:" + markedLocations.size() + "/" + totalBlocks + ", Queue Size:" + blockQueue.size());
+                    while (blockQueue.size() > 0) {
                         Block target = blockQueue.poll();
                         if (target == null) {
                             break;
                         }
 
-                        // We are going to use a predefined list of vectors. Note that these vectors will prioritize the closer.
-                        // vectors first before the further surrounding vectors.
                         List<SamIntVector> vectors = SamIntVector.getSurroundingVectorsSemiScrambled();
                         for (SamIntVector vector : vectors) {
                             Block relative = target.getRelative(vector.X(), vector.Y(), vector.Z());
 
-                            // Checking if the block is chainable
-                            if (!isSimilarData(relative, target) || markedLocations.contains(relative.getLocation())) {
+                            // Checking if the block is plantable (matches the original block
+                            boolean plantable = relative.getType() == farmlandType && relative.getRelative(BlockFace.UP).isEmpty();
+                            if (!plantable || markedLocations.contains(relative.getLocation())) {
                                 continue;
                             }
 
@@ -234,49 +220,78 @@ public class ChainBreakAttributeType extends AmountAttributeType {
                             markedLocations.add(relative.getLocation());
 
                             // If we reach the point where the blocks we have marked is at our total blocks, we will break out.
-                            if (markedLocations.size() >= totalBlocks) {
+                            if (markedLocations.size() >= placeLimit) {
                                 break;
                             }
                         }
-                        if (markedLocations.size() >= totalBlocks) {
+
+                        if (markedLocations.size() >= placeLimit) {
                             break;
                         }
                     }
 
-                    /* Breaking all the marked blocks */
+                    // We need to prioritize the item in hand.
+                    int amountPlaced = markedLocations.size();
+                    ItemStack seed = event.getItemInHand();
+                    EquipmentSlot seedSlot = event.getHand();
+
                     for (Location location : markedLocations) {
-                        Block target = location.getBlock();
-
-                        // We want to allow other plugins to stop the event if needed.
-                        BlockBreakEvent blockBreakEvent = new BlockBreakEvent(target, player);
-                        usedLocations.add(location);
-                        Bukkit.getPluginManager().callEvent(blockBreakEvent);
-
-                        if (blockBreakEvent.isCancelled()) {
+                        // This is handled normally by minecraft.
+                        if (location.equals(farmlandBlock.getLocation())) {
+                            Inscription.logger.finest("location.equals(farmlandBlock.getLocation())");
                             continue;
                         }
 
-                        /* NOTE May not drop the normal items based on fortune */
-                        target.breakNaturally(tool);
+                        Block underTarget = location.getBlock();
+                        Block target = underTarget.getRelative(BlockFace.UP);
+                        BlockState replacedState = target.getState();
+                        target.setType(placeMaterial);
 
-                        // Remove the location from the set to allow it to be triggered again
-                        usedLocations.remove(location);
+                        usedLocations.add(target.getLocation());
+                        BlockPlaceEvent newPlaceEvent = new BlockPlaceEvent(target, replacedState, target, event.getItemInHand(), player, event.canBuild(),
+                            event.getHand());
+                        Bukkit.getPluginManager().callEvent(newPlaceEvent);
+                        usedLocations.remove(target.getLocation());
 
-                        if (tool.getItemMeta() instanceof Damageable && tool.getType().getMaxDurability() > 0) {
-                            ItemUtil.damageItem(player, tool);
-
-                            Damageable damageableMeta = (Damageable) tool.getItemMeta();
-                            if (damageableMeta.getDamage() >= tool.getType().getMaxDurability()) {
-                                player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-
-                                // Making the sound the broken item.
-                                player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1F, 1F);
-
-                                break;
-                            }
-
+                        if (!newPlaceEvent.canBuild() || event.isCancelled()) {
+                            replacedState.update();
+                            // If the block isn't going to be placed, then we need not charge the player the item
+                            amountPlaced--;
+                            continue;
                         }
 
+
+                    }
+
+                    // Leaving one item at the least so Minecraft can handle it.
+                    if (amountPlaced >= (seed.getAmount() - 1)) {
+                        seed.setAmount(1);
+                        amountPlaced -= (seed.getAmount() - 1);
+                    } else {
+                        seed.setAmount((seed.getAmount() - amountPlaced));
+                        amountPlaced = 0;
+                    }
+
+                    if (seedSlot == EquipmentSlot.HAND) {
+                        playerInventory.setItemInMainHand(seed);
+                    } else if (seedSlot == EquipmentSlot.OFF_HAND) {
+                        playerInventory.setItemInOffHand(seed);
+                    }
+
+                    // Handling the overflow from the main hand.
+                    for (int slot = 0; slot < playerInventory.getSize() && amountPlaced > 0; slot++) {
+                        ItemStack item = playerInventory.getItem(slot);
+                        if (item == null || item.getType() != itemMaterial) {
+                            continue;
+                        }
+
+                        if (item.getAmount() > amountPlaced) {
+                            item.setAmount(item.getAmount() - amountPlaced);
+                            amountPlaced = 0;
+                        } else {
+                            amountPlaced -= item.getAmount();
+                            playerInventory.setItem(slot, new ItemStack(Material.AIR));
+                        }
                     }
                 }
             };
@@ -284,5 +299,5 @@ public class ChainBreakAttributeType extends AmountAttributeType {
 
         //----------------------------------------------------------------------------------------------------------------//
     }
-
+    //----------------------------------------------------------------------------------------------------------------//
 }
